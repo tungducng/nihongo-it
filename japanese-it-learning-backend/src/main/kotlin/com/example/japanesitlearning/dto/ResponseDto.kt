@@ -13,13 +13,4 @@ data class ResponseDto(
     val messageId: String? = null,
     @JsonProperty("errors")
     val errors: Map<String, String?>? = null, // Optional, excluded if null
-) {
-    constructor(
-        status: ResponseType = ResponseType.OK,
-    ) : this(
-        status = status,
-        message = null,
-        messageId = null,
-        errors = null,
-    )
-}
+)

@@ -3,18 +3,22 @@ package com.example.japanesitlearning.dto.vocabulary
 import com.example.japanesitlearning.entity.JLPTLevel
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class UpdateVocabularyRequestDto(
+    @get:NotBlank
     @get:Size(max = 100, message = "Hiragana cannot exceed 100 characters")
     @JsonProperty("hiragana")
-    val hiragana: String?,
+    val hiragana: String,
 
+    @get:NotBlank(message = "Meaning is required")
     @get:Size(max = 255, message = "Meaning cannot exceed 255 characters")
     @JsonProperty("meaning")
-    val meaning: String?,
+    val meaning: String,
 
     @get:Size(max = 100, message = "Kanji cannot exceed 100 characters")
     @JsonProperty("kanji")
@@ -35,11 +39,14 @@ data class UpdateVocabularyRequestDto(
     @JsonProperty("category")
     val category: String? = null,
 
+    @get:NotNull(message = "JLPT level is required")
+    @get:Pattern(regexp = "^(N5|N4|N3|N2|N1)$", message = "JLPT level must be one of: N5, N4, N3, N2, N1")
     @JsonProperty("jlptLevel")
-    val jlptLevel: JLPTLevel?,
+    val jlptLevel: String,
 
+    @get:NotBlank(message = "Content type is required")
     @get:Size(max = 20, message = "Content type cannot exceed 20 characters")
     @get:Pattern(regexp = "^(vocabulary|grammar|conversation)$", message = "Content type must be one of: vocabulary, grammar, conversation")
     @JsonProperty("contentType")
-    val contentType: String?,
+    val contentType: String,
 ) 

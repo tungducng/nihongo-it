@@ -2,7 +2,11 @@ package com.example.japanesitlearning.controller
 
 import com.example.japanesitlearning.dto.*
 import com.example.japanesitlearning.dto.vocabulary.CreateVocabularyRequestDto
+import com.example.japanesitlearning.dto.vocabulary.CreateVocabularyResponseDto
+import com.example.japanesitlearning.dto.vocabulary.GetVocabularyResponseDto
 import com.example.japanesitlearning.dto.vocabulary.PagedVocabularyResponseDto
+import com.example.japanesitlearning.dto.vocabulary.UpdateVocabularyRequestDto
+import com.example.japanesitlearning.dto.vocabulary.UpdateVocabularyResponseDto
 import com.example.japanesitlearning.dto.vocabulary.VocabularyDto
 import com.example.japanesitlearning.dto.vocabulary.VocabularyFilterRequestDto
 import com.example.japanesitlearning.entity.JLPTLevel
@@ -18,15 +22,13 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
 
     @PreAuthFilter(hasAnyRole = ["ADMIN", "USER"])
     @PostMapping
-    fun createVocabulary(@Valid @RequestBody request: CreateVocabularyRequestDto): VocabularyDto {
-        val result = vocabularyService.createVocabulary(request)
-        return result
+    fun createVocabulary(@Valid @RequestBody request: CreateVocabularyRequestDto): CreateVocabularyResponseDto {
+        return vocabularyService.createVocabulary(request)
     }
 
     @GetMapping("/{vocabId}")
-    fun getVocabulary(@PathVariable vocabId: UUID): VocabularyDto {
-        val result = vocabularyService.getVocabulary(vocabId)
-        return result
+    fun getVocabulary(@PathVariable vocabId: UUID): GetVocabularyResponseDto {
+        return vocabularyService.getVocabulary(vocabId)
     }
 
     @PreAuthFilter(hasAnyRole = ["ADMIN"])
@@ -47,28 +49,22 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
             page = page,
             size = size,
         )
-        val result = vocabularyService.filterVocabulary(filter)
-        return result
+        return vocabularyService.filterVocabulary(filter)
     }
 
     @PreAuthFilter(hasAnyRole = ["ADMIN", "USER"])
     @PutMapping("/{vocabId}")
     fun updateVocabulary(
         @PathVariable vocabId: UUID,
-        @Valid @RequestBody request: CreateVocabularyRequestDto,
-    ): VocabularyDto {
-        val result = vocabularyService.updateVocabulary(vocabId, request)
-        return result
+        @Valid @RequestBody request: UpdateVocabularyRequestDto,
+    ): UpdateVocabularyResponseDto {
+        return vocabularyService.updateVocabulary(vocabId, request)
     }
 
     @PreAuthFilter(hasAnyRole = ["ADMIN", "USER"])
     @DeleteMapping("/{vocabId}")
     fun deleteVocabulary(@PathVariable vocabId: UUID): ResponseDto {
-        vocabularyService.deleteVocabulary(vocabId)
-        return ResponseDto(
-            status = ResponseType.OK,
-            message = "Vocabulary deleted successfully",
-        )
+        return vocabularyService.deleteVocabulary(vocabId)
     }
 
     @PreAuthFilter(hasAnyRole = ["ADMIN", "USER"])

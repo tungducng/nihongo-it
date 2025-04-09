@@ -9,49 +9,52 @@ import java.util.*
 data class FlashcardEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "card_id")
-    val cardId: UUID = UUID.randomUUID(),
+    @Column(name = "flashcard_id")
+    val flashCardId: UUID = UUID.randomUUID(),
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "deck_id")
-    val deck: FlashcardDeckEntity,
+    @Column(name = "user_id", nullable = false)
+    val userId: Long,
 
-    @Column(name = "front_content", columnDefinition = "text", nullable = false)
-    val frontContent: String,
+    @Column(name = "front_text", nullable = false)
+    var frontText: String,
 
-    @Column(name = "back_content", columnDefinition = "text", nullable = false)
-    val backContent: String,
+    @Column(name = "back_text", nullable = false)
+    var backText: String,
 
-    @Column(name = "image_url")
-    val imageUrl: String?,
+    @Column(name = "notes")
+    var notes: String? = null,
 
-    @Column(name = "audio_url")
-    val audioUrl: String?,
-
-    @Column(name = "example_sentence", columnDefinition = "text")
-    val exampleSentence: String?,
-
-    @Column(name = "notes", columnDefinition = "text")
-    val notes: String?,
-
-    @Column(name = "difficulty_level")
-    val difficultyLevel: Int = 0,
-
-    @Column(name = "review_count")
-    val reviewCount: Int = 0,
-
-    @Column(name = "last_reviewed")
-    val lastReviewed: LocalDateTime?,
-
-    @Column(name = "next_review")
-    val nextReview: LocalDateTime?,
-
-    @Column(name = "order_index")
-    val orderIndex: Int = 0,
+    @Column(name = "tags", columnDefinition = "jsonb")
+    var tags: List<String> = listOf(),
 
     @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    var createdAt: LocalDateTime = LocalDateTime.now(),
 
-    @Column(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now(),
-) 
+    // Các trường FSRS
+    @Column(name = "state")
+    var state: Int = 0,
+
+    @Column(name = "due")
+    var due: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name = "stability")
+    var stability: Double = 0.0,
+
+    @Column(name = "difficulty")
+    var difficulty: Double = 0.3,
+
+    @Column(name = "elapsed_days")
+    var elapsedDays: Double = 0.0,
+
+    @Column(name = "scheduled_days")
+    var scheduledDays: Double = 0.0,
+
+    @Column(name = "reps")
+    var reps: Int = 0,
+
+    @Column(name = "lapses")
+    var lapses: Int = 0,
+
+    @OneToMany(mappedBy = "flashcard", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    var reviewLogs: MutableList<ReviewLog> = mutableListOf()
+)

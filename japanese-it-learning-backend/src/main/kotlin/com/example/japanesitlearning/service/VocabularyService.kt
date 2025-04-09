@@ -1,7 +1,13 @@
 package com.example.japanesitlearning.service
 
+import com.example.japanesitlearning.dto.ResponseDto
+import com.example.japanesitlearning.dto.ResponseType
 import com.example.japanesitlearning.dto.vocabulary.CreateVocabularyRequestDto
+import com.example.japanesitlearning.dto.vocabulary.CreateVocabularyResponseDto
+import com.example.japanesitlearning.dto.vocabulary.GetVocabularyResponseDto
 import com.example.japanesitlearning.dto.vocabulary.PagedVocabularyResponseDto
+import com.example.japanesitlearning.dto.vocabulary.UpdateVocabularyRequestDto
+import com.example.japanesitlearning.dto.vocabulary.UpdateVocabularyResponseDto
 import com.example.japanesitlearning.dto.vocabulary.VocabularyDto
 import com.example.japanesitlearning.dto.vocabulary.VocabularyFilterRequestDto
 import com.example.japanesitlearning.entity.JLPTLevel
@@ -25,7 +31,7 @@ class VocabularyService(
 ) {
 
     @Transactional
-    fun createVocabulary(request: CreateVocabularyRequestDto): VocabularyDto {
+    fun createVocabulary(request: CreateVocabularyRequestDto): CreateVocabularyResponseDto {
         val currentUserId = userAuthUtil.getCurrentUserId()
             ?: throw BusinessException("User not authenticated")
 
@@ -46,12 +52,17 @@ class VocabularyService(
             createdAt = LocalDateTime.now(),
         )
 
-        val savedVocab = vocabularyRepository.save(vocabulary)
-        return mapToResponse(savedVocab)
+        vocabularyRepository.save(vocabulary)
+        return CreateVocabularyResponseDto(
+            result = ResponseDto(
+                status = ResponseType.OK,
+                message = "Vocabulary created successfully",
+            ),
+        )
     }
 
     @Transactional(readOnly = true)
-    fun getVocabulary(vocabId: UUID): VocabularyDto {
+    fun getVocabulary(vocabId: UUID): GetVocabularyResponseDto {
         val currentUserId = userAuthUtil.getCurrentUserId()
         val vocabulary = vocabularyRepository.findById(vocabId)
             .orElseThrow { BusinessException("Vocabulary not found") }
@@ -60,7 +71,13 @@ class VocabularyService(
             vocabulary.savedByUsers.any { it.userId == userId }
         } ?: false
 
-        return mapToResponse(vocabulary, isSaved)
+        return GetVocabularyResponseDto(
+            result = ResponseDto(
+                status = ResponseType.OK,
+                message = "Vocabulary retrieved successfully",
+            ),
+            data = mapToResponse(vocabulary, isSaved),
+        )
     }
 
     @Transactional(readOnly = true)
@@ -105,7 +122,7 @@ class VocabularyService(
     }
 
     @Transactional
-    fun updateVocabulary(vocabId: UUID, request: CreateVocabularyRequestDto): VocabularyDto {
+    fun updateVocabulary(vocabId: UUID, request: UpdateVocabularyRequestDto): UpdateVocabularyResponseDto {
         val currentUserId = userAuthUtil.getCurrentUserId()
             ?: throw BusinessException("User not authenticated")
 
@@ -129,11 +146,17 @@ class VocabularyService(
         )
 
         val savedVocab = vocabularyRepository.save(updatedVocabulary)
-        return mapToResponse(savedVocab)
+        return UpdateVocabularyResponseDto(
+            result = ResponseDto(
+                status = ResponseType.OK,
+                message = "Vocabulary updated successfully",
+            ),
+            data = mapToResponse(savedVocab),
+        )
     }
 
     @Transactional
-    fun deleteVocabulary(vocabId: UUID) {
+    fun deleteVocabulary(vocabId: UUID): ResponseDto {
         val currentUserId = userAuthUtil.getCurrentUserId()
             ?: throw BusinessException("User not authenticated")
 
@@ -145,6 +168,11 @@ class VocabularyService(
         }
 
         vocabularyRepository.delete(vocabulary)
+
+        return ResponseDto(
+            status = ResponseType.OK,
+            message = "Vocabulary deleted successfully",
+        )
     }
 
     @Transactional

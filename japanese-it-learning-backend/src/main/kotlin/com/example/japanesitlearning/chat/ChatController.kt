@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RestController
 @RequestMapping("/api/v1/ai")
 class ChatController(
     private val chatService: ChatService,
-    private val chatModel: ChatModel,
     private val chatClient: ChatClient,
 ) {
 
@@ -29,35 +28,10 @@ class ChatController(
         return chatService.getResponseOptions(prompt)
     }
 
-    @PostMapping("/books")
-    fun getBeanResponse(@RequestParam category: String, year: String): BooksInfo? {
-        return chatClient.prompt()
-            .user { u ->
-                u.text("Please provide the book details for the given {category} and {year}.")
-                    .param("category", category)
-                    .param("year", year)
-            }
-            .call()
-            .entity(BooksInfo::class.java)
-    }
-
-    // ParameterizedTypeReference to handle generic case
-    @PostMapping("/books/list")
-    fun getListBeanResponse(@RequestParam category: String, year: String): List<BooksInfo>? {
-        return chatClient.prompt()
-            .user { u ->
-                u.text("Please provide 2 book details for the given {category} and {year}.")
-                    .param("category", category)
-                    .param("year", year)
-            }
-            .call()
-            .entity(object : ParameterizedTypeReference<List<BooksInfo>>() {})
-    }
-
     @PostMapping("/vocabulary/list")
     fun getListVocabulary(
         @RequestParam category: String,
-        @RequestParam(required = false, defaultValue = "N5") level: String
+        @RequestParam(required = false, defaultValue = "N5") level: String,
     ): List<VocabularyInfo>? {
         val vocabularyList = chatClient.prompt()
             .user { u ->
@@ -84,11 +58,10 @@ class ChatController(
             .entity(ListOutputConverter(DefaultConversionService()))
     }
 
-
     @PostMapping("/advisor")
     fun getResponseAdvisor(@RequestParam message: String): String? {
         return chatClient.prompt()
-            .user( message)
+            .user(message)
             .call()
             .content()
     }
@@ -106,7 +79,7 @@ class ChatController(
                 containing this information:
                 category, book, year, review, author, summary
                 Please remove ```json from the final output
-                """.trimIndent()
+                    """.trimIndent(),
                 )
                     .param("category", category)
                     .param("year", year)

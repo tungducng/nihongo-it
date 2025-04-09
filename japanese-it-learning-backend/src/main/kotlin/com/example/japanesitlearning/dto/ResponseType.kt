@@ -1,5 +1,5 @@
 package com.example.japanesitlearning.dto
 
-enum class ResponseStatus {
+enum class ResponseType {
     OK, NG
 }

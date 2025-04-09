@@ -1,54 +1,57 @@
 package com.example.japanesitlearning.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.FetchType
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.Id
-import jakarta.persistence.JoinColumn
-import jakarta.persistence.ManyToOne
-import jakarta.persistence.Table
+import jakarta.persistence.*
+import java.time.LocalDateTime
 import java.util.*
 
 @Entity
-@Table(name = "vocabularies")
+@Table(name = "vocabulary")
 data class VocabularyEntity(
     @Id
     @GeneratedValue(generator = "UUID")
-    @Column(name = "vocabulary_id", updatable = false, nullable = false)
-    val vocabularyId: UUID? = null,
+    @Column(name = "vocab_id", updatable = false, nullable = false)
+    val vocabId: UUID? = null,
 
     @Column(name = "kanji")
     val kanji: String?,
 
+    @Column(name = "katakana")
+    val katakana: String?,
+
     @Column(name = "hiragana", nullable = false)
     val hiragana: String,
 
-    @Column(name = "meaning", nullable = false)
+    @Column(name = "meaning", nullable = false, length = 255)
     val meaning: String,
 
-    @Column(name = "example_sentence", columnDefinition = "TEXT")
+    @Column(name = "example_sentence", columnDefinition = "text")
     val exampleSentence: String?,
 
+    @Column(name = "audio_path")
+    val audioPath: String?,
+
+    @Column(name = "category", length = 50)
+    val category: String?,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "jlpt_level")
+    val jlptLevel: JLPTLevel,
+
+    @Column(name = "content_type", length = 20)
+    val contentType: String, // vocabulary, grammar, conversation
+
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "lesson_id")
-    val lesson: LessonEntity,
+    @JoinColumn(name = "created_by", referencedColumnName = "user_id")
+    val createdBy: UserEntity,
 
-    @Column(name = "part_of_speech")
-    val partOfSpeech: String?,
+    @Column(name = "created_at")
+    val createdAt: LocalDateTime = LocalDateTime.now(),
 
-    @Column(name = "it_context", nullable = false)
-    val itContext: Boolean = false,
-
-    @Column(name = "audio_url")
-    val audioUrl: String?,
-
-    @Column(name = "similar_words", columnDefinition = "TEXT")
-    val similarWords: String?,
-
-    @Column(name = "mnemonic_hint")
-    val mnemonicHint: String?,
-
-    @Column(name = "jlpt_level", nullable = false)
-    val jlptLevel: Int
+    @ManyToMany
+    @JoinTable(
+        name = "saved_vocabulary",
+        joinColumns = [JoinColumn(name = "vocab_id")],
+        inverseJoinColumns = [JoinColumn(name = "user_id")],
+    )
+    val savedByUsers: MutableSet<UserEntity> = mutableSetOf(),
 )

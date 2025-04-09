@@ -1,5 +1,6 @@
 package com.example.japanesitlearning.security
 
+import com.example.japanesitlearning.entity.JLPTLevel
 import com.example.japanesitlearning.entity.UserEntity
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
@@ -9,7 +10,10 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.stereotype.Service
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.Date
+import java.util.UUID
 import java.util.function.Function
 import javax.crypto.SecretKey
 
@@ -28,13 +32,20 @@ class JwtTokenUtil {
 
     private val logger = LoggerFactory.getLogger(JwtTokenUtil::class.java)
 
+    private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+
     fun generateToken(user: UserEntity): String {
         val claims: Map<String, Any> = mapOf(
-            "userId" to (user.userId?: 0),
-            "role" to user.roleId,
-            "email" to user.email // Thêm claim email
+            "userId" to (user.userId?.toString() ?: ""),
+            "role" to (user.role?.roleId ?: 2), // Default to ROLE_USER
+            "email" to user.email,
+            "fullName" to (user.fullName ?: ""),
+            "profilePicture" to (user.profilePicture ?: ""),
+            "currentLevel" to (user.currentLevel?.name ?: ""),
+            "jlptGoal" to (user.jlptGoal?.name ?: ""),
+            "lastLogin" to (user.lastLogin?.format(dateTimeFormatter) ?: LocalDateTime.now().format(dateTimeFormatter)),
         )
-        return createToken(claims, user.username)
+        return createToken(claims, user.email)
     }
 
     private fun createToken(claims: Map<String, Any>, subject: String): String {
@@ -51,12 +62,12 @@ class JwtTokenUtil {
     }
 
     fun validateToken(token: String, userDetails: UserDetails): Boolean {
-        val username = extractUsername(token)
-        return username == userDetails.username && !isTokenExpired(token)
+        val email = extractEmail(token)
+        return email == userDetails.username && !isTokenExpired(token)
     }
 
-    fun extractUsername(token: String): String {
-        return extractClaim(token, Claims::getSubject)
+    fun extractEmail(token: String): String {
+        return extractClaim(token) { claims -> claims["email"] as String }
     }
 
     fun extractRoleId(jwt: String): Int {
@@ -84,15 +95,62 @@ class JwtTokenUtil {
         return extractExpiration(token).before(Date())
     }
 
-    fun extractEmail(token: String): String? {
+    fun extractUserId(token: String): UUID? {
         return try {
-            val email = extractClaim(token) { claims -> claims["email"] as String? }
-            if (email == null) {
-                logger.warn("Email claim not found in token")
-            }
-            email
+            extractClaim(token) { claims -> claims["userId"] as UUID }
         } catch (e: Exception) {
-            logger.error("Failed to extract email from token: ${e.message}", e)
+            logger.error("Failed to extract userId from token: ${e.message}", e)
+            null
+        }
+    }
+
+    fun extractFullName(token: String): String? {
+        return try {
+            extractClaim(token) { claims -> claims["fullName"] as? String }
+        } catch (e: Exception) {
+            logger.error("Failed to extract fullName from token: ${e.message}", e)
+            null
+        }
+    }
+
+    fun extractProfilePicture(token: String): String? {
+        return try {
+            extractClaim(token) { claims -> claims["profilePicture"] as? String }
+        } catch (e: Exception) {
+            logger.error("Failed to extract profilePicture from token: ${e.message}", e)
+            null
+        }
+    }
+
+    fun extractCurrentLevel(token: String): JLPTLevel? {
+        return try {
+            extractClaim(token) { claims ->
+                (claims["currentLevel"] as? String)?.let { JLPTLevel.valueOf(it) }
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to extract currentLevel from token: ${e.message}", e)
+            null
+        }
+    }
+
+    fun extractJlptGoal(token: String): JLPTLevel? {
+        return try {
+            extractClaim(token) { claims ->
+                (claims["jlptGoal"] as? String)?.let { JLPTLevel.valueOf(it) }
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to extract jlptGoal from token: ${e.message}", e)
+            null
+        }
+    }
+
+    fun extractLastLogin(token: String): LocalDateTime? {
+        return try {
+            extractClaim(token) { claims ->
+                (claims["lastLogin"] as? String)?.let { LocalDateTime.parse(it, dateTimeFormatter) }
+            }
+        } catch (e: Exception) {
+            logger.error("Failed to extract lastLogin from token: ${e.message}", e)
             null
         }
     }

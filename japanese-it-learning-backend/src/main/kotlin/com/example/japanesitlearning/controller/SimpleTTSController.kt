@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*
 @RestController
 @RequestMapping("/api/tts")
 class TTSController(
-    private val openAiAudioSpeechModel: OpenAiAudioSpeechModel
+    private val openAiAudioSpeechModel: OpenAiAudioSpeechModel,
 ) {
 
     @PostMapping("/generate")

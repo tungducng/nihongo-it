@@ -6,8 +6,7 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 @EnableScheduling
-class SpeakController(
-) {
+class SpeakController() {
 
     @GetMapping("/admin/kaiwa") // Chỉ admin truy cập
     fun getKaiwaForAdmin(): String {

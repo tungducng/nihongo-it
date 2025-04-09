@@ -1,23 +1,26 @@
 package com.example.japanesitlearning.exception
 
 import com.example.japanesitlearning.dto.ResponseDto
-import com.example.japanesitlearning.dto.ResponseStatus
+import com.example.japanesitlearning.dto.ResponseType
+import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.MalformedJwtException
 import io.jsonwebtoken.UnsupportedJwtException
 import io.jsonwebtoken.security.SignatureException
+import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.authentication.InsufficientAuthenticationException
 import org.springframework.security.core.AuthenticationException
 import org.springframework.validation.FieldError
+import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.bind.MethodArgumentNotValidException
+import org.springframework.web.bind.MissingServletRequestParameterException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
-import org.slf4j.LoggerFactory
-import org.springframework.web.HttpRequestMethodNotSupportedException
 import org.springframework.web.servlet.resource.NoResourceFoundException
 
 @RestControllerAdvice
@@ -36,11 +39,60 @@ class GlobalExceptionHandler {
         }
         logger.warn("Validation failed: $errors")
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
-                errors = errors
+            ResponseDto(
+                status = ResponseType.NG,
+                errors = errors,
             ),
-            HttpStatus.BAD_REQUEST
+            HttpStatus.BAD_REQUEST,
+        )
+    }
+
+    // Handle JSON parsing errors in request body
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun handleHttpMessageNotReadable(ex: HttpMessageNotReadableException): ResponseEntity<*> {
+        logger.warn("Malformed request body: ${ex.message}")
+
+        val errors = mutableMapOf<String, String?>()
+
+        // Check if it's a MissingKotlinParameterException (missing required field)
+        val cause = ex.cause
+        if (cause is MissingKotlinParameterException) {
+            val fieldName = cause.parameter.name ?: "unknown"
+            errors[fieldName] = "$fieldName is required"
+
+            return ResponseEntity(
+                ResponseDto(
+                    status = ResponseType.NG,
+                    errors = errors,
+                ),
+                HttpStatus.BAD_REQUEST,
+            )
+        }
+
+        // Other JSON parsing errors
+        return ResponseEntity(
+            ResponseDto(
+                status = ResponseType.NG,
+                message = "Invalid request format.",
+            ),
+            HttpStatus.BAD_REQUEST,
+        )
+    }
+
+    // Handle missing request parameters in URL
+    @ExceptionHandler(MissingServletRequestParameterException::class)
+    fun handleMissingServletRequestParameter(ex: MissingServletRequestParameterException): ResponseEntity<*> {
+        val errors = mutableMapOf<String, String?>()
+        errors[ex.parameterName] = "${ex.parameterName} is required"
+
+        logger.warn("Missing parameter: ${ex.message}")
+        return ResponseEntity(
+            ResponseDto(
+                status = ResponseType.NG,
+                message = "Missing required parameter",
+                errors = errors,
+            ),
+            HttpStatus.BAD_REQUEST,
         )
     }
 
@@ -49,12 +101,11 @@ class GlobalExceptionHandler {
     fun handleBusinessException(ex: BusinessException): ResponseEntity<*> {
         logger.warn("Business exception: ${ex.message}")
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
+            ResponseDto(
+                status = ResponseType.NG,
                 message = ex.message ?: "An error occurred",
-                messageId = "BUSINESS_ERROR_001"
             ),
-            HttpStatus.BAD_REQUEST
+            HttpStatus.BAD_REQUEST,
         )
     }
 
@@ -63,12 +114,11 @@ class GlobalExceptionHandler {
     fun handleExpiredJwtException(ex: ExpiredJwtException): ResponseEntity<*> {
         logger.warn("JWT token expired: ${ex.message}")
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
+            ResponseDto(
+                status = ResponseType.NG,
                 message = "Authentication token has expired",
-                messageId = "AUTH_ERROR_001"
             ),
-            HttpStatus.FORBIDDEN
+            HttpStatus.FORBIDDEN,
         )
     }
 
@@ -77,12 +127,11 @@ class GlobalExceptionHandler {
     fun handleJwtSignatureException(ex: SignatureException): ResponseEntity<*> {
         logger.warn("Invalid JWT signature: ${ex.message}")
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
+            ResponseDto(
+                status = ResponseType.NG,
                 message = "Invalid authentication token signature",
-                messageId = "AUTH_ERROR_002"
             ),
-            HttpStatus.FORBIDDEN
+            HttpStatus.FORBIDDEN,
         )
     }
 
@@ -91,12 +140,11 @@ class GlobalExceptionHandler {
     fun handleMalformedJwtException(ex: MalformedJwtException): ResponseEntity<*> {
         logger.warn("Malformed JWT token: ${ex.message}")
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
+            ResponseDto(
+                status = ResponseType.NG,
                 message = "Malformed authentication token",
-                messageId = "AUTH_ERROR_003"
             ),
-            HttpStatus.FORBIDDEN
+            HttpStatus.FORBIDDEN,
         )
     }
 
@@ -105,12 +153,11 @@ class GlobalExceptionHandler {
     fun handleUnsupportedJwtException(ex: UnsupportedJwtException): ResponseEntity<*> {
         logger.warn("Unsupported JWT token: ${ex.message}")
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
+            ResponseDto(
+                status = ResponseType.NG,
                 message = "Unsupported authentication token format",
-                messageId = "AUTH_ERROR_004"
             ),
-            HttpStatus.FORBIDDEN
+            HttpStatus.FORBIDDEN,
         )
     }
 
@@ -119,12 +166,11 @@ class GlobalExceptionHandler {
     fun handleAccessDeniedException(ex: AccessDeniedException): ResponseEntity<*> {
         logger.warn("Access denied: ${ex.message}")
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
-                message = "Access denied: Insufficient privileges",
-                messageId = "AUTH_ERROR_005"
+            ResponseDto(
+                status = ResponseType.NG,
+                message = "Access denied!",
             ),
-            HttpStatus.FORBIDDEN
+            HttpStatus.FORBIDDEN,
         )
     }
 
@@ -139,16 +185,14 @@ class GlobalExceptionHandler {
 
         logger.warn("Authentication exception: ${ex.message}")
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
+            ResponseDto(
+                status = ResponseType.NG,
                 message = message,
-                messageId = "AUTH_ERROR_006"
             ),
-            HttpStatus.UNAUTHORIZED
+            HttpStatus.UNAUTHORIZED,
         )
     }
 
-    // Add this to your GlobalExceptionHandler class
     @ExceptionHandler(NoResourceFoundException::class)
     fun handleNoResourceFoundException(ex: NoResourceFoundException): ResponseEntity<*> {
         val resourcePath = ex.message?.replace("No static resource ", "") ?: "unknown"
@@ -156,16 +200,14 @@ class GlobalExceptionHandler {
 
         logger.warn(message)
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
+            ResponseDto(
+                status = ResponseType.NG,
                 message = message,
-                messageId = "RESOURCE_ERROR_001"
             ),
-            HttpStatus.NOT_FOUND
+            HttpStatus.NOT_FOUND,
         )
     }
 
-    // Add this to your GlobalExceptionHandler class
     @ExceptionHandler(HttpRequestMethodNotSupportedException::class)
     fun handleMethodNotSupportedException(ex: HttpRequestMethodNotSupportedException): ResponseEntity<*> {
         val supportedMethods = ex.supportedMethods?.joinToString(", ") ?: "none"
@@ -173,12 +215,11 @@ class GlobalExceptionHandler {
 
         logger.warn(message)
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
+            ResponseDto(
+                status = ResponseType.NG,
                 message = message,
-                messageId = "METHOD_ERROR_001"
             ),
-            HttpStatus.METHOD_NOT_ALLOWED
+            HttpStatus.METHOD_NOT_ALLOWED,
         )
     }
 
@@ -187,12 +228,11 @@ class GlobalExceptionHandler {
     fun handleGenericException(ex: Exception): ResponseEntity<*> {
         logger.error("Unexpected error occurred: ${ex.message}", ex)
         return ResponseEntity(
-            ResponseDto<Any>(
-                status = ResponseStatus.NG,
+            ResponseDto(
+                status = ResponseType.NG,
                 message = "An unexpected error occurred",
-                messageId = "SERVER_ERROR_001"
             ),
-            HttpStatus.INTERNAL_SERVER_ERROR
+            HttpStatus.INTERNAL_SERVER_ERROR,
         )
     }
 }

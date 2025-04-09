@@ -6,5 +6,5 @@ data class VocabularyInfo(
     val reading: String,
     val meaning: String,
     val example: String,
-    val level: String
+    val level: String,
 )

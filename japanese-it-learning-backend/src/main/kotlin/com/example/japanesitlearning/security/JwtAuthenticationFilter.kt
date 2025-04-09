@@ -3,18 +3,18 @@ package com.example.japanesitlearning.security
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import org.slf4j.LoggerFactory
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
-import org.slf4j.LoggerFactory
 
 @Component
 class JwtAuthenticationFilter(
     private val jwtTokenUtil: JwtTokenUtil,
-    private val userDetailsService: UserDetailsService
+    private val userDetailsService: UserDetailsService,
 ) : OncePerRequestFilter() {
 
     private val logger = LoggerFactory.getLogger(JwtAuthenticationFilter::class.java)
@@ -22,7 +22,7 @@ class JwtAuthenticationFilter(
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        filterChain: FilterChain
+        filterChain: FilterChain,
     ) {
         try {
             val requestURI = request.requestURI
@@ -35,26 +35,21 @@ class JwtAuthenticationFilter(
             val authHeader = request.getHeader("Authorization")
             if (authHeader?.startsWith("Bearer ") == true) {
                 val jwt = authHeader.substring(7)
-                val username = jwtTokenUtil.extractUsername(jwt)
+                val email = jwtTokenUtil.extractEmail(jwt)
 
-                if (username != null && SecurityContextHolder.getContext().authentication == null) {
-                    val userDetails = userDetailsService.loadUserByUsername(username)
+                if (email.isNotEmpty() && SecurityContextHolder.getContext().authentication == null) {
+                    val userDetails = userDetailsService.loadUserByUsername(email)
 
                     if (jwtTokenUtil.validateToken(jwt, userDetails)) {
+                        val roleId = jwtTokenUtil.extractRoleId(jwt)
                         val authentication = UsernamePasswordAuthenticationToken(
                             userDetails,
-                            userDetails.authorities.firstOrNull()?.authority?.let {
-                                when {
-                                    it == "ROLE_ADMIN" -> 1
-                                    it == "ROLE_USER" -> 2
-                                    else -> null
-                                }
-                            },
-                            userDetails.authorities
+                            roleId,
+                            userDetails.authorities,
                         )
                         authentication.details = WebAuthenticationDetailsSource().buildDetails(request)
                         SecurityContextHolder.getContext().authentication = authentication
-                        logger.debug("Authenticated user $username with role ${userDetails.authorities}")
+                        logger.debug("Authenticated user $email with role ${userDetails.authorities}")
                     }
                 }
             }
@@ -69,7 +64,7 @@ class JwtAuthenticationFilter(
     override fun shouldNotFilter(request: HttpServletRequest): Boolean {
         val path = request.requestURI
         return path.startsWith("/api/v1/auth/") ||
-                path.startsWith("/v3/api-docs") ||
-                path.startsWith("/swagger-ui")
+            path.startsWith("/v3/api-docs") ||
+            path.startsWith("/swagger-ui")
     }
 }

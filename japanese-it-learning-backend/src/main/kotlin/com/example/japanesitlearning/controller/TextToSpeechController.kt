@@ -13,7 +13,7 @@ import reactor.core.publisher.Flux
 @RestController
 @RequestMapping("/api/v1/tts")
 class TextToSpeechController(
-    private val openAiAudioSpeechModel: OpenAiAudioSpeechModel
+    private val openAiAudioSpeechModel: OpenAiAudioSpeechModel,
 ) {
 
     /**
@@ -29,14 +29,14 @@ class TextToSpeechController(
         @RequestParam text: String,
         @RequestParam(required = false, defaultValue = "alloy") voice: String,
         @RequestParam(required = false, defaultValue = "1.0") speed: Float,
-        @RequestParam(required = false, defaultValue = "mp3") format: String
+        @RequestParam(required = false, defaultValue = "mp3") format: String,
     ): ResponseEntity<ByteArray> {
         try {
             // Validate parameters
             if (text.isBlank()) {
                 return ResponseEntity.badRequest().build()
             }
-            
+
             // Create speech options
             val speechOptions = OpenAiAudioSpeechOptions.builder()
                 .model("tts-1")
@@ -44,13 +44,13 @@ class TextToSpeechController(
                 .responseFormat(OpenAiAudioApi.SpeechRequest.AudioResponseFormat.valueOf(format.uppercase()))
                 .speed(speed)
                 .build()
-            
+
             // Create speech prompt
             val speechPrompt = SpeechPrompt(text, speechOptions)
-            
+
             // Call the model
             val response = openAiAudioSpeechModel.call(speechPrompt)
-            
+
             // Determine the MediaType based on the format
             val mediaType = when (format.lowercase()) {
                 "mp3" -> MediaType.parseMediaType("audio/mpeg")
@@ -61,7 +61,7 @@ class TextToSpeechController(
                 "pcm" -> MediaType.parseMediaType("audio/pcm")
                 else -> MediaType.APPLICATION_OCTET_STREAM
             }
-            
+
             // Return the audio
             return ResponseEntity.ok()
                 .contentType(mediaType)
@@ -70,7 +70,7 @@ class TextToSpeechController(
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
         }
     }
-    
+
     /**
      * Stream the text-to-speech conversion
      * Useful for longer texts where you want to start playing the audio before the entire conversion is complete
@@ -85,7 +85,7 @@ class TextToSpeechController(
         @RequestParam text: String,
         @RequestParam(required = false, defaultValue = "alloy") voice: String,
         @RequestParam(required = false, defaultValue = "1.0") speed: Float,
-        @RequestParam(required = false, defaultValue = "mp3") format: String
+        @RequestParam(required = false, defaultValue = "mp3") format: String,
     ): Flux<ByteArray> {
         try {
             // Create speech options
@@ -95,10 +95,10 @@ class TextToSpeechController(
                 .responseFormat(OpenAiAudioApi.SpeechRequest.AudioResponseFormat.valueOf(format.uppercase()))
                 .speed(speed)
                 .build()
-            
+
             // Create speech prompt
             val speechPrompt = SpeechPrompt(text, speechOptions)
-            
+
             // Stream the response
             return openAiAudioSpeechModel.stream(speechPrompt)
                 .map { response -> response.result.output }
@@ -106,7 +106,7 @@ class TextToSpeechController(
             return Flux.error(e)
         }
     }
-    
+
     /**
      * Endpoint specifically designed for speaking Japanese vocabulary
      * @param word The Japanese word to pronounce
@@ -117,7 +117,7 @@ class TextToSpeechController(
     fun speakJapaneseWord(
         @RequestParam word: String,
         @RequestParam(required = false, defaultValue = "nova") voice: String,
-        @RequestParam(required = false, defaultValue = "1.0") speed: Float
+        @RequestParam(required = false, defaultValue = "1.0") speed: Float,
     ): ResponseEntity<ByteArray> {
         try {
             // Create speech options with settings optimized for Japanese
@@ -127,13 +127,13 @@ class TextToSpeechController(
                 .responseFormat(OpenAiAudioApi.SpeechRequest.AudioResponseFormat.MP3)
                 .speed(speed)
                 .build()
-            
+
             // Create speech prompt
             val speechPrompt = SpeechPrompt(word, speechOptions)
-            
+
             // Call the model
             val response = openAiAudioSpeechModel.call(speechPrompt)
-            
+
             // Return the audio
             return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("audio/mpeg"))
@@ -142,7 +142,7 @@ class TextToSpeechController(
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
         }
     }
-    
+
     /**
      * Endpoint to read a complete Japanese sentence with vocabulary explanation
      * @param sentence The Japanese sentence to read
@@ -155,7 +155,7 @@ class TextToSpeechController(
         @RequestParam sentence: String,
         @RequestParam vocabulary: String,
         @RequestParam translation: String,
-        @RequestParam(required = false, defaultValue = "nova") voice: String
+        @RequestParam(required = false, defaultValue = "nova") voice: String,
     ): ResponseEntity<ByteArray> {
         try {
             val text = """
@@ -163,7 +163,7 @@ class TextToSpeechController(
                 例文: $sentence
                 意味: $translation
             """.trimIndent()
-            
+
             // Create speech options
             val speechOptions = OpenAiAudioSpeechOptions.builder()
                 .model("tts-1")
@@ -171,13 +171,13 @@ class TextToSpeechController(
                 .responseFormat(OpenAiAudioApi.SpeechRequest.AudioResponseFormat.MP3)
                 .speed(0.9f) // Slightly slower for better comprehension
                 .build()
-            
+
             // Create speech prompt
             val speechPrompt = SpeechPrompt(text, speechOptions)
-            
+
             // Call the model
             val response = openAiAudioSpeechModel.call(speechPrompt)
-            
+
             // Return the audio
             return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("audio/mpeg"))

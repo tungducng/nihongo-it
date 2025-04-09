@@ -1,41 +1,73 @@
 package com.example.japanesitlearning.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
+import java.time.LocalDateTime
 import java.util.*
 
 @Entity
 @Table(name = "conversations")
 data class ConversationEntity(
     @Id
-    @GeneratedValue(generator = "UUID")
-    @Column(name = "conversation_id", updatable = false, nullable = false)
-    val conversationId: UUID? = null,
+    @GeneratedValue
+    @Column(name = "conversation_id")
+    val conversationId: UUID = UUID.randomUUID(),
 
-    @Column(name = "topic", nullable = false)
-    val topic: String,
+    @Column(name = "title", length = 200)
+    val title: String,
 
-    @Column(name = "japanese_text", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "description", columnDefinition = "text")
+    val description: String,
+
+    @Column(name = "level")
+    val level: Int, // JLPT level (N5-N1)
+
+    @Column(name = "it_context", columnDefinition = "text")
+    val itContext: String?,
+
+    @Column(name = "created_at")
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name = "updated_at")
+    val updatedAt: LocalDateTime = LocalDateTime.now(),
+)
+
+@Entity
+@Table(name = "conversation_dialogues")
+data class ConversationDialogueEntity(
+    @Id
+    @GeneratedValue
+    @Column(name = "dialogue_id")
+    val dialogueId: UUID = UUID.randomUUID(),
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "conversation_id")
+    val conversation: ConversationEntity,
+
+    @Column(name = "speaker")
+    @Enumerated(EnumType.STRING)
+    val speaker: Speaker,
+
+    @Column(name = "japanese_text", columnDefinition = "text")
     val japaneseText: String,
 
-    @Column(name = "english_text", nullable = false, columnDefinition = "TEXT")
-    val englishText: String,
+    @Column(name = "english_translation", columnDefinition = "text")
+    val englishTranslation: String,
+
+    @Column(name = "order_index")
+    val orderIndex: Int,
 
     @Column(name = "audio_url")
     val audioUrl: String?,
 
-    @Column(name = "target_jlpt_level", nullable = false)
-    val targetJlptLevel: Int, // 5: N5, 4: N4, 3: N3
+    @Column(name = "created_at")
+    val createdAt: LocalDateTime = LocalDateTime.now(),
 
-    @Column(name = "business_context", nullable = false)
-    val businessContext: Boolean = false,
-
-    @Column(name = "tags")
-    val tags: String?,
-
-    @Column(name = "vocabulary_focus", columnDefinition = "TEXT")
-    val vocabularyFocus: String?
+    @Column(name = "updated_at")
+    val updatedAt: LocalDateTime = LocalDateTime.now(),
 )
+
+enum class Speaker {
+    USER,
+    AI,
+    NATIVE_SPEAKER,
+}

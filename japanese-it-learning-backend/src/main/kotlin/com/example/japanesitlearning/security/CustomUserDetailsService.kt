@@ -10,18 +10,18 @@ import org.springframework.stereotype.Service
 @Service
 class CustomUserDetailsService(private val userRepository: UserRepository) : UserDetailsService {
 
-    override fun loadUserByUsername(username: String): UserDetails {
-        val user = userRepository.findByUsername(username)
-            ?: throw UsernameNotFoundException("User not found with username: $username")
+    override fun loadUserByUsername(email: String): UserDetails {
+        val user = userRepository.findByEmail(email)
+            ?: throw UsernameNotFoundException("User not found with email: $email")
 
-        val authorities = when (user.roleId) {
+        val authorities = when (user.role.roleId) {
             1 -> listOf(SimpleGrantedAuthority("ROLE_ADMIN"))
             2 -> listOf(SimpleGrantedAuthority("ROLE_USER"))
-            else -> throw IllegalArgumentException("Invalid roleId: ${user.roleId}")
+            else -> throw IllegalArgumentException("Invalid roleId: ${user.role.roleId}")
         }
 
         return org.springframework.security.core.userdetails.User
-            .withUsername(user.username)
+            .withUsername(user.email)
             .password(user.password)
             .authorities(authorities)
             .accountExpired(false)

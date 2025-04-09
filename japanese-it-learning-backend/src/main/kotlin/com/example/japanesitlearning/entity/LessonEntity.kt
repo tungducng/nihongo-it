@@ -1,35 +1,71 @@
 package com.example.japanesitlearning.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.EnumType
-import jakarta.persistence.Enumerated
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.Id
-import jakarta.persistence.Table
+import jakarta.persistence.*
+import java.time.LocalDateTime
 import java.util.*
 
 @Entity
 @Table(name = "lessons")
 data class LessonEntity(
     @Id
-    @GeneratedValue(generator = "UUID")
-    @Column(name = "lesson_id", updatable = false, nullable = false)
-    val lessonId: UUID? = null,
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(name = "lesson_id")
+    val lessonId: UUID = UUID.randomUUID(),
 
-    @Column(name = "lesson_name", nullable = false)
-    val lessonName: String,
+    @Column(name = "title", nullable = false)
+    val title: String,
+
+    @Column(name = "description", columnDefinition = "text")
+    val description: String?,
+
+    @Column(name = "content", columnDefinition = "text")
+    val content: String?,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "level", nullable = false)
+    val level: JLPTLevel,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "category", nullable = false)
     val category: LessonCategory,
 
-    @Column(name = "lesson_description")
-    val description: String?,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    val type: LessonType,
 
-    @Column(name = "lesson_level", nullable = false)
-    val level: Int, // 1: N5, 2: N4, 3: N3, 4: N2, 5: N1
+    @Column(name = "duration_minutes")
+    val durationMinutes: Int?,
 
-    @Column(name = "order_index", nullable = false)
-    val orderIndex: Int
+    @Column(name = "order_index")
+    val orderIndex: Int = 0,
+
+    @Column(name = "is_active")
+    val isActive: Boolean = true,
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by")
+    val createdBy: UserEntity,
+
+    @Column(name = "created_at")
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name = "updated_at")
+    val updatedAt: LocalDateTime = LocalDateTime.now(),
 )
+
+enum class LessonCategory {
+    PROGRAMMING,
+    NETWORKING,
+    DATABASE,
+    AI,
+    CLOUD,
+    SECURITY,
+    DEVOPS,
+    OTHER,
+}
+
+enum class LessonType {
+    VOCABULARY,
+    GRAMMAR,
+    CONVERSATION,
+}

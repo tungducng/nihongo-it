@@ -1,7 +1,7 @@
 package com.example.japanesitlearning.security
 
 import com.example.japanesitlearning.dto.ResponseDto
-import com.example.japanesitlearning.dto.ResponseStatus
+import com.example.japanesitlearning.dto.ResponseType
 import com.fasterxml.jackson.databind.ObjectMapper
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -18,15 +18,14 @@ class JwtAuthenticationEntryPoint : AuthenticationEntryPoint {
     override fun commence(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        authException: AuthenticationException
+        authException: AuthenticationException,
     ) {
         response.contentType = MediaType.APPLICATION_JSON_VALUE
         response.status = HttpServletResponse.SC_UNAUTHORIZED
 
-        val responseDto = ResponseDto<Any>(
-            status = ResponseStatus.NG,
+        val responseDto = ResponseDto(
+            status = ResponseType.NG,
             message = authException.message ?: "Invalid authentication token",
-            messageId = "AUTH_001"
         )
 
         val mapper = ObjectMapper()

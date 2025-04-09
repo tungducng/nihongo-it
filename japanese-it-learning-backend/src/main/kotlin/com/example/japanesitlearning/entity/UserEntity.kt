@@ -1,11 +1,8 @@
 package com.example.japanesitlearning.entity
 
-import jakarta.persistence.Column
-import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
-import jakarta.persistence.Id
-import jakarta.persistence.Table
-import java.util.UUID
+import jakarta.persistence.*
+import java.time.LocalDateTime
+import java.util.*
 
 @Entity
 @Table(name = "users")
@@ -15,18 +12,45 @@ data class UserEntity(
     @Column(name = "user_id", updatable = false, nullable = false)
     val userId: UUID? = null,
 
-    @Column(name = "user_name", nullable = false)
-    val username: String,
+    @Column(name = "email", nullable = false, unique = true, length = 50)
+    val email: String,
 
     @Column(name = "password", nullable = false)
     val password: String,
 
-    @Column(name = "email", nullable = false)
-    val email: String,
+    @Column(name = "full_name", nullable = false, length = 100)
+    val fullName: String,
 
-    @Column(name = "role_id", nullable = false)
-    val roleId: Int, // 1: ROLE_ADMIN, 2: ROLE_USER
+    @Column(name = "profile_picture")
+    val profilePicture: String?,
 
-    @Column(name = "interests")
-    val interests: String? = null
+    @Enumerated(EnumType.STRING)
+    @Column(name = "current_level")
+    val currentLevel: JLPTLevel?,
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "jlpt_goal")
+    val jlptGoal: JLPTLevel?,
+
+    @Column(name = "is_active")
+    val isActive: Boolean = true,
+
+    @Column(name = "last_login")
+    val lastLogin: LocalDateTime?,
+
+    @Column(name = "streak_count")
+    val streakCount: Int = 0,
+
+    @Column(name = "points")
+    val points: Int = 0,
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id", nullable = false)
+    var role: RoleEntity,
+
+    @Column(name = "created_at")
+    val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name = "updated_at")
+    val updatedAt: LocalDateTime = LocalDateTime.now(),
 )

@@ -14,7 +14,7 @@ class AIConfig {
 
     @Bean
     fun chatMemory(): ChatMemory {
-        return InMemoryChatMemory();
+        return InMemoryChatMemory()
     }
 
     @Bean
@@ -23,14 +23,16 @@ class AIConfig {
             .defaultSystem("Bạn là trợ lý học tiếng Nhật, không trả lời nội dung không liên quan đến việc học tiếng Nhật hay các thông tin không liên quan.")
             .defaultAdvisors(
                 MessageChatMemoryAdvisor(chatMemory()),
-                SafeGuardAdvisor(listOf(
-                    "illegal", "smuggling", "drugs", "weapons", "violence",
-                    "hate speech", "adult content", "gambling", "malware", "spam",
-                    "explicit", "pornography", "sex", "erotic", "fetish",
-                    "tình dục", "quan hệ", "nhạy cảm", "kích thích", "dâm", "thủ dâm",
-                    "nóng bỏng", "hưng phấn", "khoái cảm"
-                )),
-                SimpleLoggerAdvisor()
+                SafeGuardAdvisor(
+                    listOf(
+                        "illegal", "smuggling", "drugs", "weapons", "violence",
+                        "hate speech", "adult content", "gambling", "malware", "spam",
+                        "explicit", "pornography", "sex", "erotic", "fetish",
+                        "tình dục", "quan hệ", "nhạy cảm", "kích thích", "dâm", "thủ dâm",
+                        "nóng bỏng", "hưng phấn", "khoái cảm",
+                    ),
+                ),
+                SimpleLoggerAdvisor(),
             )
             .build()
     }

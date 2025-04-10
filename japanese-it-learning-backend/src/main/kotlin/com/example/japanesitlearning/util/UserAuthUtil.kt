@@ -1,9 +1,11 @@
-package com.example.japanesitlearning.security
+package com.example.japanesitlearning.util
 
 import com.example.japanesitlearning.entity.JLPTLevel
 import com.example.japanesitlearning.entity.RoleEntity
 import com.example.japanesitlearning.entity.UserEntity
+import com.example.japanesitlearning.security.JwtTokenUtil
 import org.slf4j.LoggerFactory
+import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.context.request.ServletRequestAttributes
@@ -234,24 +236,60 @@ class UserAuthUtil(
     }
 
     /**
-     * Get userId from Authorization header
+     * Get userId from Authorization header or security context
      */
     fun getCurrentUserId(): UUID? {
+        // First try to get from token
         val token = getTokenFromRequest()
-        if (token == null) {
-            logger.error("No token found in request")
+        if (token != null) {
+            logger.debug("Attempting to extract userId from token")
+            val userId = getIdFromToken(token)
+            
+            if (userId != null) {
+                logger.debug("Successfully extracted userId from token: $userId")
+                return userId
+            } else {
+                logger.warn("Failed to extract userId from token, falling back to security context")
+            }
+        }
+        
+        // If token extraction failed, try from security context
+        try {
+            val authentication = SecurityContextHolder.getContext().authentication
+                ?: throw RuntimeException("User not authenticated")
+
+            val principal = authentication.principal
+            if (principal is CustomUserDetails) {
+                return principal.userId
+            }
+
+            // Try to get from authorities
+            val userIdString = authentication.authorities
+                .find { it.authority.startsWith("USER_ID:") }
+                ?.authority
+                ?.substring("USER_ID:".length)
+
+            return userIdString?.let { UUID.fromString(it) }
+                ?: throw RuntimeException("User ID not found in authentication")
+        } catch (e: Exception) {
+            logger.error("Failed to get userId from security context: ${e.message}")
             return null
         }
-
-        logger.debug("Attempting to extract userId from token")
-        val userId = getIdFromToken(token)
-
-        if (userId == null) {
-            logger.error("Failed to extract userId from token")
-        } else {
-            logger.debug("Successfully extracted userId: $userId")
-        }
-
-        return userId
     }
+
+    /**
+     * Check if the current user is authenticated
+     * @return true if user is authenticated, false otherwise
+     */
+    fun isAuthenticated(): Boolean {
+        val authentication = SecurityContextHolder.getContext().authentication
+        return authentication != null && authentication.isAuthenticated &&
+                authentication.principal != "anonymousUser"
+    }
+}
+/**
+ * CustomUserDetails interface - should match your application's user details implementation
+ */
+interface CustomUserDetails {
+    val userId: UUID
 }

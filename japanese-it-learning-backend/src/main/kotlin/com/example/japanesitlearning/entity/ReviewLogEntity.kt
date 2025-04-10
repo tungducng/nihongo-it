@@ -15,7 +15,7 @@ import java.util.*
 // Entity cho ReviewLog
 @Entity
 @Table(name = "review_logs")
-data class ReviewLog(
+data class ReviewLogEntity(
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "review_log_id")
@@ -26,7 +26,7 @@ data class ReviewLog(
     val flashcard: FlashcardEntity,
 
     @Column(name = "user_id", nullable = false)
-    val userId: Long,
+    val userId: UUID,
 
     @Column(name = "timestamp")
     val timestamp: LocalDateTime = LocalDateTime.now(),

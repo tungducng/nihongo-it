@@ -15,7 +15,7 @@ import com.example.japanesitlearning.entity.VocabularyEntity
 import com.example.japanesitlearning.exception.BusinessException
 import com.example.japanesitlearning.repository.UserRepository
 import com.example.japanesitlearning.repository.VocabularyRepository
-import com.example.japanesitlearning.security.UserAuthUtil
+import com.example.japanesitlearning.util.UserAuthUtil
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service

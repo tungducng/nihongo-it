@@ -13,7 +13,7 @@ data class FlashcardEntity(
     val flashCardId: UUID = UUID.randomUUID(),
 
     @Column(name = "user_id", nullable = false)
-    val userId: Long,
+    val userId: UUID,
 
     @Column(name = "front_text", nullable = false)
     var frontText: String,
@@ -56,5 +56,5 @@ data class FlashcardEntity(
     var lapses: Int = 0,
 
     @OneToMany(mappedBy = "flashcard", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
-    var reviewLogs: MutableList<ReviewLog> = mutableListOf()
+    var reviewLogs: MutableList<ReviewLogEntity> = mutableListOf()
 )

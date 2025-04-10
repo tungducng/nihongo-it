@@ -49,6 +49,18 @@ const routes = [
     meta: { requiresAuth: true }, // Personal progress requires auth
   },
   {
+    path: '/flashcards',
+    name: 'flashcards',
+    component: () => import('@/views/learning/FlashcardsView.vue'),
+    // meta: { requiresAuth: true },
+  },
+  {
+    path: '/flashcards/create',
+    name: 'flashcardsCreate',
+    component: () => import('@/views/learning/FlashcardCreateView.vue'),
+    // meta: { requiresAuth: true },
+  },
+  {
     path: '/admin',
     name: 'admin',
     component: () => import('@/views/admin/AdminDashboard.vue'),

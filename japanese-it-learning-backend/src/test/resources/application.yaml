@@ -4,7 +4,7 @@ spring:
   profiles:
     active: dev
   datasource:
-    url: jdbc:postgresql://localhost:5432/JapaneseITLearningTest
+    url: jdbc:postgresql://localhost:5432/NihongoITTest
     username: postgres
     password: root
     driver-class-name: org.postgresql.Driver

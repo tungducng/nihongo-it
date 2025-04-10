@@ -14,9 +14,19 @@ import com.example.japanesitlearning.repository.RoleRepository
 import com.example.japanesitlearning.repository.UserRepository
 import com.example.japanesitlearning.security.JwtTokenUtil
 import com.example.japanesitlearning.security.PreAuthFilter
-import com.example.japanesitlearning.security.UserAuthUtil
+import com.example.japanesitlearning.util.UserAuthUtil
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
+import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.slf4j.LoggerFactory
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.context.SecurityContextHolder
@@ -30,6 +40,7 @@ import java.time.LocalDateTime
 
 @RestController
 @RequestMapping("/api/v1/auth")
+@Tag(name = "Authentication", description = "API endpoints for user authentication, registration and profile management")
 class AuthController(
     private val authenticationManager: AuthenticationManager,
     private val userRepository: UserRepository,
@@ -40,8 +51,25 @@ class AuthController(
 ) {
     private val logger = LoggerFactory.getLogger(AuthController::class.java)
 
-    @PostMapping("/login")
-    fun login(@Valid @RequestBody request: LoginRequest): LoginResponseDto {
+    @PostMapping("/login", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "Authenticate user",
+        description = "Authenticates a user with email and password, returns JWT token on success"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Authentication successful",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = LoginResponseDto::class))]
+            ),
+            ApiResponse(responseCode = "401", description = "Authentication failed - invalid credentials")
+        ]
+    )
+    fun login(
+        @Parameter(description = "Login credentials", required = true)
+        @Valid @RequestBody request: LoginRequest
+    ): LoginResponseDto {
         logger.debug("Login attempt for email: ${request.email}")
 
         val user = userRepository.findByEmail(request.email)
@@ -67,8 +95,25 @@ class AuthController(
         )
     }
 
-    @PostMapping("/signup")
-    fun register(@Valid @RequestBody request: SignupRequest): SignupResponseDto {
+    @PostMapping("/signup", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "Register new user",
+        description = "Creates a new user account with the provided details"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Registration successful",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = SignupResponseDto::class))]
+            ),
+            ApiResponse(responseCode = "400", description = "Invalid request data or email already in use")
+        ]
+    )
+    fun register(
+        @Parameter(description = "User registration details", required = true)
+        @Valid @RequestBody request: SignupRequest
+    ): SignupResponseDto {
         try {
             // Check if email already exists
             if (userRepository.existsByEmail(request.email)) {
@@ -107,8 +152,23 @@ class AuthController(
         }
     }
 
-    @GetMapping("/current")
+    @GetMapping("/current", produces = [MediaType.APPLICATION_JSON_VALUE])
     @PreAuthFilter(hasAnyRole = ["user", "admin"])
+    @Operation(
+        summary = "Get current user information",
+        description = "Retrieves detailed information about the currently authenticated user"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "User information retrieved successfully",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = GetCurrentUserResponseDto::class))]
+            ),
+            ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+            ApiResponse(responseCode = "404", description = "User not found")
+        ]
+    )
     fun getCurrentUser(): GetCurrentUserResponseDto {
         try {
             // Get current user ID

@@ -1,0 +1,47 @@
+spring:
+  main:
+    banner-mode: "console"
+    output:
+      ansi:
+        enabled: always
+  application:
+    name: nihongo-it-backend
+  profiles:
+    active: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/NihongoIT
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+  sql:
+    init:
+      mode: never
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      audio:
+        speech:
+          model: tts-1
+server:
+  port: 8080
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000
+
+
+# Swagger/OpenAPI
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html

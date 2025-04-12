@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: nihongo-it-backend
+  profiles:
+    active: dev
+  datasource:
+    url: jdbc:postgresql://localhost:5432/NihongoITTest
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+    show-sql: true
+  sql:
+    init:
+      mode: never
+server:
+  port: 8080

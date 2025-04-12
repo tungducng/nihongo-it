@@ -3,11 +3,12 @@ import axios from 'axios'
 // Types
 export interface VocabularyItem {
   vocabId: string
-  hiragana: string
+  hiragana: string | null
   kanji: string | null
   katakana: string | null
   meaning: string
   exampleSentence: string | null
+  exampleSentenceTranslation: string | null
   audioPath: string | null
   audioUrl?: string | null
   exampleAudioPath?: string | null

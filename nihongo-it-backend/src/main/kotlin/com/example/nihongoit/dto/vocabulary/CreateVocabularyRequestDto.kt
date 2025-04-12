@@ -39,6 +39,7 @@ data class CreateVocabularyRequestDto(
     val audioPath: String? = null,
 
     @get:Size(max = 50, message = "Category cannot exceed 50 characters")
+    @get:Pattern(regexp = "^(Programming|Web Development|AI/Machine Learning|Cyber Security|Database|Technology|Computer Hardware|Networking|Software Testing|Project Management|General IT)$", message = "Category must be one of: Programming, Web Development, AI/Machine Learning, Cyber Security, Database, Networking, Database Management, Networking, Software Testing, Project Management")
     @JsonProperty("category")
     val category: String? = null,
 

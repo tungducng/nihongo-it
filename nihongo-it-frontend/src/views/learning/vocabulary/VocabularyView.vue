@@ -127,7 +127,7 @@
               <div class="header-cell column-border" style="width: 80px;">Level</div>
               <div class="header-cell column-border" style="width: 450px;">Vocabulary</div>
               <div class="header-cell column-border" style="width: 200px;">Kanji</div>
-              <div class="header-cell column-border" style="width: 120px;">Category</div>
+              <div class="header-cell column-border" style="width: 150px;">Category</div>
               <div class="header-cell column-border" style="flex-grow: 1;">Actions</div>
             </div>
           </div>
@@ -155,10 +155,10 @@
               <!-- Vocabulary (Hiragana/Katakana) with Meaning -->
               <div class="content-cell vocabulary-cell column-border" style="width: 450px;">
                 <div class="d-flex align-center">
-                  <span class="text-body-1 text-wrap hiragana-text">{{ item.hiragana }}</span>
-                  <span v-if="item.katakana" class="text-body-2 ml-2 text-medium-emphasis text-wrap">({{ item.katakana }})</span>
+                  <span class="text-body-2 text-wrap hiragana-text">{{ item.hiragana }}</span>
+                  <span v-if="item.katakana" class="text-caption ml-2 text-medium-emphasis text-wrap">({{ item.katakana }})</span>
                 </div>
-                <div class="meaning-text text-body-2 text-medium-emphasis mt-1 text-wrap">
+                <div class="meaning-text text-caption mt-1 text-medium-emphasis text-wrap">
                   {{ item.meaning }}
                 </div>
               </div>
@@ -170,7 +170,7 @@
               </div>
 
               <!-- Category -->
-              <div class="content-cell text-center column-border" style="width: 120px;">
+              <div class="content-cell text-center column-border" style="width: 150px;">
                 <v-chip
                   v-if="item.category"
                   size="x-small"
@@ -231,14 +231,14 @@
             </div>
 
             <!-- Expanded Content (Example Sentences) -->
-            <div v-if="expandedItems.includes(item.vocabId)" class="expanded-content mt-2 py-2 px-4" @click.stop>
+            <div v-if="expandedItems.includes(item.vocabId)" class="expanded-content py-2 px-4" @click.stop>
               <div v-if="item.exampleSentence" class="example-sentence my-2">
                 <div class="d-flex align-items-center">
-                  <v-icon class="mr-2" size="small" color="grey">mdi-format-quote-open</v-icon>
+                  <v-icon class="mr-2" size="x-small" color="grey">mdi-format-quote-open</v-icon>
                   <div class="flex-grow-1">{{ item.exampleSentence }}</div>
                   <v-btn
                     icon="mdi-volume-high"
-                    size="small"
+                    size="x-small"
                     variant="text"
                     @click.stop="playAudio(item.exampleAudioPath || item.audioPath || item.audioUrl || null)"
                     color="blue"
@@ -246,20 +246,23 @@
                     class="action-btn"
                   ></v-btn>
                 </div>
+                <div v-if="item.exampleSentenceTranslation" class="example-translation ml-6 mt-1 text-caption text-medium-emphasis">
+                  {{ item.exampleSentenceTranslation }}
+                </div>
               </div>
 
-              <div class="additional-info d-flex flex-wrap mt-3">
-                <div class="mr-4 mb-2">
+              <div class="additional-info d-flex flex-wrap mt-2">
+                <div class="mr-4 mb-1">
                   <span class="text-caption text-medium-emphasis">Created by:</span>
-                  <span class="text-body-2 ml-1">{{ item.createdBy }}</span>
+                  <span class="text-caption ml-1">{{ item.createdBy }}</span>
                 </div>
-                <div class="mr-4 mb-2">
+                <div class="mr-4 mb-1">
                   <span class="text-caption text-medium-emphasis">Created on:</span>
-                  <span class="text-body-2 ml-1">{{ formatDate(item.createdAt) }}</span>
+                  <span class="text-caption ml-1">{{ formatDate(item.createdAt) }}</span>
                 </div>
                 <div class="ms-auto">
                   <v-btn
-                    size="small"
+                    size="x-small"
                     variant="outlined"
                     color="primary"
                     @click.stop="viewDetails(item)"
@@ -421,19 +424,17 @@ export default class VocabularyView extends Vue {
   // Filter options
   jlptLevels = ['N1', 'N2', 'N3', 'N4', 'N5']
   categories = [
-    'Greetings',
-    'Numbers',
-    'Time',
-    'Daily Life',
-    'Food',
+    'Programming',
+    'Web Development',
+    'AI/Machine Learning',
+    'Cyber Security',
+    'Database',
     'Technology',
-    'Business',
-    'Travel',
-    'Nature',
-    'Education',
-    'Health'
+    'Computer Hardware',
+    'Project Management',
+    'Networking',
+    'Software Testing'
   ]
-
   // Computed Properties
   get hasActiveFilters(): boolean {
     return !!(
@@ -703,12 +704,12 @@ export default class VocabularyView extends Vue {
     border-right: none
 
 .content-cell
-  padding: 4px 8px
+  padding: 2px 8px
   overflow: hidden
 
 .vocabulary-cell
-  padding: 4px 12px
-  min-height: 70px
+  padding: 2px 12px
+  min-height: 60px
   display: flex
   flex-direction: column
   justify-content: center
@@ -729,8 +730,8 @@ export default class VocabularyView extends Vue {
     background-color: rgba(0, 0, 0, 0.02)
 
 .vocabulary-row
-  padding: 12px 16px
-  min-height: 64px
+  padding: 8px 16px
+  min-height: 54px
   width: 100%
 
 .japanese-text
@@ -751,14 +752,19 @@ export default class VocabularyView extends Vue {
 .expanded-content
   background-color: #f8fafd
   border-top: 1px dashed rgba(0, 0, 0, 0.08)
+  padding: 6px 16px
 
 .example-sentence
-  padding: 10px 12px
+  padding: 8px 10px
   background-color: rgba(0, 0, 0, 0.02)
   border-radius: 6px
   border-left: 3px solid rgba(0, 0, 0, 0.1)
   font-style: italic
-  margin: 8px 0
+  margin: 6px 0
+
+.example-translation
+  color: rgba(0, 0, 0, 0.6)
+  font-style: italic
 
 .level-chip
   min-width: 40px
@@ -816,4 +822,12 @@ export default class VocabularyView extends Vue {
   &:hover
     opacity: 1
     transform: scale(1.05)
+
+.additional-info
+  display: flex
+  flex-wrap: wrap
+  margin-top: 6px
+
+  .text-caption
+    font-size: 0.7rem
 </style>

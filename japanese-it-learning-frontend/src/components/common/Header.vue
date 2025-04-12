@@ -1,73 +1,158 @@
-<!-- eslint-disable vue/multi-word-component-names -->
 <template>
-  <v-app-bar app>
-    <v-app-bar-title>
-      <RouterLink to="/" class="logo-link"> Nihongo IT </RouterLink>
+  <!-- Navigation Header -->
+  <v-app-bar flat class="px-3">
+    <v-app-bar-title class="text-h6 font-weight-bold">
+      <router-link to="/" class="app-name text-decoration-none text-inherit">日本語 IT</router-link>
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
 
-    <div v-if="isLoggedIn" class="level-indicator">
-      <v-chip color="primary">{{ userLevel }}</v-chip>
+    <!-- Main Navigation Links -->
+    <div class="d-flex align-center navigation-links">
+      <v-btn
+        variant="text"
+        to="/dashboard"
+        class="mx-2"
+      >
+        Dashboard
+      </v-btn>
+      <v-btn
+        variant="text"
+        to="/learning-path"
+        class="mx-2"
+      >
+        Learning Path
+      </v-btn>
+      <v-btn
+        variant="text"
+        to="/vocabulary"
+        class="mx-2"
+      >
+        Vocabulary
+      </v-btn>
+      <v-btn
+        variant="text"
+        to="/practice"
+        class="mx-2"
+      >
+        Practice
+      </v-btn>
     </div>
 
-    <v-app-bar-nav-icon
-      v-if="isLoggedIn"
-      variant="text"
-      @click.stop="$emit('toggle-drawer')"
-    ></v-app-bar-nav-icon>
+    <v-spacer></v-spacer>
 
-    <nav v-if="isLoggedIn">
-      <v-btn to="/" variant="text">Dashboard</v-btn>
-      <v-btn to="/learning-path" variant="text">Learning Path</v-btn>
-      <v-btn to="/conversation" variant="text">Conversation</v-btn>
-      <v-btn to="/vocabulary" variant="text">Vocabulary</v-btn>
-      <v-btn to="/exercises" variant="text">Exercises</v-btn>
-      <v-btn to="/progress" variant="text">Progress</v-btn>
-      <v-btn v-if="isAdmin" to="/admin" variant="text">Admin</v-btn>
-      <v-btn @click="handleLogout" variant="outlined">Logout</v-btn>
-    </nav>
+    <!-- Login/Register Buttons (for logged out users) -->
+    <div v-if="!isLoggedIn" class="d-flex align-center">
+      <v-btn
+        variant="text"
+        to="/login"
+        class="mx-1"
+      >
+        Login
+      </v-btn>
+      <v-btn
+        to="/register"
+        color="primary"
+        variant="elevated"
+        class="ml-2"
+      >
+        Register
+      </v-btn>
+    </div>
 
-    <nav v-else>
-      <v-btn to="/login" variant="text">Login</v-btn>
-      <v-btn to="/register" variant="outlined">Register</v-btn>
-    </nav>
+    <!-- User Avatar & Dropdown (for logged in users) -->
+    <v-menu v-else min-width="200px" rounded>
+      <template v-slot:activator="{ props }">
+        <v-btn
+          variant="text"
+          v-bind="props"
+          class="ml-2"
+        >
+          <v-avatar size="40" color="primary" class="mr-2">
+            <span class="text-h6 text-white">{{ avatarInitials }}</span>
+          </v-avatar>
+          <v-icon>mdi-chevron-down</v-icon>
+        </v-btn>
+      </template>
+      <v-card>
+        <v-card-text>
+          <div class="d-flex align-center mb-3">
+            <v-avatar size="40" color="primary" class="mr-3">
+              <span class="text-h6 text-white">{{ avatarInitials }}</span>
+            </v-avatar>
+            <div>
+              <div class="text-subtitle-1 font-weight-medium">{{ username }}</div>
+              <div class="text-caption text-medium-emphasis">{{ userLevel }} Level</div>
+            </div>
+          </div>
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-list>
+          <v-list-item to="/profile" prepend-icon="mdi-account-outline">
+            <v-list-item-title>My Profile</v-list-item-title>
+          </v-list-item>
+          <v-list-item to="/settings" prepend-icon="mdi-cog-outline">
+            <v-list-item-title>Settings</v-list-item-title>
+          </v-list-item>
+          <v-divider></v-divider>
+          <v-list-item @click="logout" prepend-icon="mdi-logout">
+            <v-list-item-title>Logout</v-list-item-title>
+          </v-list-item>
+        </v-list>
+      </v-card>
+    </v-menu>
   </v-app-bar>
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Emit } from 'vue-facing-decorator'
-import { RouterLink } from 'vue-router'
+import { Component, Vue, Prop } from 'vue-facing-decorator'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores'
 
 @Component({
-  name: 'Header',
-  components: {
-    RouterLink,
-  },
+  name: 'AppHeader'
 })
-export default class Header extends Vue {
-  @Prop({ type: Boolean, default: false }) readonly isLoggedIn!: boolean
-  @Prop({ type: Boolean, default: false }) readonly isAdmin!: boolean
-  @Prop({ type: String, default: 'N5' }) readonly userLevel!: string
+export default class AppHeader extends Vue {
+  private authStore = useAuthStore()
 
-  @Emit('logout')
-  handleLogout(): void {
-    // This method emits the 'logout' event
+  get isLoggedIn(): boolean {
+    return !!this.authStore.user
+  }
+
+  get username(): string {
+    return this.authStore.user?.fullName || 'Guest'
+  }
+
+  get userLevel(): string {
+    return this.authStore.user?.currentLevel || 'N5'
+  }
+
+  get avatarInitials(): string {
+    return this.username.charAt(0).toUpperCase()
+  }
+
+  logout(): void {
+    this.authStore.logout()
+    const router = useRouter()
+    router.push('/login')
   }
 }
 </script>
 
 <style lang="sass" scoped>
-.logo-link
-  text-decoration: none
-  color: inherit
-  font-weight: bold
-  font-size: 1.5rem
+.navigation-links
+  position: absolute
+  left: 50%
+  transform: translateX(-50%)
 
-.level-indicator
-  margin-right: 1rem
+.text-inherit
+  color: inherit !important
 
-nav
-  display: flex
-  gap: 0.5rem
+::v-deep .app-name
+  cursor: pointer
+
+  a
+    color: inherit
+    &:hover
+      opacity: 0.85
 </style>

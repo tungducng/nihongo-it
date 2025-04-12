@@ -1,22 +1,30 @@
 import { createRouter, createWebHistory } from 'vue-router'
-// import { authGuard, roleGuard } from './guards'
+import { requireAuth, redirectIfAuthenticated } from './guards'
 
 const routes = [
   {
     path: '/',
     name: 'home',
-    component: () => import('@/views/learning/DashboardView.vue'),
+    component: () => import('@/views/HomeView.vue'),
     // No requiresAuth - accessible to everyone
   },
   {
     path: '/login',
     name: 'login',
     component: () => import('@/views/auth/LoginView.vue'),
+    beforeEnter: redirectIfAuthenticated
   },
   {
     path: '/register',
     name: 'register',
     component: () => import('@/views/auth/RegisterView.vue'),
+    beforeEnter: redirectIfAuthenticated
+  },
+  {
+    path: '/profile',
+    name: 'profile',
+    component: () => import('@/views/auth/ProfileView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/learning-path',
@@ -33,8 +41,10 @@ const routes = [
   {
     path: '/vocabulary',
     name: 'vocabulary',
-    component: () => import('@/views/learning/VocabularyView.vue'),
+    component: () => import('@/views/learning/vocabulary/VocabularyView.vue'),
     // No requiresAuth - publicly accessible
+    meta: { requiresAuth: true }, // Personalized content requires auth
+
   },
   {
     path: '/exercises',
@@ -85,7 +95,14 @@ const router = createRouter({
   routes,
 })
 
-// router.beforeEach(authGuard)
-// router.beforeEach(roleGuard)
+router.beforeEach((to, from, next) => {
+  if (to.meta.requiresAuth) {
+    requireAuth(to, from, next);
+  } else {
+    next();
+  }
+});
+
+// TODO: Add role guard when role-based auth is implemented
 
 export default router

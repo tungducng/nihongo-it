@@ -101,7 +101,7 @@ interface Lesson {
 }
 
 @Component({
-  name: 'DashboardView',
+  name: 'DashboardView'
 })
 export default class DashboardView extends Vue {
   // Mock data instead of store data

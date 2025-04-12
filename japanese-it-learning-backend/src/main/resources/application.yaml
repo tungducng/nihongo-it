@@ -30,7 +30,7 @@ spring:
       audio:
         speech:
           model: tts-1
-
+server:
   port: 8080
 
 # JWT Configuration

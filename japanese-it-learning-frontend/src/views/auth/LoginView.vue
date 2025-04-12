@@ -1,96 +1,138 @@
 <template>
-  <div class="login-view d-flex align-center justify-center">
-    <v-card class="mx-auto pa-6" max-width="400">
-      <v-card-title class="text-center text-h5 mb-4">Login</v-card-title>
+  <v-container class="login-container" fluid>
+    <v-row justify="center" align="center">
+      <v-col cols="12" sm="8" md="6" lg="4">
+        <v-card class="login-card">
+          <v-card-title class="text-center">
+            <h1 class="title">Login</h1>
+          </v-card-title>
 
-      <v-form @submit.prevent="handleLogin">
-        <v-text-field
-          v-model="email"
-          label="Email"
-          type="email"
-          :rules="rules.email"
-          required
-          variant="outlined"
-          full-width
-          class="mb-4"
-          prepend-inner-icon="mdi-email"
-        />
+          <v-card-text>
+            <v-form ref="form" @submit.prevent="handleLogin">
+              <v-text-field
+                v-model="email"
+                label="Email"
+                type="email"
+                prepend-icon="mdi-email"
+                required
+              ></v-text-field>
 
-        <v-text-field
-          v-model="password"
-          label="Password"
-          :type="showPassword ? 'text' : 'password'"
-          :rules="rules.password"
-          required
-          variant="outlined"
-          full-width
-          class="mb-4"
-          prepend-inner-icon="mdi-lock"
-          :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-          @click:append-inner="showPassword = !showPassword"
-        />
+              <v-text-field
+                v-model="password"
+                label="Password"
+                :type="showPassword ? 'text' : 'password'"
+                prepend-icon="mdi-lock"
+                :append-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
+                @click:append="showPassword = !showPassword"
+                required
+              ></v-text-field>
 
-        <v-btn type="submit" color="primary" block :loading="loading" class="mb-4">Login</v-btn>
+              <v-btn
+                type="submit"
+                color="primary"
+                block
+                class="mt-4"
+                :loading="loading"
+              >
+                Login
+              </v-btn>
 
-        <div class="text-center">
-          <v-btn variant="text" color="primary" to="/register">
-            Don't have an account? Register
-          </v-btn>
-        </div>
-      </v-form>
-    </v-card>
-  </div>
+              <div class="text-center mt-4">
+                <router-link to="/register" class="text-decoration-none">
+                  Don't have an account? Register
+                </router-link>
+              </div>
+            </v-form>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-facing-decorator'
+import { Component, Vue, Ref } from 'vue-facing-decorator'
+import { useAuthStore } from '@/stores'
+import { useToast } from 'vue-toast-notification'
+import 'vue-toast-notification/dist/theme-sugar.css'
 
 @Component({
-  name: 'LoginView',
+  name: 'LoginView'
 })
 export default class LoginView extends Vue {
+  private authStore = useAuthStore()
+  private $toast = useToast()
+
+  @Ref('form') readonly form!: any
+
   email = ''
   password = ''
-  loading = false
   showPassword = false
 
-  get rules() {
-    return {
-      email: [
-        (v: string) => !!v || 'Email is required',
-        (v: string) => /.+@.+\..+/.test(v) || 'Email must be valid',
-      ],
-      password: [
-        (v: string) => !!v || 'Password is required',
-        (v: string) => v.length >= 6 || 'Password must be at least 6 characters',
-      ],
+  get loading(): boolean {
+    return this.authStore.loading
+  }
+
+  mounted(): void {
+    if (this.authStore.isAuthenticated) {
+      console.log('User already authenticated, redirecting to home')
+      this.$router.push('/')
     }
   }
 
   async handleLogin(): Promise<void> {
-    try {
-      this.loading = true
-      // TODO: Implement login logic here
-      console.log('Login with:', { email: this.email, password: this.password })
-      // Simulate successful login
-      setTimeout(() => {
-        this.$router.push('/')
-      }, 1000)
-    } catch (error) {
-      console.error('Login failed:', error)
-    } finally {
-      this.loading = false
+    if (!this.email || !this.password) {
+      this.$toast.error('Please enter email and password', {
+        position: 'top',
+        duration: 3000
+      })
+      return
+    }
+
+    console.log('Logging in with:', this.email)
+    const success = await this.authStore.login({
+      email: this.email,
+      password: this.password
+    })
+
+    if (success) {
+      this.$toast.success('Login successful!', {
+        position: 'top',
+        duration: 3000
+      })
+      console.log('User logged in successfully')
+
+      // Redirect to the requested page or dashboard
+      const redirectPath = this.$route.query.redirect
+        ? String(this.$route.query.redirect)
+        : '/'
+      console.log('Redirecting to:', redirectPath)
+      this.$router.push(redirectPath)
+    } else {
+      this.$toast.error(this.authStore.error || 'Login failed', {
+        position: 'top',
+        duration: 3000
+      })
     }
   }
 }
 </script>
 
 <style lang="sass" scoped>
-.login-view
-  background-color: #f5f5f5
-  min-height: 80vh
+.login-container
+  min-height: 100vh
+  display: flex
+  align-items: center
 
-.v-card
-  border-radius: 8px
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1)
+.login-card
+  width: 100%
+  padding: 1rem
+
+.title
+  color: #333
+  margin-bottom: 1rem
+  width: 100%
+
+::v-deep .v-text-field
+  margin-bottom: 0.5rem
 </style>

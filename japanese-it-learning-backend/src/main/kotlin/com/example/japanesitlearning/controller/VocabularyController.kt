@@ -79,8 +79,8 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
         return vocabularyService.getVocabulary(vocabId)
     }
 
-    @PreAuthFilter(hasAnyRole = ["ADMIN"])
     @GetMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PreAuthFilter(hasAnyRole = ["user", "admin"])
     @Operation(
         summary = "Filter vocabulary",
         description = "Filters vocabulary entries based on various criteria with pagination support",
@@ -115,13 +115,17 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
         @Parameter(description = "Page size")
         @RequestParam(defaultValue = "20") size: Int,
     ): PagedVocabularyResponseDto {
+        // Validate page and size parameters to prevent invalid values
+        val validPage = if (page < 0) 0 else page
+        val validSize = if (size <= 0) 20 else if (size > 100) 100 else size
+        
         val filter = VocabularyFilterRequestDto(
             jlptLevel = jlptLevel,
             category = category,
             contentType = contentType,
             keyword = keyword,
-            page = page,
-            size = size,
+            page = validPage,
+            size = validSize,
         )
         return vocabularyService.filterVocabulary(filter)
     }
@@ -257,7 +261,11 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
         @Parameter(description = "Page size")
         @RequestParam(defaultValue = "20") size: Int,
     ): PagedVocabularyResponseDto {
-        val filter = VocabularyFilterRequestDto(page = page, size = size)
+        // Validate page and size parameters to prevent invalid values
+        val validPage = if (page < 0) 0 else page
+        val validSize = if (size <= 0) 20 else if (size > 100) 100 else size
+        
+        val filter = VocabularyFilterRequestDto(page = validPage, size = validSize)
         val result = vocabularyService.getSavedVocabulary(filter)
         return result
     }

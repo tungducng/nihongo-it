@@ -1,6 +1,6 @@
 <template>
   <v-app>
-    <Header />
+    <app-header />
 
     <v-main>
       <v-container fluid>
@@ -15,14 +15,14 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-facing-decorator'
 import { RouterView } from 'vue-router'
-import Header from './components/common/Header.vue'
+import AppHeader from './components/common/Header.vue'
 import Footer from './components/common/Footer.vue'
 
 @Component({
   name: 'App',
   components: {
     RouterView,
-    Header,
+    AppHeader,
     Footer,
   },
 })

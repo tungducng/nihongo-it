@@ -86,7 +86,12 @@ class AuthController(
 
         SecurityContextHolder.getContext().authentication = authentication
 
-        val token = jwtTokenUtil.generateToken(user)
+        // Update lastLogin time
+        val updatedUser = user.copy(lastLogin = LocalDateTime.now())
+        userRepository.save(updatedUser)
+        logger.debug("Updated lastLogin for user with email: ${request.email}")
+        
+        val token = jwtTokenUtil.generateToken(updatedUser)
         logger.debug("Login successful for user with email: ${request.email}")
 
         return LoginResponseDto(
@@ -142,9 +147,8 @@ class AuthController(
             logger.debug("User registered successfully with ID: ${savedUser.userId}")
 
             return SignupResponseDto(
-                ResponseDto(
-                    status = ResponseType.OK,
-                ),
+                status = ResponseType.OK,
+                message = "Registration successful"
             )
         } catch (ex: Exception) {
             logger.error("Registration error: ${ex.message}", ex)

@@ -32,7 +32,7 @@ class JwtTokenUtil {
 
     private val logger = LoggerFactory.getLogger(JwtTokenUtil::class.java)
 
-    private val dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
+    private val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
 
     fun generateToken(user: UserEntity): String {
         val claims: Map<String, Any> = mapOf(

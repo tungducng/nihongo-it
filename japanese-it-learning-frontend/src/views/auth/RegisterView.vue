@@ -1,125 +1,261 @@
 <template>
-  <v-card class="mx-auto pa-6" max-width="400">
-    <v-card-title class="text-center text-h5 mb-4">Register</v-card-title>
+  <v-container class="register-container" fluid>
+    <v-row justify="center" align="center">
+      <v-col cols="12" sm="8" md="6" lg="5">
+        <v-card class="register-card">
+          <v-card-title class="text-center">
+            <h1 class="title">Register</h1>
+          </v-card-title>
 
-    <v-form @submit.prevent="handleRegister">
-      <v-text-field
-        v-model="username"
-        label="Username"
-        :rules="rules.username"
-        required
-        variant="outlined"
-        full-width
-        class="mb-4"
-        prepend-inner-icon="mdi-account"
-      />
+          <v-card-text>
+            <v-form ref="form" @submit.prevent="handleRegister">
+              <v-row>
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="formData.email"
+                    label="Email"
+                    type="email"
+                    prepend-icon="mdi-email"
+                    required
+                  ></v-text-field>
+                </v-col>
 
-      <v-text-field
-        v-model="email"
-        label="Email"
-        type="email"
-        :rules="rules.email"
-        required
-        variant="outlined"
-        full-width
-        class="mb-4"
-        prepend-inner-icon="mdi-email"
-      />
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="formData.fullName"
+                    label="Full Name"
+                    prepend-icon="mdi-account"
+                    required
+                  ></v-text-field>
+                </v-col>
 
-      <v-text-field
-        v-model="password"
-        label="Password"
-        :type="showPassword ? 'text' : 'password'"
-        :rules="rules.password"
-        required
-        variant="outlined"
-        full-width
-        class="mb-4"
-        prepend-inner-icon="mdi-lock"
-        :append-inner-icon="showPassword ? 'mdi-eye-off' : 'mdi-eye'"
-        @click:append-inner="showPassword = !showPassword"
-      />
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="formData.password"
+                    label="Password"
+                    type="password"
+                    prepend-icon="mdi-lock"
+                    required
+                  ></v-text-field>
+                </v-col>
 
-      <v-text-field
-        v-model="confirmPassword"
-        label="Confirm Password"
-        :type="showConfirmPassword ? 'text' : 'password'"
-        :rules="rules.confirmPassword"
-        required
-        variant="outlined"
-        full-width
-        class="mb-4"
-        prepend-inner-icon="mdi-lock-check"
-        :append-inner-icon="showConfirmPassword ? 'mdi-eye-off' : 'mdi-eye'"
-        @click:append-inner="showConfirmPassword = !showConfirmPassword"
-      />
+                <v-col cols="12">
+                  <v-text-field
+                    v-model="confirmPassword"
+                    label="Confirm Password"
+                    type="password"
+                    prepend-icon="mdi-lock-check"
+                    required
+                  ></v-text-field>
+                </v-col>
 
-      <v-btn type="submit" color="primary" block :loading="loading" class="mb-4">Register</v-btn>
+                <v-col cols="6">
+                  <v-select
+                    v-model="formData.currentLevel"
+                    :items="japaneseLevel"
+                    label="Current Japanese Level"
+                    prepend-icon="mdi-book-open-variant"
+                  ></v-select>
+                </v-col>
 
-      <div class="text-center">
-        <v-btn variant="text" color="primary" to="/login">Already have an account? Login</v-btn>
-      </div>
-    </v-form>
-  </v-card>
+                <v-col cols="6">
+                  <v-select
+                    v-model="formData.jlptGoal"
+                    :items="jlptLevels"
+                    label="JLPT Goal"
+                    prepend-icon="mdi-flag"
+                  ></v-select>
+                </v-col>
+              </v-row>
+
+              <v-btn
+                type="submit"
+                color="primary"
+                block
+                class="mt-4"
+                :loading="loading"
+                :disabled="!isFormValid"
+              >
+                Register
+              </v-btn>
+
+              <div class="text-center mt-4">
+                <router-link to="/login" class="text-decoration-none">
+                  Already have an account? Login
+                </router-link>
+              </div>
+            </v-form>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-facing-decorator'
-// import { useRouter } from 'vue-router'
+import { Component, Vue, Ref } from 'vue-facing-decorator'
+import { useAuthStore } from '@/stores'
+import { useToast } from 'vue-toast-notification'
+import 'vue-toast-notification/dist/theme-sugar.css'
+import { reactive, ref } from 'vue'
 
 @Component({
-  name: 'RegisterView',
+  name: 'RegisterView'
 })
 export default class RegisterView extends Vue {
-  username = ''
-  email = ''
-  password = ''
-  confirmPassword = ''
-  loading = false
-  showPassword = false
-  showConfirmPassword = false
+  private authStore = useAuthStore()
+  private $toast = useToast()
 
-  get rules() {
-    return {
-      username: [
-        (v: string) => !!v || 'Username is required',
-        (v: string) => v.length >= 3 || 'Username must be at least 3 characters',
-      ],
-      email: [
-        (v: string) => !!v || 'Email is required',
-        (v: string) => /.+@.+\..+/.test(v) || 'Email must be valid',
-      ],
-      password: [
-        (v: string) => !!v || 'Password is required',
-        (v: string) => v.length >= 6 || 'Password must be at least 6 characters',
-      ],
-      confirmPassword: [
-        (v: string) => !!v || 'Please confirm your password',
-        (v: string) => v === this.password || 'Passwords do not match',
-      ],
+  @Ref('form') readonly form!: any
+
+  formData = reactive({
+    email: '',
+    fullName: '',
+    password: '',
+    currentLevel: 'N5',
+    jlptGoal: 'N3',
+    profilePicture: ''
+  })
+
+  confirmPassword = ''
+
+  get loading(): boolean {
+    return this.authStore.loading
+  }
+
+  get isFormValid(): boolean {
+    return !!this.formData.email &&
+           !!this.formData.fullName &&
+           !!this.formData.password &&
+           this.formData.password === this.confirmPassword
+  }
+
+  get japaneseLevel() {
+    return [
+      { value: 'BEGINNER', title: 'Beginner' },
+      { value: 'N5', title: 'N5' },
+      { value: 'N4', title: 'N4' },
+      { value: 'N3', title: 'N3' },
+      { value: 'N2', title: 'N2' },
+      { value: 'N1', title: 'N1' }
+    ]
+  }
+
+  get jlptLevels() {
+    return [
+      { value: 'N5', title: 'N5' },
+      { value: 'N4', title: 'N4' },
+      { value: 'N3', title: 'N3' },
+      { value: 'N2', title: 'N2' },
+      { value: 'N1', title: 'N1' }
+    ]
+  }
+
+  validateForm(): boolean {
+    let isValid = true
+    const errors = []
+
+    if (!this.formData.email) {
+      errors.push('Email is required')
+      isValid = false
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.formData.email)) {
+      errors.push('Email format is invalid')
+      isValid = false
     }
+
+    if (!this.formData.fullName) {
+      errors.push('Full name is required')
+      isValid = false
+    } else if (this.formData.fullName.length < 2) {
+      errors.push('Full name must be at least 2 characters')
+      isValid = false
+    }
+
+    if (!this.formData.password) {
+      errors.push('Password is required')
+      isValid = false
+    } else if (this.formData.password.length < 6) {
+      errors.push('Password must be at least 6 characters')
+      isValid = false
+    }
+
+    if (this.formData.password !== this.confirmPassword) {
+      errors.push('Passwords do not match')
+      isValid = false
+    }
+
+    if (errors.length > 0) {
+      errors.forEach(error => {
+        this.$toast.error(error, {
+          position: 'top',
+          duration: 3000
+        })
+      })
+    }
+
+    return isValid
   }
 
   async handleRegister(): Promise<void> {
+    if (!this.validateForm()) {
+      return
+    }
+
     try {
-      this.loading = true
-      // TODO: Implement registration logic here
-      // const response = await authService.register({
-      //   username: this.username,
-      //   email: this.email,
-      //   password: this.password
-      // })
-      // this.$router.push('/login')
+      const success = await this.authStore.register(this.formData)
+
+      if (success) {
+        this.$toast.success('Registration successful! Please login.', {
+          position: 'top',
+          duration: 3000
+        })
+        this.$router.push({ name: 'login' })
+      } else if (this.authStore.error) {
+        this.$toast.error(this.authStore.error, {
+          position: 'top',
+          duration: 5000
+        })
+      }
     } catch (error) {
-      console.error('Registration failed:', error)
-    } finally {
-      this.loading = false
+      console.error('Registration error:', error)
+      this.$toast.error('Registration failed. Please try again.', {
+        position: 'top',
+        duration: 5000
+      })
     }
   }
 }
 </script>
 
 <style lang="sass" scoped>
-.register-view
-  background-color: #f5f5f5
+.register-container
+  min-height: 100vh
+  display: flex
+  align-items: center
+
+.register-card
+  width: 100%
+  padding: 1rem
+
+.title
+  color: #333
+  margin-bottom: 1rem
+  width: 100%
+
+::v-deep .v-text-field
+  margin-bottom: 0.5rem
+
+// Add styles to reduce column height and hide message details
+::v-deep .v-col
+  padding-top: 4px
+  padding-bottom: 4px
+
+::v-deep .v-input__details
+  display: none !important
+  margin: 0
+  padding: 0
+  min-height: 0
+
+::v-deep .v-messages
+  min-height: 0
 </style>

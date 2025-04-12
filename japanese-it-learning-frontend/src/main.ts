@@ -1,4 +1,4 @@
-import '@/assets/styles/main.scss'
+import '@/assets/styles/main.sass'
 import 'vuetify/styles'
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'

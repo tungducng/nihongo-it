@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import axios from 'axios'
 import type { AxiosError } from 'axios'
 
-interface Flashcard {
+export interface Flashcard {
   id: number | string
   // Add other flashcard properties based on your data model
   front?: string
@@ -11,13 +11,13 @@ interface Flashcard {
   // Add any other properties your flashcards have
 }
 
-interface Review {
+export interface Review {
   card: Flashcard | null
   rating: number
   timestamp: Date
 }
 
-interface FlashcardsState {
+export interface FlashcardsState {
   dueCards: Flashcard[]
   currentCard: Flashcard | null
   reviewHistory: Review[]

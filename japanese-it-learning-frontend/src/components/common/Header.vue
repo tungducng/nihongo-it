@@ -1,29 +1,4 @@
 <!-- eslint-disable vue/multi-word-component-names -->
-<script setup lang="ts">
-import { RouterLink } from 'vue-router'
-
-defineProps({
-  isLoggedIn: {
-    type: Boolean,
-    default: false,
-  },
-  isAdmin: {
-    type: Boolean,
-    default: false,
-  },
-  userLevel: {
-    type: String,
-    default: 'N5',
-  },
-})
-
-const emit = defineEmits(['logout', 'toggle-drawer'])
-
-const handleLogout = () => {
-  emit('logout')
-}
-</script>
-
 <template>
   <v-app-bar app>
     <v-app-bar-title>
@@ -39,7 +14,7 @@ const handleLogout = () => {
     <v-app-bar-nav-icon
       v-if="isLoggedIn"
       variant="text"
-      @click.stop="emit('toggle-drawer')"
+      @click.stop="$emit('toggle-drawer')"
     ></v-app-bar-nav-icon>
 
     <nav v-if="isLoggedIn">
@@ -60,20 +35,39 @@ const handleLogout = () => {
   </v-app-bar>
 </template>
 
-<style lang="scss" scoped>
-.logo-link {
-  text-decoration: none;
-  color: inherit;
-  font-weight: bold;
-  font-size: 1.5rem;
-}
+<script lang="ts">
+import { Component, Vue, Prop, Emit } from 'vue-facing-decorator'
+import { RouterLink } from 'vue-router'
 
-.level-indicator {
-  margin-right: 1rem;
-}
+@Component({
+  name: 'Header',
+  components: {
+    RouterLink,
+  },
+})
+export default class Header extends Vue {
+  @Prop({ type: Boolean, default: false }) readonly isLoggedIn!: boolean
+  @Prop({ type: Boolean, default: false }) readonly isAdmin!: boolean
+  @Prop({ type: String, default: 'N5' }) readonly userLevel!: string
 
-nav {
-  display: flex;
-  gap: 0.5rem;
+  @Emit('logout')
+  handleLogout(): void {
+    // This method emits the 'logout' event
+  }
 }
+</script>
+
+<style lang="sass" scoped>
+.logo-link
+  text-decoration: none
+  color: inherit
+  font-weight: bold
+  font-size: 1.5rem
+
+.level-indicator
+  margin-right: 1rem
+
+nav
+  display: flex
+  gap: 0.5rem
 </style>

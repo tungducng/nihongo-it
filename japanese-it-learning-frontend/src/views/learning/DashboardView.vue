@@ -1,50 +1,3 @@
-<script setup lang="ts">
-import { ref } from 'vue'
-
-// Mock data instead of store data
-const username = ref('Guest')
-const currentLevel = ref('N5')
-
-// Static progress data
-const dailyProgress = ref({
-  minutesStudied: 25,
-})
-
-const studyPlan = ref({
-  dailyGoalMinutes: 60,
-})
-
-const dailyGoalProgress = ref(42) // Static percentage
-
-// Mock suggested lessons
-const suggestedLessons = ref([
-  {
-    id: '1',
-    title: 'Basic Greetings',
-    type: 'conversation',
-    level: 'N5',
-    estimatedMinutes: 15,
-    description: 'Learn essential Japanese greetings for everyday conversations.',
-  },
-  {
-    id: '2',
-    title: 'Numbers 1-100',
-    type: 'vocabulary',
-    level: 'N5',
-    estimatedMinutes: 20,
-    description: 'Master counting in Japanese from 1 to 100.',
-  },
-  {
-    id: '3',
-    title: 'IT Terminology Basics',
-    type: 'vocabulary',
-    level: 'N5',
-    estimatedMinutes: 25,
-    description: 'Essential IT vocabulary for beginners in Japanese.',
-  },
-])
-</script>
-
 <template>
   <div class="dashboard">
     <v-container>
@@ -135,34 +88,89 @@ const suggestedLessons = ref([
   </div>
 </template>
 
-<style lang="scss" scoped>
-.welcome-header {
-  margin-bottom: 2rem;
+<script lang="ts">
+import { Component, Vue } from 'vue-facing-decorator'
 
-  small {
-    display: block;
-    font-size: 1rem;
-    font-weight: normal;
-    color: rgba(0, 0, 0, 0.7);
-    margin-top: 0.5rem;
-  }
+interface Lesson {
+  id: string
+  title: string
+  type: string
+  level: string
+  estimatedMinutes: number
+  description: string
 }
 
-.daily-progress {
-  text-align: center;
+@Component({
+  name: 'DashboardView',
+})
+export default class DashboardView extends Vue {
+  // Mock data instead of store data
+  username = 'Guest'
+  currentLevel = 'N5'
 
-  .v-card-text {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+  // Static progress data
+  dailyProgress = {
+    minutesStudied: 25,
   }
-}
 
-.progress-details {
-  text-align: center;
-
-  p {
-    margin: 0.5rem 0;
+  studyPlan = {
+    dailyGoalMinutes: 60,
   }
+
+  dailyGoalProgress = 42 // Static percentage
+
+  // Mock suggested lessons
+  suggestedLessons: Lesson[] = [
+    {
+      id: '1',
+      title: 'Basic Greetings',
+      type: 'conversation',
+      level: 'N5',
+      estimatedMinutes: 15,
+      description: 'Learn essential Japanese greetings for everyday conversations.',
+    },
+    {
+      id: '2',
+      title: 'Numbers 1-100',
+      type: 'vocabulary',
+      level: 'N5',
+      estimatedMinutes: 20,
+      description: 'Master counting in Japanese from 1 to 100.',
+    },
+    {
+      id: '3',
+      title: 'IT Terminology Basics',
+      type: 'vocabulary',
+      level: 'N5',
+      estimatedMinutes: 25,
+      description: 'Essential IT vocabulary for beginners in Japanese.',
+    },
+  ]
 }
+</script>
+
+<style lang="sass" scoped>
+.welcome-header
+  margin-bottom: 2rem
+
+  small
+    display: block
+    font-size: 1rem
+    font-weight: normal
+    color: rgba(0, 0, 0, 0.7)
+    margin-top: 0.5rem
+
+.daily-progress
+  text-align: center
+
+  .v-card-text
+    display: flex
+    flex-direction: column
+    align-items: center
+
+.progress-details
+  text-align: center
+
+  p
+    margin: 0.5rem 0
 </style>

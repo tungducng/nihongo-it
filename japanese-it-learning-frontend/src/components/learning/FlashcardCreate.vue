@@ -9,7 +9,7 @@
       <v-form @submit.prevent="createFlashcard" ref="form" v-model="isFormValid">
         <v-text-field
           v-model="front"
-          :rules="[(v) => !!v || 'Vui lòng nhập nội dung mặt trước']"
+          :rules="frontRules"
           label="Mặt trước (Tiếng Nhật)"
           required
           variant="outlined"
@@ -21,7 +21,7 @@
 
         <v-text-field
           v-model="back"
-          :rules="[(v) => !!v || 'Vui lòng nhập nội dung mặt sau']"
+          :rules="backRules"
           label="Mặt sau (Nghĩa tiếng Việt)"
           required
           variant="outlined"
@@ -80,7 +80,7 @@
             type="submit"
             color="primary"
             block
-            :loading="flashcardsStore.loading"
+            :loading="loading"
             :disabled="!isFormValid"
             prepend-icon="mdi-check"
           >
@@ -92,7 +92,7 @@
             color="secondary"
             block
             @click="resetForm"
-            :disabled="flashcardsStore.loading"
+            :disabled="loading"
             prepend-icon="mdi-refresh"
           >
             Làm mới
@@ -100,12 +100,7 @@
         </div>
 
         <div class="text-center mt-4">
-          <v-btn
-            variant="text"
-            color="primary"
-            @click="router.back()"
-            prepend-icon="mdi-arrow-left"
-          >
+          <v-btn variant="text" color="primary" @click="goBack" prepend-icon="mdi-arrow-left">
             Quay lại
           </v-btn>
         </div>
@@ -122,51 +117,78 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+<script lang="ts">
+import { Component, Vue } from 'vue-facing-decorator'
 import { useFlashcardsStore } from '@/stores'
+import { useRouter } from 'vue-router'
+import { Ref } from 'vue-facing-decorator'
 
-const router = useRouter()
-const flashcardsStore = useFlashcardsStore()
-const form = ref(null)
-const isFormValid = ref(false)
-const showSnackbar = ref(false)
-const previewTab = ref('front')
-
-const front = ref('')
-const back = ref('')
-const notes = ref('')
-
-const createFlashcard = async () => {
-  await flashcardsStore.createFlashcard({
-    front: front.value,
-    back: back.value,
-    notes: notes.value,
-  })
-
-  // Show success message
-  showSnackbar.value = true
-
-  // Clear the form
-  resetForm()
+interface FormInstance {
+  reset: () => void
 }
 
-const resetForm = () => {
-  front.value = ''
-  back.value = ''
-  notes.value = ''
-  if (form.value) {
-    // Reset validation
-    form.value.reset()
+@Component({
+  name: 'FlashcardCreate',
+})
+export default class FlashcardCreate extends Vue {
+  private flashcardsStore = useFlashcardsStore()
+  private router = useRouter()
+
+  @Ref() form!: FormInstance | null
+
+  isFormValid = false
+  showSnackbar = false
+  previewTab = 'front'
+
+  front = ''
+  back = ''
+  notes = ''
+
+  get loading(): boolean {
+    return this.flashcardsStore.loading
+  }
+
+  get frontRules(): Array<(v: string) => boolean | string> {
+    return [(v: string) => !!v || 'Vui lòng nhập nội dung mặt trước']
+  }
+
+  get backRules(): Array<(v: string) => boolean | string> {
+    return [(v: string) => !!v || 'Vui lòng nhập nội dung mặt sau']
+  }
+
+  async createFlashcard(): Promise<void> {
+    await this.flashcardsStore.createFlashcard({
+      front: this.front,
+      back: this.back,
+      notes: this.notes,
+    })
+
+    // Show success message
+    this.showSnackbar = true
+
+    // Clear the form
+    this.resetForm()
+  }
+
+  resetForm(): void {
+    this.front = ''
+    this.back = ''
+    this.notes = ''
+    if (this.form) {
+      // Reset validation
+      this.form.reset()
+    }
+  }
+
+  goBack(): void {
+    this.router.back()
   }
 }
 </script>
 
-<style scoped>
-.flashcard-create-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-}
+<style lang="sass" scoped>
+.flashcard-create-container
+  max-width: 600px
+  margin: 0 auto
+  padding: 20px
 </style>

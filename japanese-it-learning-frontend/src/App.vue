@@ -1,14 +1,3 @@
-<script setup lang="ts">
-import { RouterView } from 'vue-router'
-import Header from './components/common/Header.vue'
-import Footer from './components/common/Footer.vue'
-import { onMounted } from 'vue'
-
-onMounted(() => {
-  // Initialize user from localStorage if available
-})
-</script>
-
 <template>
   <v-app>
     <Header />
@@ -23,4 +12,25 @@ onMounted(() => {
   </v-app>
 </template>
 
-<style lang="scss"></style>
+<script lang="ts">
+import { Component, Vue } from 'vue-facing-decorator'
+import { RouterView } from 'vue-router'
+import Header from './components/common/Header.vue'
+import Footer from './components/common/Footer.vue'
+
+@Component({
+  name: 'App',
+  components: {
+    RouterView,
+    Header,
+    Footer,
+  },
+})
+export default class App extends Vue {
+  mounted(): void {
+    // Initialize user from localStorage if available
+  }
+}
+</script>
+
+<style lang="sass"></style>

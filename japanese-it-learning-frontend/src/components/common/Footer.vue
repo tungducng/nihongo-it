@@ -7,9 +7,17 @@
   </v-footer>
 </template>
 
-<style lang="scss" scoped>
-.v-footer {
-  background-color: $color-background-soft;
-  padding: 1rem;
-}
+<script lang="ts">
+import { Component, Vue } from 'vue-facing-decorator'
+
+@Component({
+  name: 'Footer',
+})
+export default class Footer extends Vue {}
+</script>
+
+<style lang="sass" scoped>
+.v-footer
+  background-color: #f8f9fa
+  padding: 1rem
 </style>

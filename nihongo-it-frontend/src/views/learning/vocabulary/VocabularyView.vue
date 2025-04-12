@@ -137,6 +137,7 @@
             v-for="item in vocabulary"
             :key="item.vocabId"
             class="vocabulary-item"
+            :data-vocab-id="item.vocabId"
             @click="toggleExpand(item.vocabId)"
           >
             <!-- Main Row Content -->
@@ -190,7 +191,7 @@
                     icon="mdi-volume-high"
                     size="small"
                     variant="text"
-                    @click.stop="playAudio(item.audioPath || item.audioUrl || null)"
+                    @click.stop="playAudio(item.audioPath || item.audioUrl || null, item)"
                     class="mr-2 action-btn"
                     color="blue"
                     title="Play pronunciation"
@@ -240,7 +241,7 @@
                     icon="mdi-volume-high"
                     size="x-small"
                     variant="text"
-                    @click.stop="playAudio(item.exampleAudioPath || item.audioPath || item.audioUrl || null)"
+                    @click.stop="playAudio(item.exampleAudioPath || null, item, true)"
                     color="blue"
                     title="Play example audio"
                     class="action-btn"
@@ -396,7 +397,9 @@
 import { Component, Vue } from 'vue-facing-decorator'
 import { useToast } from 'vue-toast-notification'
 import vocabularyService from '@/services/vocabulary.service'
+import authService from '@/services/auth.service'
 import type { VocabularyItem, VocabularyFilter } from '@/services/vocabulary.service'
+import axios from 'axios'
 
 @Component({
   name: 'VocabularyView'
@@ -603,26 +606,131 @@ export default class VocabularyView extends Vue {
     }
   }
 
-  async playAudio(audioPath: string | null): Promise<void> {
+  async playAudio(audioPath: string | null, vocabItem?: VocabularyItem, isExampleSentence: boolean = false): Promise<void> {
     const toast = useToast();
-    if (!audioPath) {
-      toast.warning('No audio available for this vocabulary', {
-        position: 'top',
-        duration: 3000
-      });
+
+    if (audioPath) {
+      // If there's an existing audio path, use it
+      try {
+        const audio = new Audio(audioPath);
+        await audio.play();
+      } catch (error) {
+        console.error('Error playing audio:', error);
+        toast.error('Failed to play audio', {
+          position: 'top',
+          duration: 3000
+        });
+      }
       return;
     }
 
+    // No audio path available, use TTS API
     try {
-      const audio = new Audio(audioPath);
+      // Get the item either from the parameter or by finding it in the vocabulary array
+      const currentItem = vocabItem || this.getCurrentItemFromEvent();
+
+      if (!currentItem) {
+        toast.warning('Could not identify vocabulary item', {
+          position: 'top',
+          duration: 3000
+        });
+        return;
+      }
+
+      // Determine which text to use for speech
+      let textToSpeak = '';
+
+      if (isExampleSentence && currentItem.exampleSentence) {
+        // Use example sentence if requested and available
+        textToSpeak = currentItem.exampleSentence;
+      } else {
+        // Use vocabulary word based on new priority: katakana -> kanji -> hiragana
+        if (currentItem.katakana) {
+          textToSpeak = currentItem.katakana;
+        } else if (currentItem.kanji) {
+          textToSpeak = currentItem.kanji;
+        } else if (currentItem.hiragana) {
+          textToSpeak = currentItem.hiragana;
+        } else {
+          toast.warning('No Japanese text available for this vocabulary', {
+            position: 'top',
+            duration: 3000
+          });
+          return;
+        }
+      }
+
+      // Show loading indicator
+      toast.info('Generating audio...', {
+        position: 'top',
+        duration: 2000
+      });
+
+      // Get the backend API URL
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+      // Set speed: 0.9 for vocabulary, 1.0 for example sentences
+      const speed = isExampleSentence ? 1.0 : 0.9;
+
+      // Get authentication token
+      const authToken = authService.getToken();
+      if (!authToken) {
+        toast.error('Authentication required', {
+          position: 'top',
+          duration: 3000
+        });
+        return;
+      }
+
+      // Call the TTS API with Authorization header
+      const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
+        headers: {
+          'Content-Type': 'text/plain; charset=UTF-8',
+          'Accept-Language': 'ja-JP',
+          'X-Speech-Speed': speed.toString(),
+          'X-Content-Language': 'ja',
+          'X-Content-Is-Example': isExampleSentence.toString(),
+          'Authorization': `Bearer ${authToken}`,
+          'Accept': 'audio/mpeg'
+        },
+        responseType: 'arraybuffer'
+      });
+
+      // Convert response to blob and create audio URL
+      const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // Play the audio
+      const audio = new Audio(audioUrl);
       await audio.play();
+
+      // Clean up the object URL after playing
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+      };
+
     } catch (error) {
-      console.error('Error playing audio:', error);
-      toast.error('Failed to play audio', {
+      console.error('Error generating or playing TTS audio:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to generate speech', {
         position: 'top',
         duration: 3000
       });
     }
+  }
+
+  // Helper method to get current item from event context
+  getCurrentItemFromEvent(): VocabularyItem | null {
+    // This relies on the event coming from a button inside a list item
+    // The list item has the vocab ID
+    const button = event?.target as HTMLElement;
+    const listItem = button?.closest('.vocabulary-item');
+    const vocabId = listItem?.getAttribute('data-vocab-id');
+
+    if (vocabId) {
+      return this.vocabulary.find(item => item.vocabId === vocabId) || null;
+    }
+
+    return null;
   }
 
   viewDetails(item: VocabularyItem) {

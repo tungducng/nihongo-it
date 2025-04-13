@@ -207,6 +207,8 @@
                     class="mr-2 action-btn"
                     color="blue"
                     title="Play pronunciation"
+                    :loading="playingAudioId === item.vocabId"
+                    :disabled="playingAudioId !== null && playingAudioId !== item.vocabId || playingExampleAudioId !== null"
                   ></v-btn>
 
                   <v-btn
@@ -257,6 +259,8 @@
                     color="blue"
                     title="Play example audio"
                     class="action-btn"
+                    :loading="playingExampleAudioId === item.vocabId"
+                    :disabled="playingExampleAudioId !== null && playingExampleAudioId !== item.vocabId || playingAudioId !== null"
                   ></v-btn>
                 </div>
                 <div v-if="item.exampleSentenceTranslation" class="example-translation ml-6 mt-1 text-caption text-medium-emphasis">
@@ -427,6 +431,8 @@ export default class VocabularyView extends Vue {
   chatGPTItems: string[] = []
   loadingChatGPT: string | null = null
   chatInputs: Record<string, string> = {}
+  playingAudioId: string | null = null
+  playingExampleAudioId: string | null = null
 
   filters = {
     keyword: null as string | null,
@@ -621,113 +627,119 @@ export default class VocabularyView extends Vue {
   async playAudio(audioPath: string | null, vocabItem?: VocabularyItem, isExampleSentence: boolean = false): Promise<void> {
     const toast = useToast();
 
-    if (audioPath) {
-      // If there's an existing audio path, use it
-      try {
+    if (!vocabItem) {
+      toast.error('Could not identify vocabulary item');
+      return;
+    }
+
+    // Set loading state based on whether it's a word or example
+    if (isExampleSentence) {
+      this.playingExampleAudioId = vocabItem.vocabId;
+    } else {
+      this.playingAudioId = vocabItem.vocabId;
+    }
+
+    try {
+      if (audioPath) {
+        // If there's an existing audio path, use it
         const audio = new Audio(audioPath);
         await audio.play();
-      } catch (error) {
-        console.error('Error playing audio:', error);
-        toast.error('Failed to play audio', {
-          position: 'top',
-          duration: 3000
-        });
-      }
-      return;
-    }
-
-    // Verify authentication before proceeding
-    const authToken = authService.getToken();
-    if (!authToken) {
-      toast.error('Please log in to use text-to-speech', {
-        position: 'top',
-        duration: 4000
-      });
-      // Redirect to login page after a short delay
-      setTimeout(() => {
-        this.$router.push({
-          name: 'login',
-          query: { redirect: this.$route.fullPath }
-        });
-      }, 1500);
-      return;
-    }
-
-    // No audio path available, use TTS API
-    try {
-      // Get the item either from the parameter or by finding it in the vocabulary array
-      const currentItem = vocabItem || this.getCurrentItemFromEvent();
-
-      if (!currentItem) {
-        toast.warning('Could not identify vocabulary item', {
-          position: 'top',
-          duration: 3000
-        });
-        return;
-      }
-
-      // Determine which text to use for speech
-      let textToSpeak = '';
-
-      if (isExampleSentence && currentItem.exampleSentence) {
-        // Use example sentence if requested and available
-        textToSpeak = currentItem.exampleSentence;
       } else {
-        // Use vocabulary word based on new priority: katakana -> kanji -> hiragana
-        if (currentItem.katakana) {
-          textToSpeak = currentItem.katakana;
-        } else if (currentItem.kanji) {
-          textToSpeak = currentItem.kanji;
-        } else if (currentItem.hiragana) {
-          textToSpeak = currentItem.hiragana;
-        } else {
-          toast.warning('No Japanese text available for this vocabulary', {
+        // Verify authentication before proceeding
+        const authToken = authService.getToken();
+        if (!authToken) {
+          toast.error('Please log in to use text-to-speech', {
+            position: 'top',
+            duration: 4000
+          });
+          // Redirect to login page after a short delay
+          setTimeout(() => {
+            this.$router.push({
+              name: 'login',
+              query: { redirect: this.$route.fullPath }
+            });
+          }, 1500);
+          return;
+        }
+
+        // No audio path available, use TTS API
+        // Get the item either from the parameter or by finding it in the vocabulary array
+        const currentItem = vocabItem || this.getCurrentItemFromEvent();
+
+        if (!currentItem) {
+          toast.warning('Could not identify vocabulary item', {
             position: 'top',
             duration: 3000
           });
           return;
         }
+
+        // Determine which text to use for speech
+        let textToSpeak = '';
+
+        if (isExampleSentence && currentItem.exampleSentence) {
+          // Use example sentence if requested and available
+          textToSpeak = currentItem.exampleSentence;
+        } else {
+          // Use vocabulary word based on priority: katakana -> kanji -> hiragana
+          if (currentItem.katakana) {
+            textToSpeak = currentItem.katakana;
+          } else if (currentItem.kanji) {
+            textToSpeak = currentItem.kanji;
+          } else if (currentItem.hiragana) {
+            textToSpeak = currentItem.hiragana;
+          } else {
+            toast.warning('No Japanese text available for this vocabulary', {
+              position: 'top',
+              duration: 3000
+            });
+            return;
+          }
+        }
+
+        // Show loading indicator
+        toast.info('Generating audio...', {
+          position: 'top',
+          duration: 2000
+        });
+
+        // Get the backend API URL
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+        // Set speed: 0.9 for vocabulary, 1.0 for example sentences
+        const speed = isExampleSentence ? 1.0 : 0.9;
+
+        // Call the TTS API with Authorization header
+        const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
+          headers: {
+            'Content-Type': 'text/plain; charset=UTF-8',
+            'Accept-Language': 'ja-JP',
+            'X-Speech-Speed': speed.toString(),
+            'X-Content-Language': 'ja',
+            'X-Content-Is-Example': isExampleSentence.toString(),
+            'Authorization': `Bearer ${authToken}`,
+            'Accept': 'audio/mpeg'
+          },
+          responseType: 'arraybuffer'
+        });
+
+        // Convert response to blob and create audio URL
+        const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+
+        // Play the audio
+        const audio = new Audio(audioUrl);
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          if (isExampleSentence) {
+            this.playingExampleAudioId = null;
+          } else {
+            this.playingAudioId = null;
+          }
+        };
+
+        await audio.play();
       }
-
-      // Show loading indicator
-      toast.info('Generating audio...', {
-        position: 'top',
-        duration: 2000
-      });
-
-      // Get the backend API URL
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-      // Set speed: 0.9 for vocabulary, 1.0 for example sentences
-      const speed = isExampleSentence ? 1.0 : 0.9;
-
-      // Call the TTS API with Authorization header
-      const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
-        headers: {
-          'Content-Type': 'text/plain; charset=UTF-8',
-          'Accept-Language': 'ja-JP',
-          'X-Speech-Speed': speed.toString(),
-          'X-Content-Language': 'ja',
-          'X-Content-Is-Example': isExampleSentence.toString(),
-          'Authorization': `Bearer ${authToken}`,
-          'Accept': 'audio/mpeg'
-        },
-        responseType: 'arraybuffer'
-      });
-
-      // Convert response to blob and create audio URL
-      const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
-      const audioUrl = URL.createObjectURL(audioBlob);
-
-      // Play the audio
-      const audio = new Audio(audioUrl);
-      await audio.play();
-
-      // Clean up the object URL after playing
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-      };
-
     } catch (error) {
       console.error('Error generating or playing TTS audio:', error);
 
@@ -742,6 +754,24 @@ export default class VocabularyView extends Vue {
           position: 'top',
           duration: 3000
         });
+      }
+    } finally {
+      // Reset loading state if no audio was played (in case of error)
+      // For successful audio playback, the onended event will handle this
+      if (!audioPath) {
+        setTimeout(() => {
+          if (isExampleSentence) {
+            this.playingExampleAudioId = null;
+          } else {
+            this.playingAudioId = null;
+          }
+        }, 3000);
+      } else {
+        if (isExampleSentence) {
+          this.playingExampleAudioId = null;
+        } else {
+          this.playingAudioId = null;
+        }
       }
     }
   }

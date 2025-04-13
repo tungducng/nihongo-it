@@ -94,14 +94,6 @@
               </h3>
               <v-chip color="success" variant="outlined">{{ vocabulary.category || 'Uncategorized' }}</v-chip>
             </section>
-
-            <section v-if="vocabulary.notes" class="notes-section mb-6 flex-grow-1">
-              <h3 class="section-title">
-                <v-icon color="primary" class="mr-2">mdi-note-text</v-icon>
-                Notes
-              </h3>
-              <p class="section-content text-body-2">{{ vocabulary.notes }}</p>
-            </section>
           </div>
 
           <!-- Additional Info -->

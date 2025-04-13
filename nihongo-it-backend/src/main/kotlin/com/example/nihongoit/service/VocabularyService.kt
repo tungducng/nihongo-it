@@ -219,13 +219,21 @@ class VocabularyService(
         val currentUserId = userAuthUtil.getCurrentUserId()
             ?: throw BusinessException("User not authenticated")
 
-        val pageable = PageRequest.of(filter.page, filter.size)
-        val result = vocabularyRepository.findSavedByUser(currentUserId, pageable)
+        // Use pagination parameters from the filter
+        val pageable = createPageableWithSort(filter.page, filter.size, filter.sort)
+        
+        // Apply keyword filter if provided
+        val result = if (filter.keyword != null && filter.keyword.isNotBlank()) {
+            vocabularyRepository.findSavedByUserAndKeyword(currentUserId, filter.keyword, pageable)
+        } else {
+            vocabularyRepository.findSavedByUser(currentUserId, pageable)
+        }
 
         val content = result.content.map { vocabulary ->
             mapToResponse(vocabulary, true)
         }
 
+        // Create a response with pagination information
         return PagedVocabularyResponseDto(
             content = content,
             page = result.number,
@@ -234,6 +242,21 @@ class VocabularyService(
             totalPages = result.totalPages,
             lastPage = result.isLast,
         )
+    }
+    
+    /**
+     * Creates a PageRequest with sorting based on the sort parameter
+     */
+    private fun createPageableWithSort(page: Int, size: Int, sort: String?): PageRequest {
+        return when(sort) {
+            "date_asc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").ascending())
+            "date_desc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending())
+            "jlpt_asc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("jlptLevel").ascending())
+            "jlpt_desc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("jlptLevel").descending())
+            "alpha_asc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("hiragana").ascending())
+            "alpha_desc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("hiragana").descending())
+            else -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending())
+        }
     }
 
     private fun mapToResponse(vocabulary: VocabularyEntity, isSaved: Boolean = false): VocabularyDto {

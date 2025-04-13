@@ -9,4 +9,5 @@ data class VocabularyFilterRequestDto(
     val keyword: String? = null,
     val page: Int = 0,
     val size: Int = 20,
+    val sort: String? = "date_desc"
 )

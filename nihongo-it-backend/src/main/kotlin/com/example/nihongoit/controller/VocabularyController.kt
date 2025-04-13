@@ -251,17 +251,28 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
         ]
     )
     fun getSavedVocabulary(
+        @Parameter(description = "Search by keyword in hiragana, kanji, or meaning")
+        @RequestParam(required = false) keyword: String?,
+        
         @Parameter(description = "Page number (0-based)")
         @RequestParam(defaultValue = "0") page: Int,
         
         @Parameter(description = "Page size")
         @RequestParam(defaultValue = "20") size: Int,
+        
+        @Parameter(description = "Sort option")
+        @RequestParam(defaultValue = "date_desc") sort: String?,
     ): PagedVocabularyResponseDto {
         // Validate page and size parameters to prevent invalid values
         val validPage = if (page < 0) 0 else page
         val validSize = if (size <= 0) 20 else if (size > 100) 100 else size
         
-        val filter = VocabularyFilterRequestDto(page = validPage, size = validSize)
+        val filter = VocabularyFilterRequestDto(
+            keyword = keyword,
+            page = validPage,
+            size = validSize,
+            sort = sort
+        )
         val result = vocabularyService.getSavedVocabulary(filter)
         return result
     }

@@ -35,4 +35,21 @@ interface VocabularyRepository : JpaRepository<VocabularyEntity, UUID> {
     // Find saved vocabulary for a specific user
     @Query("SELECT v FROM VocabularyEntity v JOIN v.savedByUsers u WHERE u.userId = :userId")
     fun findSavedByUser(@Param("userId") userId: UUID, pageable: Pageable): Page<VocabularyEntity>
+
+    @Query("""
+        SELECT v FROM VocabularyEntity v
+        JOIN v.savedByUsers u
+        WHERE u.userId = :userId
+        AND (
+            LOWER(v.hiragana) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(v.kanji) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(v.katakana) LIKE LOWER(CONCAT('%', :keyword, '%'))
+            OR LOWER(v.meaning) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        )
+    """)
+    fun findSavedByUserAndKeyword(
+        @Param("userId") userId: UUID,
+        @Param("keyword") keyword: String,
+        pageable: Pageable
+    ): Page<VocabularyEntity>
 } 

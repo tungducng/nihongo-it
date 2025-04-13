@@ -51,6 +51,6 @@ data class VocabularyDto(
     @JsonProperty("createdBy")
     val createdBy: String,
 
-    @JsonProperty("updatedAt")
+    @JsonProperty("isSaved")
     val isSaved: Boolean = false,
 )

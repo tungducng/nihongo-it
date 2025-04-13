@@ -36,7 +36,7 @@ server:
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET}
-  expiration: 86400000
+  expiration: 10000
 
 
 # Swagger/OpenAPI

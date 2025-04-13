@@ -61,7 +61,9 @@ import 'vue-toast-notification/dist/theme-sugar.css'
 })
 export default class LoginView extends Vue {
   private authStore = useAuthStore()
-  private $toast = useToast()
+  private getToast() {
+    return useToast()
+  }
 
   @Ref('form') readonly form!: any
 
@@ -77,12 +79,24 @@ export default class LoginView extends Vue {
     if (this.authStore.isAuthenticated) {
       console.log('User already authenticated, redirecting to home')
       this.$router.push('/')
+    } else {
+      // Check for error message in query params
+      const errorMsg = this.$route.query.error
+      if (errorMsg) {
+        const toast = this.getToast()
+        toast.error(String(errorMsg), {
+          position: 'top',
+          duration: 4000
+        })
+      }
     }
   }
 
   async handleLogin(): Promise<void> {
+    const toast = this.getToast()
+
     if (!this.email || !this.password) {
-      this.$toast.error('Please enter email and password', {
+      toast.error('Please enter email and password', {
         position: 'top',
         duration: 3000
       })
@@ -96,7 +110,7 @@ export default class LoginView extends Vue {
     })
 
     if (success) {
-      this.$toast.success('Login successful!', {
+      toast.success('Login successful!', {
         position: 'top',
         duration: 3000
       })
@@ -109,7 +123,7 @@ export default class LoginView extends Vue {
       console.log('Redirecting to:', redirectPath)
       this.$router.push(redirectPath)
     } else {
-      this.$toast.error(this.authStore.error || 'Login failed', {
+      toast.error(this.authStore.error || 'Login failed', {
         position: 'top',
         duration: 3000
       })

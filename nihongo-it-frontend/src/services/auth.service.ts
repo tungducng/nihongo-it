@@ -113,6 +113,26 @@ class AuthService {
   isLoggedIn(): boolean {
     return !!this.getToken();
   }
+
+  async isTokenValid(): Promise<boolean> {
+    const token = this.getToken();
+    if (!token) return false;
+
+    try {
+      // Use the getCurrentUser endpoint to verify token validity
+      // This endpoint should already exist in your backend
+      const response = await apiClient.get('/api/v1/auth/current', {
+        timeout: 3000 // Set timeout to detect server unavailability quickly
+      });
+
+      // If we get a successful response with user data, the token is valid
+      return response.data && response.data.status === 'OK';
+    } catch (error) {
+      console.error('Token validation error:', error);
+      // If server is down or token is invalid, return false
+      return false;
+    }
+  }
 }
 
 export default new AuthService();

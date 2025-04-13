@@ -624,6 +624,26 @@ export default class VocabularyView extends Vue {
       return;
     }
 
+    // Verify authentication before proceeding
+    const authToken = authService.getToken();
+    if (!authToken) {
+      toast.error('Please log in to use text-to-speech', {
+        position: 'top',
+        duration: 4000
+      });
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        this.$router.push({
+          name: 'login',
+          query: { redirect: this.$route.fullPath }
+        });
+      }, 1500);
+      return;
+    }
+
+    // Even if we have a token, we'll try to proceed anyway.
+    // Any 401 errors will be caught in the axios interceptor.
+
     // No audio path available, use TTS API
     try {
       // Get the item either from the parameter or by finding it in the vocabulary array
@@ -671,16 +691,6 @@ export default class VocabularyView extends Vue {
 
       // Set speed: 0.9 for vocabulary, 1.0 for example sentences
       const speed = isExampleSentence ? 1.0 : 0.9;
-
-      // Get authentication token
-      const authToken = authService.getToken();
-      if (!authToken) {
-        toast.error('Authentication required', {
-          position: 'top',
-          duration: 3000
-        });
-        return;
-      }
 
       // Call the TTS API with Authorization header
       const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {

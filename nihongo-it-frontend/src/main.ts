@@ -33,6 +33,33 @@ axios.interceptors.request.use(
   error => Promise.reject(error)
 )
 
+// Add response interceptor to handle unauthorized errors
+axios.interceptors.response.use(
+  response => response,
+  error => {
+    // Handle 401 Unauthorized errors
+    if (error.response && error.response.status === 401) {
+      console.log('Unauthorized access detected, redirecting to login')
+
+      // Clear auth token and user data
+      localStorage.removeItem('auth_token')
+
+      // Get Pinia store outside of Vue component
+      const pinia = createPinia()
+      const authStore = useAuthStore(pinia)
+      authStore.logout()
+
+      // Check if we're not already on the login page to avoid redirect loops
+      const currentPath = window.location.pathname
+      if (!currentPath.includes('/login')) {
+        // Redirect to login page with current location for redirect after login
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
 const app = createApp(App)
 const pinia = createPinia()
 

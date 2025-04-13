@@ -40,21 +40,35 @@ axios.interceptors.response.use(
   error => {
     // Handle 401 Unauthorized errors
     if (error.response && error.response.status === 401) {
-      console.log('Unauthorized access detected, redirecting to login')
+      console.log('Unauthorized access detected, checking request...');
+
+      // Check if this is a TTS API request (which should not trigger logout)
+      const isTtsRequest = error.config &&
+        (error.config.url?.includes('/api/v1/tts/') ||
+         error.config.headers['X-Content-Language'] === 'ja' ||
+         error.config.url?.includes('/tts/'));
+
+      if (isTtsRequest) {
+        console.log('TTS API unauthorized error - not logging out user');
+        // Just return the error for TTS requests without logging out
+        return Promise.reject(error);
+      }
+
+      console.log('Non-TTS unauthorized access, redirecting to login');
 
       // Clear auth token and user data
-      localStorage.removeItem('auth_token')
+      localStorage.removeItem('auth_token');
 
       // Get Pinia store outside of Vue component
-      const pinia = createPinia()
-      const authStore = useAuthStore(pinia)
-      authStore.logout()
+      const pinia = createPinia();
+      const authStore = useAuthStore(pinia);
+      authStore.logout();
 
       // Handle session expiration with notification and redirect
-      const currentPath = window.location.pathname
-      handleSessionExpiration(currentPath)
+      const currentPath = window.location.pathname;
+      handleSessionExpiration(currentPath);
     }
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
 )
 

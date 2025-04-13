@@ -85,14 +85,24 @@
             </v-card>
           </section>
 
-          <!-- Category Section -->
-          <section class="category-section mb-6" style="min-width: 200px">
-            <h3 class="section-title">
-              <v-icon color="primary" class="mr-2">mdi-tag</v-icon>
-              Category
-            </h3>
-            <v-chip color="success" variant="outlined">{{ vocabulary.category || 'Uncategorized' }}</v-chip>
-          </section>
+          <!-- Category and Notes Section -->
+          <div class="d-flex flex-wrap">
+            <section class="category-section me-6 mb-6" style="min-width: 200px">
+              <h3 class="section-title">
+                <v-icon color="primary" class="mr-2">mdi-tag</v-icon>
+                Category
+              </h3>
+              <v-chip color="success" variant="outlined">{{ vocabulary.category || 'Uncategorized' }}</v-chip>
+            </section>
+
+            <section v-if="vocabulary.notes" class="notes-section mb-6 flex-grow-1">
+              <h3 class="section-title">
+                <v-icon color="primary" class="mr-2">mdi-note-text</v-icon>
+                Notes
+              </h3>
+              <p class="section-content text-body-2">{{ vocabulary.notes }}</p>
+            </section>
+          </div>
 
           <!-- Additional Info -->
           <section class="additional-info-section mt-4">

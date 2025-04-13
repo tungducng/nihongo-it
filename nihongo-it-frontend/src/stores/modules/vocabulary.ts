@@ -8,13 +8,18 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
   // State
   const currentVocabulary = ref<VocabularyItem | null>(null)
   const relatedVocabulary = ref<VocabularyItem[]>([])
+  const savedVocabulary = ref<VocabularyItem[]>([])
   const loading = ref(false)
+  const savedLoading = ref(false)
   const error = ref<string | null>(null)
   const processedExample = ref('')
+  const totalSavedItems = ref(0)
+  const totalSavedPages = ref(0)
 
   // Getters
   const hasVocabulary = computed(() => !!currentVocabulary.value)
   const hasRelatedItems = computed(() => relatedVocabulary.value.length > 0)
+  const hasSavedItems = computed(() => savedVocabulary.value.length > 0)
   const isFavorite = computed(() => currentVocabulary.value?.isSaved || false)
 
   // Actions
@@ -31,13 +36,69 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
       console.error('Error fetching vocabulary details:', err)
       error.value = err.response?.data?.message || 'Failed to load vocabulary details'
       const toast = useToast()
-      toast.error(error.value, {
+      toast.error(error.value || 'Failed to load vocabulary details', {
         position: 'top',
         duration: 3000
       })
       return null
     } finally {
       loading.value = false
+    }
+  }
+
+  async function fetchSavedVocabulary(page = 0, size = 10, keyword?: string, sort?: string) {
+    savedLoading.value = true
+    error.value = null
+
+    try {
+      const filter: VocabularyFilter = {
+        page,
+        size
+      }
+
+      // Add keyword and sort if provided
+      if (keyword) {
+        filter.keyword = keyword
+      }
+
+      if (sort) {
+        filter.sort = sort
+      }
+
+      const response = await vocabularyService.getSavedVocabulary(filter)
+
+      if (response && Array.isArray(response.content)) {
+        savedVocabulary.value = response.content
+        totalSavedItems.value = response.totalElements
+        totalSavedPages.value = response.totalPages
+      } else {
+        savedVocabulary.value = []
+        totalSavedItems.value = 0
+        totalSavedPages.value = 0
+
+        // Don't show error for empty results
+        if (!response) {
+          throw new Error('Invalid response format')
+        }
+      }
+
+      return response
+    } catch (err: any) {
+      console.error('Error fetching saved vocabulary:', err)
+      error.value = err.response?.data?.message || 'Failed to load saved vocabulary'
+      savedVocabulary.value = []
+      totalSavedItems.value = 0
+      totalSavedPages.value = 0
+
+      const toast = useToast()
+      toast.error(error.value || 'Failed to load saved vocabulary', {
+        position: 'top',
+        duration: 3000
+      })
+
+      return null
+    } finally {
+      savedLoading.value = false
     }
   }
 
@@ -104,12 +165,48 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
     }
   }
 
+  async function removeSavedItem(vocabId: string) {
+    const toast = useToast()
+    try {
+      await vocabularyService.removeSavedVocabulary(vocabId)
+
+      // Remove the item from the local state
+      savedVocabulary.value = savedVocabulary.value.filter(item => item.vocabId !== vocabId)
+
+      // Decrement the total count
+      if (totalSavedItems.value > 0) {
+        totalSavedItems.value--
+      }
+
+      toast.success('Removed from saved items', {
+        position: 'top',
+        duration: 2000
+      })
+
+      return true
+    } catch (err) {
+      console.error('Error removing saved item:', err)
+      toast.error('Failed to remove item from saved list', {
+        position: 'top',
+        duration: 3000
+      })
+      return false
+    }
+  }
+
   function reset() {
     currentVocabulary.value = null
     relatedVocabulary.value = []
     loading.value = false
     error.value = null
     processedExample.value = ''
+  }
+
+  function resetSaved() {
+    savedVocabulary.value = []
+    savedLoading.value = false
+    totalSavedItems.value = 0
+    totalSavedPages.value = 0
   }
 
   function setProcessedExample(text: string) {
@@ -120,20 +217,28 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
     // State
     currentVocabulary,
     relatedVocabulary,
+    savedVocabulary,
     loading,
+    savedLoading,
     error,
     processedExample,
+    totalSavedItems,
+    totalSavedPages,
 
     // Getters
     hasVocabulary,
     hasRelatedItems,
+    hasSavedItems,
     isFavorite,
 
     // Actions
     fetchVocabularyById,
     fetchRelatedTerms,
+    fetchSavedVocabulary,
     toggleFavorite,
+    removeSavedItem,
     reset,
+    resetSaved,
     setProcessedExample
   }
 })

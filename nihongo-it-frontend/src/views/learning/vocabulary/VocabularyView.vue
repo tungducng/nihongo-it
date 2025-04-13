@@ -1,6 +1,18 @@
 <template>
   <v-container fluid>
-    <h2 class="font-weight-bold mb-1" style="font-size: 1.3rem;">Nihongo Vocabulary</h2>
+    <div class="d-flex align-center mb-4">
+      <h2 class="font-weight-bold" style="font-size: 1.3rem;">Nihongo Vocabulary</h2>
+      <v-spacer></v-spacer>
+      <v-btn
+        color="primary"
+        variant="outlined"
+        prepend-icon="mdi-bookmark-multiple"
+        :to="{ name: 'savedVocabulary' }"
+        class="ml-2"
+      >
+        My Saved Vocabulary
+      </v-btn>
+    </div>
 
     <!-- Search and Filter Bar -->
     <v-card class="mb-6 filter-card elevation-1">

@@ -21,15 +21,16 @@ export interface VocabularyItem {
 }
 
 export interface VocabularyFilter {
-  keyword?: string | null
   jlptLevel?: string | null
   category?: string | null
-  page: number
-  size: number
+  keyword?: string | null
+  page?: number
+  size?: number
+  sort?: string
 }
 
-export interface PagedResponse {
-  content: VocabularyItem[]
+export interface PagedResponse<T> {
+  content: T[]
   page: number
   size: number
   totalElements: number
@@ -41,7 +42,7 @@ const API_URL = '/api/v1/vocabulary'
 
 class VocabularyService {
   // Get vocabulary with filters
-  async getVocabulary(filter: VocabularyFilter): Promise<PagedResponse> {
+  async getVocabulary(filter: VocabularyFilter): Promise<PagedResponse<VocabularyItem>> {
     try {
       const response = await axios.get(API_URL, {
         params: filter,
@@ -122,27 +123,29 @@ class VocabularyService {
   }
 
   // Get saved vocabulary
-  async getSavedVocabulary(filter: VocabularyFilter): Promise<PagedResponse> {
+  async getSavedVocabulary(filter: VocabularyFilter | URLSearchParams): Promise<PagedResponse<VocabularyItem>> {
+    let url = '/api/v1/vocabulary/saved'
+
     try {
-      const response = await axios.get(`${API_URL}/saved`, {
-        params: filter,
-        headers: { 'Accept': 'application/json' }
-      })
+      if (filter instanceof URLSearchParams) {
+        url += `?${filter.toString()}`
+        const response = await axios.get(url)
+        return response.data
+      } else {
+        // Build query params the old way
+        const params = new URLSearchParams()
+        if (filter.page !== undefined) params.append('page', filter.page.toString())
+        if (filter.size !== undefined) params.append('size', filter.size.toString())
+        if (filter.keyword) params.append('keyword', filter.keyword)
+        if (filter.sort) params.append('sort', filter.sort)
 
-      // Transform the response data
-      const data = response.data;
-      if (data && Array.isArray(data.content)) {
-        data.content = data.content.map((item: VocabularyItem) => ({
-          ...item,
-          isSaved: true,
-          audioPath: item.audioPath || item.audioUrl || null // Use audioUrl as fallback
-        }));
+        url += `?${params.toString()}`
+        const response = await axios.get(url)
+        return response.data
       }
-
-      return data;
     } catch (error) {
-      console.error('Error in getSavedVocabulary:', error);
-      throw error;
+      console.error('Error fetching saved vocabulary:', error)
+      throw error
     }
   }
 }

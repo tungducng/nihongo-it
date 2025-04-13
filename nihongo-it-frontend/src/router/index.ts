@@ -47,6 +47,12 @@ const routes = [
 
   },
   {
+    path: '/vocabulary/saved',
+    name: 'savedVocabulary',
+    component: () => import('@/views/learning/vocabulary/SavedVocabularyView.vue'),
+    meta: { requiresAuth: true }, // Saved content requires auth
+  },
+  {
     path: '/vocabulary/:id',
     name: 'vocabularyDetail',
     component: () => import('@/views/learning/vocabulary/VocabularyDetailView.vue'),

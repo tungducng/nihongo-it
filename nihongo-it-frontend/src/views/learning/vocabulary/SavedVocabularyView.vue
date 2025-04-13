@@ -185,8 +185,9 @@
               color="primary"
               size="small"
               @click.stop="playAudio(item)"
-              :disabled="!item.audioPath"
-              :title="item.audioPath ? 'Play audio' : 'No audio available'"
+              :loading="playingAudioId === item.vocabId"
+              :disabled="playingAudioId !== null && playingAudioId !== item.vocabId"
+              title="Play audio"
             >
               <v-icon>mdi-volume-high</v-icon>
             </v-btn>
@@ -221,21 +222,25 @@
 
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useVocabularyStore } from '@/stores'
+import { useRouter, useRoute } from 'vue-router'
+import { useVocabularyStore, useAuthStore } from '@/stores'
 import type { VocabularyItem } from '@/services/vocabulary.service'
 import { useToast } from 'vue-toast-notification'
+import axios from 'axios'
 
 // Router
 const router = useRouter()
+const route = useRoute()
 
 // Store
 const vocabularyStore = useVocabularyStore()
+const authStore = useAuthStore()
 
 // State
 const currentPage = ref(1)
 const searchQuery = ref('')
 const sortOption = ref('date_desc')
+const playingAudioId = ref<string | null>(null)
 const sortOptions = [
   { title: 'Date Added (Newest)', value: 'date_desc' },
   { title: 'Date Added (Oldest)', value: 'date_asc' },
@@ -303,23 +308,115 @@ function handlePageChange(page: number) {
 async function playAudio(item: VocabularyItem) {
   const toast = useToast()
 
-  if (!item.audioPath) {
-    toast.info('No audio available for this vocabulary', {
-      position: 'top',
-      duration: 2000
-    })
-    return
-  }
+  // Set loading state
+  playingAudioId.value = item.vocabId
 
   try {
-    const audio = new Audio(item.audioPath)
-    await audio.play()
+    if (item.audioPath) {
+      // If there's an existing audio path, use it
+      const audio = new Audio(item.audioPath)
+      await audio.play()
+    } else {
+      // Verify authentication before proceeding
+      if (!authStore.isAuthenticated) {
+        toast.error('Please log in to use text-to-speech', {
+          position: 'top',
+          duration: 4000
+        })
+        setTimeout(() => {
+          router.push({
+            name: 'login',
+            query: { redirect: route.fullPath }
+          })
+        }, 1500)
+        return
+      }
+
+      // No audio path available, use TTS API
+      // Determine which text to use for speech based on priority: katakana -> kanji -> hiragana
+      let textToSpeak = ''
+
+      if (item.katakana) {
+        textToSpeak = item.katakana
+      } else if (item.kanji) {
+        textToSpeak = item.kanji
+      } else if (item.hiragana) {
+        textToSpeak = item.hiragana
+      } else {
+        toast.warning('No Japanese text available for this vocabulary', {
+          position: 'top',
+          duration: 3000
+        })
+        return
+      }
+
+      // Show loading indicator
+      toast.info('Generating audio...', {
+        position: 'top',
+        duration: 2000
+      })
+
+      // Get the backend API URL
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+      // Set speed: 0.9 for vocabulary
+      const speed = 0.9
+
+      // Get auth token from localStorage directly as a fallback
+      const authToken = localStorage.getItem('auth_token')
+
+      // Call the TTS API with Authorization header
+      const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
+        headers: {
+          'Content-Type': 'text/plain; charset=UTF-8',
+          'Accept-Language': 'ja-JP',
+          'X-Speech-Speed': speed.toString(),
+          'X-Content-Language': 'ja',
+          'X-Content-Is-Example': 'false',
+          'Authorization': `Bearer ${authToken}`,
+          'Accept': 'audio/mpeg'
+        },
+        responseType: 'arraybuffer'
+      })
+
+      // Convert response to blob and create audio URL
+      const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
+      const audioUrl = URL.createObjectURL(audioBlob)
+
+      // Play the audio
+      const audio = new Audio(audioUrl)
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl)
+        playingAudioId.value = null
+      }
+
+      await audio.play()
+    }
   } catch (error) {
-    console.error('Error playing audio:', error)
-    toast.error('Failed to play audio', {
-      position: 'top',
-      duration: 3000
-    })
+    console.error('Error generating or playing TTS audio:', error)
+
+    // Special handling for 401 errors
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      toast.error('TTS service requires authentication. Please log in again.', {
+        position: 'top',
+        duration: 3000
+      })
+    } else {
+      toast.error(error instanceof Error ? error.message : 'Failed to generate speech', {
+        position: 'top',
+        duration: 3000
+      })
+    }
+  } finally {
+    // Reset loading state if no audio was played (in case of error)
+    // For successful audio playback, the onended event will handle this
+    if (!item.audioPath) {
+      setTimeout(() => {
+        playingAudioId.value = null
+      }, 3000)
+    } else {
+      playingAudioId.value = null
+    }
   }
 }
 

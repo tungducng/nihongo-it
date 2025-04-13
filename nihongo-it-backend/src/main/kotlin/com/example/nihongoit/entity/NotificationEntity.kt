@@ -40,6 +40,4 @@ enum class NotificationType {
     STUDY_REMINDER,
     ACHIEVEMENT,
     QUIZ_RESULT,
-    SYSTEM_UPDATE,
-    COURSE_UPDATE,
-} 
+}

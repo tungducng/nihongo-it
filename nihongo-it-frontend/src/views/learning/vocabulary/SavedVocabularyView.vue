@@ -23,59 +23,96 @@
       {{ vocabularyStore.error }}
     </v-alert>
 
-    <!-- Empty State -->
-    <v-card v-else-if="!vocabularyStore.hasSavedItems" class="text-center pa-8 mb-6">
-      <v-icon size="large" icon="mdi-bookmark-outline" class="mb-4"></v-icon>
-      <h3 class="text-h6">No saved vocabulary</h3>
-      <p class="text-body-1 text-medium-emphasis mb-4">
-        You haven't saved any vocabulary items yet. Browse the vocabulary list and save the ones you want to study.
-      </p>
-      <v-btn color="primary" prepend-icon="mdi-book-open-variant" :to="{ name: 'vocabulary' }">
-        Browse Vocabulary
-      </v-btn>
-    </v-card>
-
-    <!-- Content -->
-    <template v-else>
-      <!-- Filter & Search -->
-      <v-card class="mb-6 filter-card elevation-1">
-        <v-card-text>
-          <v-row align="center">
-            <!-- Search Box -->
-            <v-col cols="12" sm="6">
-              <div class="d-flex">
-                <v-text-field
-                  v-model="searchQuery"
-                  prepend-inner-icon="mdi-magnify"
-                  label="Search saved vocabulary"
-                  clearable
-                  hide-details
-                  density="comfortable"
-                  variant="outlined"
-                  class="mr-2"
-                ></v-text-field>
-                <v-btn color="primary" @click="searchVocabulary">
-                  Search
-                </v-btn>
-              </div>
-            </v-col>
-
-            <!-- Sort Options -->
-            <v-col cols="12" sm="6">
-              <v-select
-                v-model="sortOption"
-                label="Sort By"
-                :items="sortOptions"
+    <!-- Filter & Search -->
+    <v-card class="mb-6 filter-card elevation-1">
+      <v-card-text>
+        <v-row align="center">
+          <!-- Search Box -->
+          <v-col cols="12" sm="6">
+            <div class="d-flex">
+              <v-text-field
+                v-model="searchQuery"
+                prepend-inner-icon="mdi-magnify"
+                label="Search saved vocabulary"
+                clearable
                 hide-details
                 density="comfortable"
                 variant="outlined"
-                @update:model-value="loadSavedVocabulary"
-              ></v-select>
-            </v-col>
-          </v-row>
-        </v-card-text>
-      </v-card>
+                class="mr-2"
+              ></v-text-field>
+              <v-btn color="primary" @click="searchVocabulary">
+                Search
+              </v-btn>
+            </div>
+          </v-col>
 
+          <!-- Sort Options -->
+          <v-col cols="12" sm="6">
+            <v-select
+              v-model="sortOption"
+              label="Sort By"
+              :items="sortOptions"
+              hide-details
+              density="comfortable"
+              variant="outlined"
+              @update:model-value="loadSavedVocabulary"
+            ></v-select>
+          </v-col>
+        </v-row>
+
+        <!-- Active Filters -->
+        <v-row class="mt-3" v-if="hasActiveFilters">
+          <v-col cols="12">
+            <div class="d-flex flex-wrap align-center">
+              <span class="text-body-2 text-medium-emphasis mr-2">Active filters:</span>
+              <v-chip
+                v-if="searchQuery"
+                size="small"
+                class="mr-2 mb-1"
+                closable
+                @click:close="clearSearch"
+              >
+                Search: {{ searchQuery }}
+              </v-chip>
+              <v-btn
+                size="small"
+                variant="text"
+                density="comfortable"
+                @click="clearAllFilters"
+                v-if="searchQuery"
+              >
+                Clear all
+              </v-btn>
+            </div>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
+    <!-- Empty State -->
+    <v-card v-if="!vocabularyStore.savedLoading && !vocabularyStore.error && !vocabularyStore.hasSavedItems" class="text-center pa-8 mb-6">
+      <v-icon size="large" icon="mdi-bookmark-outline" class="mb-4"></v-icon>
+      <h3 class="text-h6">
+        {{ hasActiveFilters ? 'No matches found' : 'No saved vocabulary' }}
+      </h3>
+      <p class="text-body-1 text-medium-emphasis mb-4">
+        {{ hasActiveFilters
+          ? 'No vocabulary items match your search criteria. Try adjusting your filters or clear them to see all saved items.'
+          : 'You haven\'t saved any vocabulary items yet. Browse the vocabulary list and save the ones you want to study.'
+        }}
+      </p>
+      <div class="d-flex justify-center gap-2">
+        <v-btn color="primary" prepend-icon="mdi-book-open-variant" :to="{ name: 'vocabulary' }" v-if="!hasActiveFilters">
+          Browse Vocabulary
+        </v-btn>
+        <v-btn color="secondary" prepend-icon="mdi-filter-off" @click="clearAllFilters" v-if="hasActiveFilters">
+          Clear Filters
+        </v-btn>
+      </div>
+    </v-card>
+
+    <!-- Content -->
+    <template v-if="!vocabularyStore.savedLoading && !vocabularyStore.error && vocabularyStore.hasSavedItems">
       <!-- Saved Vocabulary Cards -->
       <div class="saved-vocabulary-grid">
         <v-card
@@ -96,9 +133,26 @@
               </div>
 
               <div class="d-flex flex-column mt-3">
-                <span class="text-h6 japanese-text">{{ item.hiragana }}</span>
-                <span v-if="item.kanji" class="text-body-1 japanese-text text-medium-emphasis mb-1">
+                <!-- Show kanji first if available -->
+                <span v-if="item.kanji" class="text-h6 japanese-text font-weight-bold">
                   {{ item.kanji }}
+                </span>
+                <!-- For katakana-only words, show katakana as the main form -->
+                <span v-else-if="item.katakana" class="text-h6 japanese-text font-weight-bold">
+                  {{ item.katakana }}
+                </span>
+                <!-- Show hiragana as default or as reading when kanji exists -->
+                <span v-else class="text-h6 japanese-text font-weight-bold">
+                  {{ item.hiragana }}
+                </span>
+
+                <!-- Show reading below kanji if both kanji and hiragana exist -->
+                <span v-if="item.kanji && item.hiragana" class="text-body-1 japanese-text text-medium-emphasis">
+                  {{ item.hiragana }}
+                </span>
+                <!-- Show katakana reading if it exists and isn't the main display -->
+                <span v-else-if="item.katakana && item.kanji" class="text-body-1 japanese-text text-medium-emphasis">
+                  {{ item.katakana }}
                 </span>
               </div>
             </v-card-title>
@@ -131,7 +185,8 @@
               color="primary"
               size="small"
               @click.stop="playAudio(item)"
-              title="Play audio"
+              :disabled="!item.audioPath"
+              :title="item.audioPath ? 'Play audio' : 'No audio available'"
             >
               <v-icon>mdi-volume-high</v-icon>
             </v-btn>
@@ -165,7 +220,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVocabularyStore } from '@/stores'
 import type { VocabularyItem } from '@/services/vocabulary.service'
@@ -248,25 +303,24 @@ function handlePageChange(page: number) {
 async function playAudio(item: VocabularyItem) {
   const toast = useToast()
 
-  if (item.audioPath) {
-    try {
-      const audio = new Audio(item.audioPath)
-      await audio.play()
-    } catch (error) {
-      console.error('Error playing audio:', error)
-      toast.error('Failed to play audio', {
-        position: 'top',
-        duration: 3000
-      })
-    }
+  if (!item.audioPath) {
+    toast.info('No audio available for this vocabulary', {
+      position: 'top',
+      duration: 2000
+    })
     return
   }
 
-  // If no audio path available, show message
-  toast.info('No audio available for this vocabulary', {
-    position: 'top',
-    duration: 2000
-  })
+  try {
+    const audio = new Audio(item.audioPath)
+    await audio.play()
+  } catch (error) {
+    console.error('Error playing audio:', error)
+    toast.error('Failed to play audio', {
+      position: 'top',
+      duration: 3000
+    })
+  }
 }
 
 function getJlptColor(level: string): string {
@@ -278,6 +332,21 @@ function getJlptColor(level: string): string {
     case 'N5': return 'green'
     default: return 'grey'
   }
+}
+
+// Computed properties
+const hasActiveFilters = computed(() => {
+  return !!searchQuery.value;
+})
+
+function clearSearch() {
+  searchQuery.value = '';
+  searchVocabulary();
+}
+
+function clearAllFilters() {
+  searchQuery.value = '';
+  searchVocabulary();
 }
 </script>
 

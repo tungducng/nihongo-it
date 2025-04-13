@@ -2,7 +2,6 @@ package com.example.nihongoit.controller
 
 import org.springframework.ai.openai.OpenAiAudioSpeechModel
 import org.springframework.ai.openai.OpenAiAudioSpeechOptions
-import org.springframework.ai.openai.OpenAiAudioTranscriptionOptions
 import org.springframework.ai.openai.api.OpenAiAudioApi
 import org.springframework.ai.openai.audio.speech.SpeechPrompt
 import org.springframework.http.HttpHeaders

@@ -236,7 +236,7 @@
               <div v-if="item.exampleSentence" class="example-sentence my-2">
                 <div class="d-flex align-items-center">
                   <v-icon class="mr-2" size="x-small" color="grey">mdi-format-quote-open</v-icon>
-                  <div class="flex-grow-1 japanese-text" ref="exampleText" v-html="getInitialFurigana(item.exampleSentence)" :data-text="item.exampleSentence"></div>
+                  <div class="flex-grow-1 japanese-text">{{ item.exampleSentence }}</div>
                   <v-btn
                     icon="mdi-volume-high"
                     size="x-small"
@@ -400,7 +400,6 @@ import vocabularyService from '@/services/vocabulary.service'
 import authService from '@/services/auth.service'
 import type { VocabularyItem, VocabularyFilter } from '@/services/vocabulary.service'
 import axios from 'axios'
-import { addFurigana, addFuriganaAsync, addReading } from '@/utils/furiganaHelper'
 
 @Component({
   name: 'VocabularyView'
@@ -416,7 +415,6 @@ export default class VocabularyView extends Vue {
   chatGPTItems: string[] = []
   loadingChatGPT: string | null = null
   chatInputs: Record<string, string> = {}
-  furiganaCache: Record<string, string> = {} // Cache for processed sentences
 
   filters = {
     keyword: null as string | null,
@@ -451,7 +449,6 @@ export default class VocabularyView extends Vue {
 
   // Lifecycle Hooks
   async mounted() {
-    this.preloadCommonReadings();
     this.fetchVocabulary();
   }
 
@@ -793,82 +790,6 @@ export default class VocabularyView extends Vue {
       this.chatInputs[vocabId] = '';
     }
   }
-
-  // Method for immediate display of text while async processing happens
-  getInitialFurigana(text: string): string {
-    if (!text) return '';
-
-    // Check cache first
-    if (this.furiganaCache[text]) {
-      return this.furiganaCache[text];
-    }
-
-    // Get initial display with basic processing
-    const initialResult = addFurigana(text);
-
-    // Trigger async processing
-    this.processFuriganaAsync(text);
-
-    return initialResult;
-  }
-
-  // Process furigana asynchronously and update display
-  async processFuriganaAsync(text: string): Promise<void> {
-    try {
-      const result = await addFuriganaAsync(text);
-
-      // Update cache
-      this.furiganaCache[text] = result;
-
-      // Force update if needed - find elements with this text and update them
-      this.$nextTick(() => {
-        const elements = this.$refs.exampleText;
-        if (elements) {
-          // Could be an array or single element
-          const targets = Array.isArray(elements) ? elements : [elements];
-
-          for (const el of targets) {
-            if (el && el.getAttribute('data-text') === text) {
-              el.innerHTML = result;
-            }
-          }
-        }
-      });
-    } catch (error) {
-      console.error('Error with async furigana processing:', error);
-    }
-  }
-
-  // Preload common readings for IT-related Japanese words
-  preloadCommonReadings(): void {
-    // IT terms
-    addReading('技術', 'ぎじゅつ');
-    addReading('情報', 'じょうほう');
-    addReading('通信', 'つうしん');
-    addReading('開発', 'かいはつ');
-    addReading('言語', 'げんご');
-    addReading('計算機', 'けいさんき');
-    addReading('安全', 'あんぜん');
-    addReading('化', 'か');
-    addReading('専門', 'せんもん');
-    addReading('知能', 'ちのう');
-    addReading('画像', 'がぞう');
-    addReading('処理', 'しょり');
-    addReading('設計', 'せっけい');
-    addReading('管理', 'かんり');
-    addReading('用語', 'ようご');
-    addReading('業務', 'ぎょうむ');
-    addReading('品質', 'ひんしつ');
-
-    // Japanese language terms
-    addReading('日本語', 'にほんご');
-    addReading('漢字', 'かんじ');
-    addReading('ふりがな', 'ふりがな');
-    addReading('単語', 'たんご');
-    addReading('文法', 'ぶんぽう');
-    addReading('語彙', 'ごい');
-    addReading('発音', 'はつおん');
-  }
 }
 </script>
 
@@ -1034,13 +955,23 @@ export default class VocabularyView extends Vue {
   .text-caption
     font-size: 0.7rem
 
-:deep(ruby)
-  ruby-align: center
+// Japanese text styling similar to Jisho
+.japanese-text
+  font-size: 1.2rem
+  line-height: 1.6
 
-  rt
-    font-size: 0.5em
-    line-height: 1
-    color: rgba(0, 0, 0, 0.6)
-    text-align: center
-    margin-bottom: -0.1em
+// Example sentence styling
+.example-sentence
+  background-color: #f9f9f9
+  border-radius: 8px
+  padding: 10px
+
+  .japanese-text
+    font-size: 1.1rem
+    line-height: 1.6
+
+  .example-translation
+    margin-top: 5px
+    color: #666
+    font-style: italic
 </style>

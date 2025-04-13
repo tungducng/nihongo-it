@@ -47,6 +47,12 @@ const routes = [
 
   },
   {
+    path: '/vocabulary/:id',
+    name: 'vocabularyDetail',
+    component: () => import('@/views/learning/vocabulary/VocabularyDetailView.vue'),
+    meta: { requiresAuth: true }, // Personalized content requires auth
+  },
+  {
     path: '/exercises',
     name: 'exercises',
     component: () => import('@/views/learning/ExercisesView.vue'),
@@ -69,24 +75,6 @@ const routes = [
     name: 'flashcardsCreate',
     component: () => import('@/views/learning/FlashcardCreateView.vue'),
     // meta: { requiresAuth: true },
-  },
-  {
-    path: '/admin',
-    name: 'admin',
-    component: () => import('@/views/admin/AdminDashboard.vue'),
-    meta: { requiresAuth: true, role: 'ROLE_ADMIN' }, // Admin section remains protected
-    children: [
-      {
-        path: 'content',
-        name: 'content-management',
-        component: () => import('@/views/admin/ContentManagement.vue'),
-      },
-      {
-        path: 'users',
-        name: 'user-management',
-        component: () => import('@/views/admin/UserManagement.vue'),
-      },
-    ],
   },
 ]
 

@@ -24,7 +24,7 @@ class JwtTokenUtil {
     private lateinit var secret: String
 
     @Value("\${jwt.expiration}")
-    private val jwtExpiration: Long = 10000 // 24 hours by default
+    private val jwtExpiration: Long = 2592000000 // 24 hours by default
 
     private val secretKey: SecretKey by lazy {
         Keys.hmacShaKeyFor(secret.toByteArray())
@@ -46,23 +46,6 @@ class JwtTokenUtil {
             "lastLogin" to (user.lastLogin?.format(dateTimeFormatter) ?: LocalDateTime.now().format(dateTimeFormatter)),
         )
         return createToken(claims, user.email)
-    }
-
-    /**
-     * Generate a token with custom expiration time (for testing purposes)
-     */
-    fun generateTokenWithCustomExpiration(user: UserEntity, expirationMs: Long): String {
-        val claims: Map<String, Any> = mapOf(
-            "userId" to (user.userId?.toString() ?: ""),
-            "role" to (user.role?.roleId ?: 2), // Default to ROLE_USER
-            "email" to user.email,
-            "fullName" to (user.fullName ?: ""),
-            "profilePicture" to (user.profilePicture ?: ""),
-            "currentLevel" to (user.currentLevel?.name ?: ""),
-            "jlptGoal" to (user.jlptGoal?.name ?: ""),
-            "lastLogin" to (user.lastLogin?.format(dateTimeFormatter) ?: LocalDateTime.now().format(dateTimeFormatter)),
-        )
-        return createTokenWithCustomExpiration(claims, user.email, expirationMs)
     }
 
     private fun createToken(claims: Map<String, Any>, subject: String): String {

@@ -38,3 +38,17 @@ input, textarea, select
 img
   max-width: 100%
   height: auto
+
+// Add custom styles for session expiration notifications
+.v-toast.v-toast--top
+  margin-top: 20px
+
+.v-toast__item.v-toast__item--error
+  background-color: rgba(220, 53, 69, 0.95)
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2)
+  border-left: 4px solid #dc3545
+  padding: 14px 20px
+
+  .v-toast__text
+    font-weight: 500
+    color: #fff

@@ -86,8 +86,15 @@ export default class LoginView extends Vue {
         const toast = this.getToast()
         toast.error(String(errorMsg), {
           position: 'top',
-          duration: 4000
+          duration: 5000
         })
+
+        // Remove the error parameter from URL to prevent showing the message again on refresh
+        if (window.history && window.history.pushState) {
+          const newUrl = new URL(window.location.href)
+          newUrl.searchParams.delete('error')
+          window.history.pushState({ path: newUrl.toString() }, '', newUrl.toString())
+        }
       }
     }
   }

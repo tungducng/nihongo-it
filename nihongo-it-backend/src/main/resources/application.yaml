@@ -36,7 +36,7 @@ server:
 # JWT Configuration
 jwt:
   secret: ${JWT_SECRET}
-  expiration: 10000
+  expiration: 2592000000  # 30 days for language learning apps
 
 
 # Swagger/OpenAPI

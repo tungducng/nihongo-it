@@ -9,6 +9,7 @@ import VueToast from 'vue-toast-notification'
 import 'vue-toast-notification/dist/theme-sugar.css'
 import { useAuthStore } from './stores'
 import axios from 'axios'
+import { handleSessionExpiration } from './utils/sessionHandler'
 
 // Configure axios defaults
 axios.defaults.headers.common['Accept'] = 'application/json'
@@ -49,12 +50,9 @@ axios.interceptors.response.use(
       const authStore = useAuthStore(pinia)
       authStore.logout()
 
-      // Check if we're not already on the login page to avoid redirect loops
+      // Handle session expiration with notification and redirect
       const currentPath = window.location.pathname
-      if (!currentPath.includes('/login')) {
-        // Redirect to login page with current location for redirect after login
-        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`
-      }
+      handleSessionExpiration(currentPath)
     }
     return Promise.reject(error)
   }

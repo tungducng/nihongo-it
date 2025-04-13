@@ -30,6 +30,19 @@ spring:
       audio:
         speech:
           model: gpt-4o-mini-tts
+  # Mail configuration for notifications
+#  mail:
+#    host: localhost
+#    port: 1025 # Default for MailHog or similar SMTP testing tools
+#    username: no-reply@nihongoit.com
+#    password: password
+#    properties:
+#      mail:
+#        smtp:
+#          auth: false
+#          starttls:
+#            enable: false
+#        debug: true
 server:
   port: 8080
 
@@ -38,6 +51,9 @@ jwt:
   secret: ${JWT_SECRET}
   expiration: 2592000000  # 30 days for language learning apps
 
+# App custom properties
+app:
+  frontend-url: http://localhost:3000
 
 # Swagger/OpenAPI
 springdoc:

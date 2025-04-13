@@ -9,7 +9,7 @@ import com.example.nihongoit.dto.vocabulary.UpdateVocabularyRequestDto
 import com.example.nihongoit.dto.vocabulary.UpdateVocabularyResponseDto
 import com.example.nihongoit.dto.vocabulary.VocabularyDto
 import com.example.nihongoit.dto.vocabulary.VocabularyFilterRequestDto
-import com.example.nihongoit.entity.JLPTLevel
+import com.example.nihongoit.entity.JlptLevel
 import com.example.nihongoit.security.PreAuthFilter
 import com.example.nihongoit.service.VocabularyService
 import io.swagger.v3.oas.annotations.Operation
@@ -98,7 +98,7 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
     )
     fun filterVocabulary(
         @Parameter(description = "Filter by JLPT level")
-        @RequestParam(required = false) jlptLevel: JLPTLevel?,
+        @RequestParam(required = false) jlptLevel: JlptLevel?,
         
         @Parameter(description = "Filter by category")
         @RequestParam(required = false) category: String?,
@@ -312,8 +312,8 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
             )
         ]
     )
-    fun getJLPTLevels(): List<JLPTLevel> {
-        val levels = JLPTLevel.entries
+    fun getJlptLevels(): List<JlptLevel> {
+        val levels = JlptLevel.entries
         return levels
     }
 }

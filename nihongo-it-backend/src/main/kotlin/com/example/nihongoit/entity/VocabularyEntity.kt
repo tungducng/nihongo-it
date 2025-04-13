@@ -38,7 +38,7 @@ data class VocabularyEntity(
 
     @Enumerated(EnumType.STRING)
     @Column(name = "jlpt_level")
-    val jlptLevel: JLPTLevel,
+    val jlptLevel: JlptLevel,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "user_id")
@@ -46,6 +46,9 @@ data class VocabularyEntity(
 
     @Column(name = "created_at")
     val createdAt: LocalDateTime = LocalDateTime.now(),
+
+    @OneToMany(mappedBy = "vocabulary", cascade = [CascadeType.ALL])
+    val flashcards: MutableList<FlashcardEntity> = mutableListOf(),
 
     @ManyToMany
     @JoinTable(

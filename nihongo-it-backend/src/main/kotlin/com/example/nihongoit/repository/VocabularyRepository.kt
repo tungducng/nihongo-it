@@ -1,6 +1,6 @@
 package com.example.nihongoit.repository
 
-import com.example.nihongoit.entity.JLPTLevel
+import com.example.nihongoit.entity.JlptLevel
 import com.example.nihongoit.entity.VocabularyEntity
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -17,7 +17,7 @@ interface VocabularyRepository : JpaRepository<VocabularyEntity, UUID> {
 
     // Find by JLPT level
     @Query("SELECT v FROM VocabularyEntity v WHERE v.jlptLevel = :level")
-    fun findByJlptLevel(@Param("level") level: JLPTLevel, pageable: Pageable): Page<VocabularyEntity>
+    fun findByJlptLevel(@Param("level") level: JlptLevel, pageable: Pageable): Page<VocabularyEntity>
 
     // Find by IT category (programming, network, database, AI, etc.)
     fun findByCategory(category: String, pageable: Pageable): Page<VocabularyEntity>

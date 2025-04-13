@@ -20,24 +20,62 @@ data class NotificationEntity(
     val title: String,
 
     @Column(name = "message", columnDefinition = "text")
-    val message: String?,
+    val message: String,
 
+    @Column(name = "type")
     @Enumerated(EnumType.STRING)
-    @Column(name = "type", nullable = false)
     val type: NotificationType,
 
     @Column(name = "is_read")
     val isRead: Boolean = false,
 
-    @Column(name = "scheduled_for")
-    val scheduledFor: LocalDateTime?,
+    @Column(name = "action_url")
+    val actionUrl: String? = null,
 
-    @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    @Column(name = "notification_channel")
+    @Enumerated(EnumType.STRING)
+    val notificationChannel: NotificationChannel = NotificationChannel.EMAIL,
+
+    @Column(name = "sent_at")
+    val sentAt: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name = "read_at")
+    val readAt: LocalDateTime? = null,
+
+    @Column(name = "review_count")
+    val reviewCount: Int? = null, // Number of flashcards due for review
+    
+    @Column(name = "review_category")
+    val reviewCategory: String? = null, // Category of items due (flashcard)
+    
+    @Column(name = "priority_level")
+    val priorityLevel: Int = 0, // Priority based on FSRS algorithm (0-low, 5-high)
+    
+    @Column(name = "scheduled_for")
+    val scheduledFor: LocalDateTime? = null,
+
+    @Column(name = "external_id")
+    val externalId: String? = null // For Firebase or external notification IDs
 )
 
+/**
+ * Notification types for Japanese IT vocabulary learning system
+ */
 enum class NotificationType {
-    STUDY_REMINDER,
-    ACHIEVEMENT,
-    QUIZ_RESULT,
+    STREAK_REMINDER,      // Daily streak reminder
+    STUDY_REMINDER,       // General study reminder
+    REVIEW_DUE,           // FSRS-calculated flashcard review due
+    SYSTEM_ANNOUNCEMENT,  // System announcements
+    QUIZ_REMINDER,        // Quiz reminder
+    LEECH_ALERT           // Alert for "leech" flashcards that need extra attention
+}
+
+/**
+ * Notification delivery channels
+ */
+enum class NotificationChannel {
+    APP,    // In-app notification
+    EMAIL,  // Email notification
+    PUSH,   // Push notification via Firebase
+    SMS     // SMS notification (future support)
 }

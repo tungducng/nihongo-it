@@ -1,6 +1,6 @@
 package com.example.nihongoit.dto.vocabulary
 
-import com.example.nihongoit.entity.JLPTLevel
+import com.example.nihongoit.entity.JlptLevel
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
@@ -40,7 +40,7 @@ data class VocabularyDto(
     val category: String?,
 
     @JsonProperty("jlptLevel")
-    val jlptLevel: JLPTLevel,
+    val jlptLevel: JlptLevel,
 
     @JsonProperty("createdAt")
     @JsonDeserialize(using = LocalDateTimeDeserializer::class)

@@ -1,6 +1,6 @@
 package com.example.nihongoit.dto.user
 
-import com.example.nihongoit.entity.JLPTLevel
+import com.example.nihongoit.entity.JlptLevel
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
@@ -27,10 +27,10 @@ data class UserDto(
     val profilePicture: String?,
 
     @JsonProperty("currentLevel")
-    val currentLevel: JLPTLevel?,
+    val currentLevel: JlptLevel?,
 
     @JsonProperty("jlptGoal")
-    val jlptGoal: JLPTLevel?,
+    val jlptGoal: JlptLevel?,
 
     @JsonDeserialize(using = LocalDateTimeDeserializer::class)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")

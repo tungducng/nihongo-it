@@ -20,5 +20,5 @@ data class UpdateFlashcardRequestDto(
     val notes: String? = null,
     
     @JsonProperty("tags")
-    val tags: List<String> = listOf()
+    val tags: String?
 ) 

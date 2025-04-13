@@ -3,6 +3,7 @@ package com.example.nihongoit.dto.flashcard
 import com.fasterxml.jackson.annotation.JsonProperty
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
+import java.util.UUID
 
 data class CreateFlashcardRequestDto(
     @field:NotBlank(message = "Front text is required")
@@ -20,5 +21,8 @@ data class CreateFlashcardRequestDto(
     val notes: String? = null,
     
     @JsonProperty("tags")
-    val tags: List<String> = listOf()
+    val tags: String? = null,
+    
+    @JsonProperty("vocabularyId")
+    val vocabularyId: UUID? = null
 ) 

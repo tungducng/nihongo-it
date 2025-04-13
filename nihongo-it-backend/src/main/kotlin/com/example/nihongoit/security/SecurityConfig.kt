@@ -1,6 +1,6 @@
 package com.example.nihongoit.util
 
-import com.example.nihongoit.entity.JLPTLevel
+import com.example.nihongoit.entity.JlptLevel
 import com.example.nihongoit.entity.RoleEntity
 import com.example.nihongoit.entity.UserEntity
 import com.example.nihongoit.security.JwtTokenUtil
@@ -70,10 +70,10 @@ class UserAuthUtil(
     /**
      * Extract current level from token
      */
-    fun getCurrentLevelFromToken(token: String): JLPTLevel? {
+    fun getCurrentLevelFromToken(token: String): JlptLevel? {
         return try {
             jwtTokenUtil.extractClaim(token) { claims ->
-                (claims["currentLevel"] as? String)?.let { JLPTLevel.valueOf(it) }
+                (claims["currentLevel"] as? String)?.let { JlptLevel.valueOf(it) }
             }
         } catch (e: Exception) {
             logger.error("Failed to extract currentLevel from token: ${e.message}")
@@ -84,10 +84,10 @@ class UserAuthUtil(
     /**
      * Extract JLPT goal from token
      */
-    fun getJlptGoalFromToken(token: String): JLPTLevel? {
+    fun getJlptGoalFromToken(token: String): JlptLevel? {
         return try {
             jwtTokenUtil.extractClaim(token) { claims ->
-                (claims["jlptGoal"] as? String)?.let { JLPTLevel.valueOf(it) }
+                (claims["jlptGoal"] as? String)?.let { JlptLevel.valueOf(it) }
             }
         } catch (e: Exception) {
             logger.error("Failed to extract jlptGoal from token: ${e.message}")
@@ -206,7 +206,7 @@ class UserAuthUtil(
     /**
      * Get current level from Authorization header
      */
-    fun getCurrentLevel(): JLPTLevel? {
+    fun getCurrentLevel(): JlptLevel? {
         val token = getTokenFromRequest() ?: return null
         return getCurrentLevelFromToken(token)
     }
@@ -214,7 +214,7 @@ class UserAuthUtil(
     /**
      * Get JLPT goal from Authorization header
      */
-    fun getCurrentGoal(): JLPTLevel? {
+    fun getCurrentGoal(): JlptLevel? {
         val token = getTokenFromRequest() ?: return null
         return getJlptGoalFromToken(token)
     }

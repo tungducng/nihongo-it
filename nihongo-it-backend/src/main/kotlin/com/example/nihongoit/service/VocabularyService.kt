@@ -10,7 +10,7 @@ import com.example.nihongoit.dto.vocabulary.UpdateVocabularyRequestDto
 import com.example.nihongoit.dto.vocabulary.UpdateVocabularyResponseDto
 import com.example.nihongoit.dto.vocabulary.VocabularyDto
 import com.example.nihongoit.dto.vocabulary.VocabularyFilterRequestDto
-import com.example.nihongoit.entity.JLPTLevel
+import com.example.nihongoit.entity.JlptLevel
 import com.example.nihongoit.entity.VocabularyEntity
 import com.example.nihongoit.exception.BusinessException
 import com.example.nihongoit.repository.UserRepository
@@ -58,7 +58,7 @@ class VocabularyService(
             exampleSentenceTranslation = request.exampleSentenceTranslation,
             audioPath = request.audioPath,
             category = request.category,
-            jlptLevel = JLPTLevel.valueOf(request.jlptLevel),
+            jlptLevel = JlptLevel.valueOf(request.jlptLevel),
             createdBy = user,
             createdAt = LocalDateTime.now(),
         )
@@ -150,7 +150,7 @@ class VocabularyService(
             exampleSentenceTranslation = request.exampleSentenceTranslation,
             audioPath = request.audioPath,
             category = request.category,
-            jlptLevel = JLPTLevel.valueOf(request.jlptLevel),
+            jlptLevel = JlptLevel.valueOf(request.jlptLevel),
         )
 
         val savedVocab = vocabularyRepository.save(updatedVocabulary)

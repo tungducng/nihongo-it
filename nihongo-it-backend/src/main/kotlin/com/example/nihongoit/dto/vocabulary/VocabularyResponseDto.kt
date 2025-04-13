@@ -1,6 +1,6 @@
 package com.example.nihongoit.dto.vocabulary
 
-import com.example.nihongoit.entity.JLPTLevel
+import com.example.nihongoit.entity.JlptLevel
 import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
@@ -37,7 +37,7 @@ data class VocabularyResponseDto(
     val category: String?,
 
     @JsonProperty("jlptLevel")
-    val jlptLevel: JLPTLevel,
+    val jlptLevel: JlptLevel,
 
     @JsonProperty("createdById")
     val createdById: UUID?,

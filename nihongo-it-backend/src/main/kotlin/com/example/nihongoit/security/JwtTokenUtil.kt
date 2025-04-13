@@ -1,6 +1,6 @@
 package com.example.nihongoit.security
 
-import com.example.nihongoit.entity.JLPTLevel
+import com.example.nihongoit.entity.JlptLevel
 import com.example.nihongoit.entity.UserEntity
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
@@ -122,10 +122,10 @@ class JwtTokenUtil {
         }
     }
 
-    fun extractCurrentLevel(token: String): JLPTLevel? {
+    fun extractCurrentLevel(token: String): JlptLevel? {
         return try {
             extractClaim(token) { claims ->
-                (claims["currentLevel"] as? String)?.let { JLPTLevel.valueOf(it) }
+                (claims["currentLevel"] as? String)?.let { JlptLevel.valueOf(it) }
             }
         } catch (e: Exception) {
             logger.error("Failed to extract currentLevel from token: ${e.message}", e)
@@ -133,10 +133,10 @@ class JwtTokenUtil {
         }
     }
 
-    fun extractJlptGoal(token: String): JLPTLevel? {
+    fun extractJlptGoal(token: String): JlptLevel? {
         return try {
             extractClaim(token) { claims ->
-                (claims["jlptGoal"] as? String)?.let { JLPTLevel.valueOf(it) }
+                (claims["jlptGoal"] as? String)?.let { JlptLevel.valueOf(it) }
             }
         } catch (e: Exception) {
             logger.error("Failed to extract jlptGoal from token: ${e.message}", e)

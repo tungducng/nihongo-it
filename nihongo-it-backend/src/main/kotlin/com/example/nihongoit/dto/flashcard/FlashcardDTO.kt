@@ -20,7 +20,10 @@ data class FlashcardDTO(
     val notes: String? = null,
     
     @JsonProperty("tags")
-    val tags: List<String> = listOf(),
+    val tags: String? = null,
+    
+    @JsonProperty("vocabularyId")
+    val vocabularyId: UUID? = null,
     
     @JsonProperty("due")
     val due: LocalDateTime? = null,
@@ -29,5 +32,17 @@ data class FlashcardDTO(
     val reps: Int? = null,
     
     @JsonProperty("lapses")
-    val lapses: Int? = null
+    val lapses: Int? = null,
+    
+    @JsonProperty("state")
+    val state: String? = null,
+    
+    @JsonProperty("difficulty")
+    val difficulty: Double? = null,
+    
+    @JsonProperty("stability")
+    val stability: Double? = null,
+    
+    @JsonProperty("interval")
+    val interval: Double? = null
 )

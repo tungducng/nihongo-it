@@ -1,6 +1,6 @@
 package com.example.nihongoit.dto.auth
 
-import com.example.nihongoit.entity.JLPTLevel
+import com.example.nihongoit.entity.JlptLevel
 import jakarta.validation.constraints.Email
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.Size
@@ -20,7 +20,7 @@ data class SignupRequest(
 
     val profilePicture: String? = null,
 
-    val currentLevel: JLPTLevel = JLPTLevel.N5,
+    val currentLevel: JlptLevel = JlptLevel.N5,
 
-    val jlptGoal: JLPTLevel = JLPTLevel.N3,
+    val jlptGoal: JlptLevel = JlptLevel.N3,
 ) 

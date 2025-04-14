@@ -199,7 +199,7 @@ generateFurigana()
 }
 
 .ruby-text {
-  display: inline-block;
+  /* display: inline-block; */
   margin: 0 1px;
   text-align: center;
   position: relative;
@@ -210,13 +210,12 @@ ruby {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  vertical-align: 1.2em;
 }
 
 rt {
   position: absolute;
-  top: -0.8em;
-  font-size: 0.5rem;
+  top: 0.2em;
+  font-size: 0.6rem;
   color: #2196F3;
   font-weight: 400;
   text-align: center;

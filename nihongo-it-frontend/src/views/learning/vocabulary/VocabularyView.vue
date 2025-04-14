@@ -929,27 +929,8 @@ export default class VocabularyView extends Vue {
   margin: 6px 0
 
 .example-translation
-  margin-top: 5px
-  color: #666
+  color: rgba(0, 0, 0, 0.6)
   font-style: italic
-
-/* Furigana styling */
-ruby
-  display: inline-flex
-  flex-direction: column-reverse
-  vertical-align: bottom
-  line-height: normal
-
-rt
-  font-size: 0.5rem
-  color: #2196F3
-  font-weight: 400
-  text-align: center
-  line-height: 1
-  display: inline
-  margin: 0
-  transform: none
-  letter-spacing: 0.05em
 
 .level-chip
   min-width: 40px

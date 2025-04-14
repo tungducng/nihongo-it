@@ -16,7 +16,15 @@
           hide-details
         ></v-textarea>
 
-        <div class="d-flex">
+        <div class="d-flex align-items-center">
+          <v-switch
+            v-model="showFurigana"
+            label="Show Furigana"
+            color="primary"
+            hide-details
+            density="comfortable"
+            class="mt-0 mr-4"
+          ></v-switch>
           <v-spacer></v-spacer>
           <v-btn
             color="primary"
@@ -37,7 +45,7 @@
       <div class="furigana-text">
         <ruby v-for="(token, index) in tokens" :key="index" class="ruby-text">
           {{ token.text }}
-          <rt v-if="token.reading && token.isKanji">{{ token.reading }}</rt>
+          <rt v-if="token.reading && token.isKanji && showFurigana">{{ token.reading }}</rt>
         </ruby>
       </div>
 
@@ -107,6 +115,7 @@ const japaneseText = ref('日本語を勉強しています。')
 const tokens = ref([])
 const loading = ref(false)
 const showDebug = ref(false)
+const showFurigana = ref(true)
 const snackbar = ref({
   show: false,
   text: '',
@@ -190,7 +199,7 @@ generateFurigana()
 
 .furigana-text {
   font-size: 1.5rem;
-  line-height: 2.5;
+  line-height: 2.2;
   margin: 20px 0;
   padding: 10px;
   background-color: #fff;

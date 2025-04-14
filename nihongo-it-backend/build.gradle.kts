@@ -67,6 +67,9 @@ dependencies {
     testImplementation("org.mockito.kotlin:mockito-kotlin:5.2.0")
     testImplementation("org.mockito:mockito-core:5.11.0")
     testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
+
+    // Add Kuromoji for Japanese text analysis
+    implementation("com.atilika.kuromoji:kuromoji-ipadic:0.9.0")
 }
 
 dependencyManagement {

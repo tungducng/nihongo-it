@@ -82,6 +82,12 @@ const routes = [
     component: () => import('@/views/learning/FlashcardCreateView.vue'),
     // meta: { requiresAuth: true },
   },
+  {
+    path: '/furigana',
+    name: 'furigana',
+    component: () => import('@/views/learning/FuriganaView.vue'),
+    // No requiresAuth - publicly accessible for demonstrating furigana
+  },
 ]
 
 const router = createRouter({

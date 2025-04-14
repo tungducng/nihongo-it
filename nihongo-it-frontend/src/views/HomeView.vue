@@ -54,6 +54,22 @@
           <h2>Recommended for Today</h2>
         </v-col>
 
+        <!-- New Feature Card -->
+        <v-col cols="12" sm="6" md="4">
+          <v-card class="feature-card" color="primary" variant="outlined">
+            <v-card-title>Try Our New Furigana Generator!</v-card-title>
+            <v-card-text>
+              <p>Generate furigana for any Japanese text. Perfect for studying kanji pronunciation and creating learning materials.</p>
+            </v-card-text>
+            <v-card-actions>
+              <v-btn to="/furigana" color="primary" variant="flat">
+                Try it now
+                <v-icon end>mdi-arrow-right</v-icon>
+              </v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-col>
+
         <v-col v-for="lesson in suggestedLessons" :key="lesson.id" cols="12" sm="6" md="4">
           <v-card>
             <v-card-title>{{ lesson.title }}</v-card-title>
@@ -101,9 +117,9 @@ interface Lesson {
 }
 
 @Component({
-  name: 'DashboardView'
+  name: 'HomeView'
 })
-export default class DashboardView extends Vue {
+export default class HomeView extends Vue {
   // Mock data instead of store data
   username = 'Guest'
   currentLevel = 'N5'

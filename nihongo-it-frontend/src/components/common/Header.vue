@@ -32,6 +32,13 @@
       </v-btn>
       <v-btn
         variant="text"
+        to="/furigana"
+        class="mx-2"
+      >
+        Furigana
+      </v-btn>
+      <v-btn
+        variant="text"
         to="/practice"
         class="mx-2"
       >

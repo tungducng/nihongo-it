@@ -47,10 +47,58 @@ class ChatController(
 
         return vocabularyList
     }
-    
+
     /**
      * Generate detailed vocabulary explanation with examples
      */
+    // @PostMapping("/vocabulary/explain")
+    // fun explainVocabulary(
+    //     @RequestParam kanji: String?,
+    //     @RequestParam hiragana: String,
+    //     @RequestParam(required = false) katakana: String?,
+    //     @RequestParam meaning: String,
+    //     @RequestParam(required = false) category: String?,
+    //     @RequestParam(required = false) exampleSentence: String?
+    // ): String {
+    //     val word = if (kanji.isNullOrBlank()) hiragana else "$kanji ($hiragana)"
+
+    //     val prompt = """
+    //         Act as a Japanese language teacher for a Vietnamese student. Create an explanation in English for this vocabulary word:
+    //         Word: $word
+    //         Meaning in Vietnamese: $meaning
+
+    //         Please provide:
+    //         1. A brief explanation in English
+    //         2. Two example sentences with English translations
+
+    //         Format as JSON like this example:
+    //         {"explanation":"Unit testing refers to testing individual components or modules of software in isolation to verify they work correctly.","examples":[{"japanese":"単体テストを行うことで、バグを早期に発見できます。","english":"By conducting unit tests, bugs can be discovered early.","note":"Discussing the benefits of unit testing."},{"japanese":"プログラムの各モジュールに対して単体テストを作成しました。","english":"I created unit tests for each module of the program.","note":"Describing the action of creating unit tests."}]}
+    //     """.trimIndent()
+
+    //     val response = chatService.getResponseOptions(prompt)
+
+    //     // Clean the response by removing markdown code blocks
+    //     val cleanedResponse = response
+    //         .replace("```json", "")
+    //         .replace("```", "")
+    //         .trim()
+
+    //     // Try to validate the response as JSON
+    //     return try {
+    //         // If it's valid JSON, return it as is
+    //         objectMapper.readTree(cleanedResponse)
+    //         cleanedResponse
+    //     } catch (e: Exception) {
+    //         // If not valid JSON, wrap it in a proper JSON structure
+    //         """
+    //         {
+    //             "explanation": "Failed to parse AI response. Original response was: ${cleanedResponse.replace("\"", "\\\"").replace("\n", "\\n")}",
+    //             "examples": []
+    //         }
+    //         """.trimIndent()
+    //     }
+    // }
+
     @PostMapping("/vocabulary/explain")
     fun explainVocabulary(
         @RequestParam kanji: String?,
@@ -61,28 +109,22 @@ class ChatController(
         @RequestParam(required = false) exampleSentence: String?
     ): String {
         val word = if (kanji.isNullOrBlank()) hiragana else "$kanji ($hiragana)"
-        
         val prompt = """
-            Act as a Japanese language teacher for a Vietnamese student. Create an explanation in English for this vocabulary word:
-            Word: $word
-            Meaning in Vietnamese: $meaning
-            
-            Please provide:
-            1. A brief explanation in English
-            2. Two example sentences with English translations
-            
-            Format as JSON like this example:
-            {"explanation":"Unit testing refers to testing individual components or modules of software in isolation to verify they work correctly.","examples":[{"japanese":"単体テストを行うことで、バグを早期に発見できます。","english":"By conducting unit tests, bugs can be discovered early.","note":"Discussing the benefits of unit testing."},{"japanese":"プログラムの各モジュールに対して単体テストを作成しました。","english":"I created unit tests for each module of the program.","note":"Describing the action of creating unit tests."}]}
-        """.trimIndent()
-        
+        Hãy đóng vai trò như một giáo viên tiếng Nhật cho học sinh Việt Nam. Tạo một lời giải thích bằng tiếng Việt cho từ vựng này:
+        Từ: $word
+        Ý nghĩa bằng tiếng Việt: $meaning
+        Vui lòng cung cấp:
+        1. Một lời giải thích ngắn gọn bằng tiếng Việt
+        2. Hai câu ví dụ kèm bản dịch tiếng Việt
+        Định dạng theo kiểu JSON như ví dụ này:
+        {"explanation":"Unit testing là việc kiểm tra các thành phần hoặc module riêng lẻ của phần mềm một cách độc lập để xác minh chúng hoạt động chính xác.","examples":[{"japanese":"単体テストを行うことで、バグを早期に発見できます。","vietnamese":"Bằng cách thực hiện kiểm thử đơn vị, có thể phát hiện lỗi sớm.","note":"Thảo luận về lợi ích của kiểm thử đơn vị."},{"japanese":"プログラムの各モジュールに対して単体テストを作成しました。","vietnamese":"Tôi đã tạo các bài kiểm tra đơn vị cho mỗi module của chương trình.","note":"Mô tả hành động tạo các bài kiểm tra đơn vị."}]}
+    """.trimIndent()
         val response = chatService.getResponseOptions(prompt)
-        
         // Clean the response by removing markdown code blocks
         val cleanedResponse = response
             .replace("```json", "")
             .replace("```", "")
             .trim()
-        
         // Try to validate the response as JSON
         return try {
             // If it's valid JSON, return it as is
@@ -91,14 +133,19 @@ class ChatController(
         } catch (e: Exception) {
             // If not valid JSON, wrap it in a proper JSON structure
             """
-            {
-                "explanation": "Failed to parse AI response. Original response was: ${cleanedResponse.replace("\"", "\\\"").replace("\n", "\\n")}",
-                "examples": []
-            }
-            """.trimIndent()
+        {
+            "explanation": "Không thể phân tích cú pháp phản hồi AI. Phản hồi gốc là: ${
+                cleanedResponse.replace(
+                    "\"",
+                    "\\\""
+                ).replace("\n", "\\n")
+            }",
+            "examples": []
+        }
+        """.trimIndent()
         }
     }
-    
+
     /**
      * Respond to user messages about vocabulary
      */
@@ -114,15 +161,15 @@ class ChatController(
             Provide a helpful response in English with examples in JSON format like:
             {"message":"The verb 思う (omou) means 'to think' in English. For example, 'I think so' would be 私はそう思います (watashi wa sou omoimasu)."}
         """.trimIndent()
-        
+
         val response = chatService.getResponseOptions(prompt)
-        
+
         // Clean the response by removing markdown code blocks
         val cleanedResponse = response
             .replace("```json", "")
             .replace("```", "")
             .trim()
-        
+
         // Try to validate the response as JSON
         return try {
             // If it's valid JSON, return it as is

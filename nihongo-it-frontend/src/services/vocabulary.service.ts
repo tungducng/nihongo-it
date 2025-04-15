@@ -45,7 +45,7 @@ export interface PagedResponse<T> {
 
 export interface ExampleSentence {
   japanese: string
-  english: string
+  vietnamese: string
   note?: string
 }
 

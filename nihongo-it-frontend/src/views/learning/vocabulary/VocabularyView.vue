@@ -305,10 +305,10 @@
                       <p v-html="item.aiExplanation"></p>
 
                       <div v-if="item.aiExamples && item.aiExamples.length > 0" class="mt-3">
-                        <p class="font-weight-medium">Example Sentences:</p>
+                        <p class="font-weight-medium">Câu ví dụ:</p>
                         <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-2">
                           <p class="example-text">{{ example.japanese }}</p>
-                          <p class="text-caption ml-3">{{ example.english }}</p>
+                          <p class="text-caption ml-3">{{ example.vietnamese }}</p>
                           <p v-if="example.note" class="text-caption ml-3 font-italic">{{ example.note }}</p>
                         </div>
                       </div>

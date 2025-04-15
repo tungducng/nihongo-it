@@ -293,7 +293,8 @@
 
             <!-- ChatGPT Content -->
             <div v-if="chatGPTItems.includes(item.vocabId)" class="chatgpt-content mt-0 py-2 px-4" @click.stop>
-              <v-card flat class="chatgpt-card pa-3 mb-3">
+              <!-- Initial AI Explanation -->
+              <v-card flat class="chatgpt-card pa-3 mb-3" v-if="item.aiExplanation">
                 <div class="d-flex align-items-start mb-2">
                   <v-avatar size="32" color="green" class="mr-2">
                     <span class="text-caption text-white">AI</span>
@@ -301,54 +302,61 @@
                   <div>
                     <div class="text-subtitle-2 font-weight-medium">ChatGPT Assistant</div>
                     <div class="chatgpt-message text-body-2 mt-1">
-                      <p>「{{ item.hiragana }}{{ item.kanji ? ` (${item.kanji})` : '' }}」について説明します：</p>
-                      <p class="mt-2">これは「{{ item.meaning }}」という意味の日本語の単語です。</p>
-                      <p class="mt-2">例文：</p>
-                      <p class="mt-1 example-text">{{ item.exampleSentence || '彼はいつも新しい技術について' + item.hiragana + 'を持っています。' }}</p>
-                      <p class="mt-1 example-text">この{{ item.hiragana }}は日本のIT業界でよく使われています。</p>
-                      <p class="mt-2">他の例文：</p>
-                      <p class="mt-1 example-text">プログラミングを学ぶには、{{ item.hiragana }}と忍耐力が必要です。</p>
+                      <p v-html="item.aiExplanation"></p>
+
+                      <div v-if="item.aiExamples && item.aiExamples.length > 0" class="mt-3">
+                        <p class="font-weight-medium">Example Sentences:</p>
+                        <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-2">
+                          <p class="example-text">{{ example.japanese }}</p>
+                          <p class="text-caption ml-3">{{ example.english }}</p>
+                          <p v-if="example.note" class="text-caption ml-3 font-italic">{{ example.note }}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </v-card>
 
-              <div class="d-flex align-items-start mb-3">
-                <v-avatar size="32" color="blue" class="mr-2">
-                  <span class="text-caption text-white">You</span>
-                </v-avatar>
-                <div>
-                  <div class="text-subtitle-2 font-weight-medium">You</div>
-                  <div class="chatgpt-message text-body-2 mt-1">
-                    「{{ item.hiragana }}」を使った他の例文をくださいませんか？
-                  </div>
-                </div>
-              </div>
-
-              <v-card flat class="chatgpt-card pa-3 mb-3">
-                <div class="d-flex align-items-start">
-                  <v-avatar size="32" color="green" class="mr-2">
-                    <span class="text-caption text-white">AI</span>
-                  </v-avatar>
-                  <div>
-                    <div class="text-subtitle-2 font-weight-medium">ChatGPT Assistant</div>
-                    <div class="chatgpt-message text-body-2 mt-1">
-                      <p>はい、「{{ item.hiragana }}」を使った例文をいくつか紹介します：</p>
-                      <p class="mt-2 example-text">1. 彼は新しいプロジェクトに取り組む{{ item.hiragana }}を持っています。</p>
-                      <p class="mt-1 example-text">2. この会社の成功は社員の{{ item.hiragana }}と努力のおかげです。</p>
-                      <p class="mt-1 example-text">3. 技術者として成功するには、常に学ぶ{{ item.hiragana }}が必要です。</p>
-                      <p class="mt-1 example-text">4. 彼女は常に前向きな{{ item.hiragana }}で仕事に取り組んでいます。</p>
-                      <p class="mt-1 example-text">5. 新しいソフトウェアを開発する{{ item.hiragana }}が生まれました。</p>
+              <!-- Chat History -->
+              <template v-if="item.chatHistory && item.chatHistory.length > 0">
+                <div
+                  v-for="(message, msgIndex) in (item.chatHistory as Array<{role: string, content: string}>)"
+                  :key="msgIndex"
+                  class="mb-3"
+                >
+                  <!-- User Message -->
+                  <div v-if="message.role === 'user'" class="d-flex align-items-start">
+                    <v-avatar size="32" color="blue" class="mr-2">
+                      <span class="text-caption text-white">You</span>
+                    </v-avatar>
+                    <div>
+                      <div class="text-subtitle-2 font-weight-medium">You</div>
+                      <div class="chatgpt-message text-body-2 mt-1">
+                        {{ message.content }}
+                      </div>
                     </div>
                   </div>
+
+                  <!-- AI Response -->
+                  <v-card v-else flat class="chatgpt-card pa-3">
+                    <div class="d-flex align-items-start">
+                      <v-avatar size="32" color="green" class="mr-2">
+                        <span class="text-caption text-white">AI</span>
+                      </v-avatar>
+                      <div>
+                        <div class="text-subtitle-2 font-weight-medium">ChatGPT Assistant</div>
+                        <div class="chatgpt-message text-body-2 mt-1" v-html="message.content"></div>
+                      </div>
+                    </div>
+                  </v-card>
                 </div>
-              </v-card>
+              </template>
 
               <!-- User Input -->
               <div class="chat-input-container d-flex mt-3">
                 <v-text-field
                   v-model="chatInputs[item.vocabId]"
-                  placeholder="メッセージを入力してください..."
+                  placeholder="Enter your message..."
                   variant="outlined"
                   density="comfortable"
                   hide-details
@@ -414,7 +422,7 @@ import { Component, Vue } from 'vue-facing-decorator'
 import { useToast } from 'vue-toast-notification'
 import vocabularyService from '@/services/vocabulary.service'
 import authService from '@/services/auth.service'
-import type { VocabularyItem, VocabularyFilter } from '@/services/vocabulary.service'
+import type { VocabularyItem, VocabularyFilter, ExampleSentence, ChatMessage } from '@/services/vocabulary.service'
 import axios from 'axios'
 
 @Component({
@@ -808,28 +816,187 @@ export default class VocabularyView extends Vue {
       // If already open, close it
       this.chatGPTItems.splice(index, 1);
     } else {
-      // Simulate loading
+      // Start loading state
       this.loadingChatGPT = vocabId;
 
-      // Simulate API call delay
-      setTimeout(() => {
-        this.chatGPTItems.push(vocabId);
-        this.loadingChatGPT = null;
+      // Find the vocabulary item by ID
+      const vocabItem = this.vocabulary.find(item => item.vocabId === vocabId);
 
-        // Initialize chat input for this item if not exists
-        if (!this.chatInputs[vocabId]) {
-          this.chatInputs[vocabId] = '';
+      if (!vocabItem) {
+        console.error('Vocabulary item not found');
+        this.loadingChatGPT = null;
+        return;
+      }
+
+      // Initialize chat input for this item if not exists
+      if (!this.chatInputs[vocabId]) {
+        this.chatInputs[vocabId] = '';
+      }
+
+      // Get the backend API URL
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+      // Query the AI for vocabulary explanation
+      axios.post(`${apiUrl}/api/v1/ai/vocabulary/explain`, null, {
+        params: {
+          kanji: vocabItem.kanji || '',
+          hiragana: vocabItem.hiragana || '',
+          katakana: vocabItem.katakana || '',
+          meaning: vocabItem.meaning || '',
+          category: vocabItem.category || '',
+          exampleSentence: vocabItem.exampleSentence || ''
         }
-      }, 800);
+      })
+      .then(response => {
+        // Store the AI response for this vocabulary
+        const vocabIndex = this.vocabulary.findIndex(item => item.vocabId === vocabId);
+        if (vocabIndex !== -1) {
+          let data = response.data;
+          // If data is a string, try to parse it as JSON
+          if (typeof data === 'string') {
+            try {
+              // Clean string by removing markdown code blocks if present
+              const cleanedString = data
+                .replace(/```json/g, '')
+                .replace(/```/g, '')
+                .trim();
+
+              data = JSON.parse(cleanedString);
+            } catch (error) {
+              console.error('Failed to parse response as JSON:', error);
+              // If parsing fails, create a fallback object
+              data = {
+                explanation: data, // Use the raw string as explanation
+                examples: []
+              };
+            }
+          }
+
+          // Add AI response data to the vocabulary item
+          this.vocabulary[vocabIndex].aiExplanation = data.explanation;
+          this.vocabulary[vocabIndex].aiExamples = data.examples || [];
+
+          // Add to visible chatGPT items
+          this.chatGPTItems.push(vocabId);
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching AI explanation:', error);
+        const toast = useToast();
+        toast.error('Failed to fetch AI explanation', {
+          position: 'top',
+          duration: 3000
+        });
+      })
+      .finally(() => {
+        this.loadingChatGPT = null;
+      });
     }
   }
 
-  sendChatMessage(vocabId: string) {
-    if (this.chatInputs[vocabId]) {
-      console.log('Sending message for vocab ID:', vocabId, 'Message:', this.chatInputs[vocabId]);
-      // In a real implementation, this would send the message to an API
-      // For demo purposes, we just clear the input
-      this.chatInputs[vocabId] = '';
+  async sendChatMessage(vocabId: string) {
+    if (!this.chatInputs[vocabId]) return;
+
+    const message = this.chatInputs[vocabId];
+    this.chatInputs[vocabId] = ''; // Clear input immediately for better UX
+
+    const vocabItem = this.vocabulary.find(item => item.vocabId === vocabId);
+    if (!vocabItem) {
+      console.error('Vocabulary item not found');
+      return;
+    }
+
+    // Create a local copy to maintain reactivity
+    const localMessageHistory = vocabItem.chatHistory || [];
+
+    // Add user message to history
+    localMessageHistory.push({
+      role: 'user',
+      content: message
+    });
+
+    // Update the vocabulary item with the new message
+    const vocabIndex = this.vocabulary.findIndex(item => item.vocabId === vocabId);
+    if (vocabIndex !== -1) {
+      // Ensure chatHistory exists and is an array
+      if (!this.vocabulary[vocabIndex].chatHistory) {
+        this.vocabulary[vocabIndex].chatHistory = [];
+      }
+      this.vocabulary[vocabIndex].chatHistory = [...localMessageHistory];
+    }
+
+    // Fetch AI response for the user message
+    try {
+      // Get the backend API URL
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+      const vocabWord = vocabItem.hiragana || '';
+
+      const response = await axios.post(`${apiUrl}/api/v1/ai/vocabulary/chat`, null, {
+        params: {
+          vocabWord: vocabWord,
+          userMessage: message
+        }
+      });
+
+      // Process the response data
+      let data = response.data;
+      // If data is a string, try to parse it as JSON
+      if (typeof data === 'string') {
+        try {
+          // Clean string by removing markdown code blocks if present
+          const cleanedString = data
+            .replace(/```json/g, '')
+            .replace(/```/g, '')
+            .trim();
+
+          data = JSON.parse(cleanedString);
+        } catch (error) {
+          console.error('Failed to parse chat response as JSON:', error);
+          // If parsing fails, create a fallback object with raw string as message
+          data = {
+            message: data
+          };
+        }
+      }
+
+      // Add AI response to chat history
+      if (vocabIndex !== -1) {
+        // Ensure chatHistory exists and is an array
+        if (!this.vocabulary[vocabIndex].chatHistory) {
+          this.vocabulary[vocabIndex].chatHistory = [];
+        }
+
+        // Use the message from the parsed data, or a fallback message
+        const responseMessage = data && data.message
+          ? data.message
+          : "I'm sorry, I don't have a specific response for that. Could you try asking something else?";
+
+        this.vocabulary[vocabIndex].chatHistory!.push({
+          role: 'assistant',
+          content: responseMessage
+        });
+      }
+    } catch (error) {
+      console.error('Error sending chat message:', error);
+
+      const toast = useToast();
+      toast.error('Failed to get AI response', {
+        position: 'top',
+        duration: 3000
+      });
+
+      // Add error message to chat history
+      if (vocabIndex !== -1) {
+        // Ensure chatHistory exists and is an array
+        if (!this.vocabulary[vocabIndex].chatHistory) {
+          this.vocabulary[vocabIndex].chatHistory = [];
+        }
+        this.vocabulary[vocabIndex].chatHistory!.push({
+          role: 'assistant',
+          content: 'Sorry, I encountered an error processing your request. Please try again.'
+        });
+      }
     }
   }
 }

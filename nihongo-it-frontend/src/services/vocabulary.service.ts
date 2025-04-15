@@ -18,6 +18,11 @@ export interface VocabularyItem {
   createdBy: string
   updatedAt?: boolean  // Changed from isSaved to match API response
   isSaved?: boolean    // Keep this for backward compatibility
+
+  // AI-related properties
+  aiExplanation?: string
+  aiExamples?: ExampleSentence[]
+  chatHistory?: ChatMessage[]
 }
 
 export interface VocabularyFilter {
@@ -36,6 +41,17 @@ export interface PagedResponse<T> {
   totalElements: number
   totalPages: number
   lastPage: boolean
+}
+
+export interface ExampleSentence {
+  japanese: string
+  english: string
+  note?: string
+}
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
 }
 
 const API_URL = '/api/v1/vocabulary'

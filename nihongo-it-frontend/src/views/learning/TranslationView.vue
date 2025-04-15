@@ -40,20 +40,35 @@
 
                 <!-- Economy Mode Toggle -->
                 <div class="d-flex align-center mt-2">
-                  <v-switch
+                  <v-btn-toggle
                     v-model="economyMode"
-                    color="success"
-                    hide-details
-                    class="mt-0 me-2"
+                    color="primary"
+                    mandatory
                     density="compact"
-                  ></v-switch>
-                  <span class="text-body-2" :class="{'text-success': economyMode}">
-                    Economy Mode {{ economyMode ? 'On' : 'Off' }}
-                    <v-tooltip activator="parent" location="end">
-                      Economy mode uses GPT-3.5 Turbo instead of GPT-4o for more affordable translations.
-                      It's about 20x cheaper but may be less accurate with specialized terminology.
-                    </v-tooltip>
-                  </span>
+                    class="model-toggle"
+                  >
+                    <v-btn
+                      :value="true"
+                      prepend-icon="mdi-lightning-bolt"
+                      class="model-toggle-btn"
+                      color="success"
+                    >
+                      GPT-3.5 Turbo
+                      <v-tooltip activator="parent" location="bottom">
+                        More affordable option (20x cheaper)
+                      </v-tooltip>
+                    </v-btn>
+                    <v-btn
+                      :value="false"
+                      prepend-icon="mdi-star"
+                      class="model-toggle-btn"
+                    >
+                      GPT-4o
+                      <v-tooltip activator="parent" location="bottom">
+                        Higher accuracy for specialized terminology
+                      </v-tooltip>
+                    </v-btn>
+                  </v-btn-toggle>
                 </div>
               </v-col>
             </v-row>
@@ -186,7 +201,7 @@
                       <small class="text-caption text-secondary">
                         {{ item.direction === 'vn-to-jp' ? 'VN → JP' : 'JP → VN' }}
                         <v-chip size="x-small" class="ml-2" :color="item.isEconomy ? 'success' : 'primary'" variant="outlined">
-                          {{ item.isEconomy ? 'Economy' : 'Premium' }}
+                          {{ item.isEconomy ? 'GPT-3.5 Turbo' : 'GPT-4o' }}
                         </v-chip>
                       </small>
                       <span class="ml-2 text-truncate history-text">{{ item.source }}</span>
@@ -264,7 +279,7 @@ export default defineComponent({
     const translating = ref(false);
     const translationDirection = ref('vn-to-jp'); // Default: Vietnamese to Japanese
     const translationHistory = ref<TranslationHistoryItem[]>([]);
-    const economyMode = ref(false); // Default: Use premium model (GPT-4o)
+    const economyMode = ref(true); // Default: Use economy model (GPT-3.5 Turbo)
 
     // Mock related vocabulary (could be fetched based on translation content)
     const relatedVocabulary = ref<VocabularyTerm[]>([
@@ -279,10 +294,22 @@ export default defineComponent({
     // Load data from URL if available
     onMounted(() => {
       // Check if there are query parameters
-      if (route.query.text && route.query.dir && route.query.result) {
+      if (route.query.text) {
         sourceText.value = route.query.text as string;
-        translationDirection.value = route.query.dir as string;
-        translationResult.value = route.query.result as string;
+
+        if (route.query.dir) {
+          translationDirection.value = route.query.dir as string;
+        }
+
+        // If there's a result parameter, just display it
+        if (route.query.result) {
+          translationResult.value = route.query.result as string;
+        }
+        // If there's text but no result, automatically translate
+        else if (route.query.text) {
+          // Trigger translation automatically
+          translateText();
+        }
       }
 
       // Load translation history from localStorage
@@ -486,6 +513,15 @@ export default defineComponent({
 
 .translation-toggle-btn {
   min-width: 150px;
+}
+
+.model-toggle {
+  width: 100%;
+}
+
+.model-toggle-btn {
+  flex-grow: 1;
+  padding: 5px 10px;
 }
 
 .japanese-text {

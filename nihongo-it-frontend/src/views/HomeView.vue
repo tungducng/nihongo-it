@@ -83,7 +83,7 @@
             <v-card-title class="translation-title">
               <div class="d-flex align-center">
                 <v-icon color="amber-darken-2" class="me-2">mdi-translate</v-icon>
-                英語翻訳
+                ベトナム翻訳
               </div>
             </v-card-title>
             <v-card-text class="pa-0">
@@ -122,8 +122,7 @@
                 <div class="translation-actions px-3 py-2 d-flex justify-end">
                   <v-btn
                     color="primary"
-                    :loading="translating"
-                    @click="translateText"
+                    @click="goToTranslationPage"
                   >
                     翻訳する
                   </v-btn>
@@ -432,6 +431,19 @@ export default class HomeView extends Vue {
   }
 
   // Translation methods
+  goToTranslationPage() {
+    if (!this.translationText.trim()) return;
+
+    // Navigate to the translations page with the text and direction as query parameters
+    this.$router.push({
+      path: '/translations',
+      query: {
+        text: this.translationText,
+        dir: this.translationDirection
+      }
+    });
+  }
+
   async translateText() {
     if (!this.translationText.trim()) return;
 

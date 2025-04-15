@@ -30,12 +30,16 @@
         <div class="vocab-header d-flex align-center px-6 py-4">
           <div class="word-container">
             <div class="d-flex align-center mb-1">
-              <h2 class="text-h4 japanese-text">{{ vocabulary.hiragana }}</h2>
+              <h2 class="text-h4 japanese-text">
+                {{ (vocabulary.kanji ?? vocabulary.hiragana ?? vocabulary.katakana ?? '').toString() }}
+              </h2>
               <v-chip :color="getJlptColor(vocabulary.jlptLevel)" class="ml-4">
                 {{ vocabulary.jlptLevel }}
               </v-chip>
             </div>
-            <div class="reading-container text-h6 text-medium-emphasis">{{ vocabulary.kanji }}</div>
+            <div v-if="vocabulary.kanji && vocabulary.hiragana" class="reading-container text-h6 text-medium-emphasis">
+              {{ vocabulary.hiragana }}
+            </div>
           </div>
           <v-spacer></v-spacer>
           <div class="action-buttons">
@@ -100,10 +104,10 @@
           <section class="additional-info-section mt-4">
             <div class="d-flex flex-wrap text-caption text-medium-emphasis">
               <div class="me-4 mb-2">
-                <span class="font-weight-medium">Created by:</span> {{ vocabulary.createdBy }}
+                <span class="font-weight-medium">Created by:</span> {{ vocabulary.createdBy || 'Admin' }}
               </div>
               <div class="me-4 mb-2">
-                <span class="font-weight-medium">Created on:</span> {{ formatDate(vocabulary.createdAt) }}
+                <span class="font-weight-medium">Created on:</span> {{ formatDate(vocabulary.createdAt || '1999') }}
               </div>
             </div>
           </section>
@@ -149,9 +153,9 @@
               >
                 <div class="d-flex align-center">
                   <div>
-                    <div class="font-weight-bold text-subtitle-1">{{ item.hiragana }}</div>
+                    <div class="font-weight-bold text-subtitle-1">{{ item.kanji ?? item.hiragana ?? item.katakana }}</div>
                     <div class="text-caption text-medium-emphasis mb-1">{{ item.meaning }}</div>
-                    <div v-if="item.kanji" class="text-caption japanese-text">{{ item.kanji }}</div>
+                    <div v-if="item.kanji && item.hiragana" class="text-caption japanese-text">{{ item.hiragana }}</div>
                   </div>
                   <v-spacer></v-spacer>
                   <v-chip size="small" :color="getJlptColor(item.jlptLevel)">{{ item.jlptLevel }}</v-chip>
@@ -221,7 +225,9 @@ async function loadVocabulary(id: string) {
   }
 }
 
-function getJlptColor(level: string): string {
+function getJlptColor(level: string | null | undefined): string {
+  if (!level) return 'grey';
+
   switch (level) {
     case 'N1': return 'deep-purple'
     case 'N2': return 'indigo'

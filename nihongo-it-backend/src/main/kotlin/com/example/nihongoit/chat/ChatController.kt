@@ -190,7 +190,7 @@ class ChatController(
         @RequestParam userMessage: String
     ): String {
         val prompt = """
-        Hãy đóng vai trò như một giáo viên tiếng Nhật cho học sinh Việt Nam và không trả lời các câu hỏi không liên quan đến tiếng Nhật và từ vựng "$vocabWord". Học sinh đã hỏi về từ "$vocabWord".:
+        Hãy đóng vai trò như một giáo viên tiếng Nhật cho học sinh Việt Nam liên quan đến từ vựng "$vocabWord". Học sinh đã hỏi về từ "$vocabWord".:
         "$userMessage"
         Vui lòng cung cấp một phản hồi hữu ích, giới hạn tối đa 150 từ bằng tiếng Việt với các ví dụ theo định dạng JSON như sau:
         {"message":"Động từ 思う (omou) có nghĩa là 'nghĩ' trong tiếng Việt."}

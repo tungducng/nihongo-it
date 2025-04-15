@@ -48,7 +48,7 @@
                     class="mx-2"
                   ></v-switch>
                   <span class="text-body-2" :class="{'text-primary': useGpt4}">
-                    Bật GPT-4o
+                    {{ useGpt4 ? 'GPT-4o' : 'GPT-3.5 Turbo' }}
                     <v-tooltip activator="parent" location="end">
                       {{ useGpt4 ? 'Độ chính xác cao hơn cho thuật ngữ chuyên ngành nhưng đắt hơn 20 lần' : 'Bật để có độ chính xác cao hơn' }}
                     </v-tooltip>

@@ -1,7 +1,7 @@
 <template>
   <v-container fluid>
     <div class="d-flex align-center mb-4">
-      <h2 class="font-weight-bold" style="font-size: 1.3rem;">Nihongo Vocabulary</h2>
+      <h2 class="font-weight-bold" style="font-size: 1.3rem;">Từ vựng tiếng Nhật</h2>
       <v-spacer></v-spacer>
       <v-btn
         color="primary"
@@ -10,7 +10,7 @@
         :to="{ name: 'savedVocabulary' }"
         class="ml-2"
       >
-        My Saved Vocabulary
+        Từ vựng đã lưu
       </v-btn>
     </div>
 
@@ -23,7 +23,7 @@
             <v-text-field
               v-model="filters.keyword"
               prepend-inner-icon="mdi-magnify"
-              label="Search vocabulary"
+              label="Tìm kiếm từ vựng"
               clearable
               hide-details
               density="comfortable"
@@ -36,7 +36,7 @@
           <v-col cols="12" sm="3">
             <v-select
               v-model="filters.jlptLevel"
-              label="JLPT Level"
+              label="Trình độ JLPT"
               :items="jlptLevels"
               clearable
               hide-details
@@ -50,7 +50,7 @@
           <v-col cols="12" sm="5">
             <v-select
               v-model="filters.category"
-              label="Category"
+              label="Danh mục"
               :items="categories"
               clearable
               hide-details
@@ -65,7 +65,7 @@
         <v-row class="mt-3" v-if="hasActiveFilters">
           <v-col cols="12">
             <div class="d-flex flex-wrap align-center">
-              <span class="text-body-2 text-medium-emphasis mr-2">Active filters:</span>
+              <span class="text-body-2 text-medium-emphasis mr-2">Bộ lọc đang dùng:</span>
               <v-chip
                 v-if="filters.keyword"
                 size="small"
@@ -73,7 +73,7 @@
                 closable
                 @click:close="clearFilter('keyword')"
               >
-                Search: {{ filters.keyword }}
+                Tìm kiếm: {{ filters.keyword }}
               </v-chip>
               <v-chip
                 v-if="filters.jlptLevel"
@@ -83,7 +83,7 @@
                 closable
                 @click:close="clearFilter('jlptLevel')"
               >
-                Level: {{ filters.jlptLevel }}
+                Trình độ: {{ filters.jlptLevel }}
               </v-chip>
               <v-chip
                 v-if="filters.category"
@@ -93,7 +93,7 @@
                 closable
                 @click:close="clearFilter('category')"
               >
-                Category: {{ filters.category }}
+                Danh mục: {{ filters.category }}
               </v-chip>
               <v-btn
                 size="small"
@@ -101,7 +101,7 @@
                 density="comfortable"
                 @click="clearAllFilters"
               >
-                Clear all
+                Xóa tất cả
               </v-btn>
             </div>
           </v-col>
@@ -123,12 +123,12 @@
       <v-list class="custom-vocabulary-list pa-0">
         <div v-if="vocabulary.length === 0" class="text-center pa-6">
           <v-icon size="large" icon="mdi-book-search-outline" class="mb-4"></v-icon>
-          <h3 class="text-h6">No vocabulary found</h3>
+          <h3 class="text-h6">Không tìm thấy từ vựng</h3>
           <p class="text-body-1 text-medium-emphasis mb-4">
-            Try adjusting your search filters or adding new vocabulary.
+            Hãy điều chỉnh bộ lọc tìm kiếm hoặc thêm từ vựng mới.
           </p>
           <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
-            Add vocabulary
+            Thêm từ vựng
           </v-btn>
         </div>
 
@@ -136,11 +136,11 @@
           <!-- Table Header -->
           <div class="custom-header">
             <div class="d-flex px-4 py-3 text-subtitle-2 font-weight-bold w-100">
-              <div class="header-cell column-border" style="width: 80px;">Level</div>
-              <div class="header-cell column-border" style="width: 450px;">Vocabulary</div>
+              <div class="header-cell column-border" style="width: 80px;">Trình độ</div>
+              <div class="header-cell column-border" style="width: 450px;">Từ vựng</div>
               <div class="header-cell column-border" style="width: 200px;">Kanji</div>
-              <div class="header-cell column-border" style="width: 150px;">Category</div>
-              <div class="header-cell column-border" style="flex-grow: 1;">Actions</div>
+              <div class="header-cell column-border" style="width: 150px;">Danh mục</div>
+              <div class="header-cell column-border" style="flex-grow: 1;">Thao tác</div>
             </div>
           </div>
 
@@ -208,7 +208,7 @@
                     @click.stop="playAudio(item.audioPath || item.audioUrl || null, item)"
                     class="mr-2 action-btn"
                     color="blue"
-                    title="Play pronunciation"
+                    title="Phát âm"
                     :loading="playingAudioId === item.vocabId"
                     :disabled="playingAudioId !== null && playingAudioId !== item.vocabId || playingExampleAudioId !== null"
                   ></v-btn>
@@ -220,6 +220,7 @@
                     :color="item.isSaved ? 'warning' : undefined"
                     @click.stop="toggleSave(item)"
                     class="mr-2 action-btn"
+                    :title="item.isSaved ? 'Bỏ lưu' : 'Lưu từ vựng'"
                   ></v-btn>
 
                   <v-btn
@@ -228,7 +229,7 @@
                     variant="text"
                     @click.stop="toggleExpand(item.vocabId)"
                     class="action-btn mr-2"
-                    title="Show example sentences"
+                    title="Hiện câu ví dụ"
                   ></v-btn>
 
                   <v-btn
@@ -259,7 +260,7 @@
                     variant="text"
                     @click.stop="playAudio(item.exampleAudioPath || null, item, true)"
                     color="blue"
-                    title="Play example audio"
+                    title="Phát âm câu ví dụ"
                     class="action-btn"
                     :loading="playingExampleAudioId === item.vocabId"
                     :disabled="playingExampleAudioId !== null && playingExampleAudioId !== item.vocabId || playingAudioId !== null"
@@ -272,11 +273,11 @@
 
               <div class="additional-info d-flex flex-wrap mt-2">
                 <div class="mr-4 mb-1">
-                  <span class="text-caption text-medium-emphasis">Created by:</span>
+                  <span class="text-caption text-medium-emphasis">Tạo bởi:</span>
                   <span class="text-caption ml-1">{{ item.createdBy || 'Admin' }}</span>
                 </div>
                 <div class="mr-4 mb-1">
-                  <span class="text-caption text-medium-emphasis">Created on:</span>
+                  <span class="text-caption text-medium-emphasis">Ngày tạo:</span>
                   <span class="text-caption ml-1">{{ formatDate(item.createdAt ?? '1999') }}</span>
                 </div>
                 <div class="ms-auto">
@@ -287,7 +288,7 @@
                     @click.stop="viewDetails(item)"
                     class="text-none"
                   >
-                    View Details
+                    Xem chi tiết
                   </v-btn>
                 </div>
               </div>
@@ -302,7 +303,7 @@
                     <span class="text-caption text-white">AI</span>
                   </v-avatar>
                   <div>
-                    <div class="text-subtitle-2 font-weight-medium">ChatGPT Assistant</div>
+                    <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
                     <div class="chatgpt-message text-body-2 mt-1">
                       <p v-html="displayedText[item.vocabId] || ''"></p>
                       <span v-if="typingInProgress === item.vocabId && typingExamples[item.vocabId] === undefined" class="typing-cursor">|</span>
@@ -343,10 +344,10 @@
                   <!-- User Message -->
                   <div v-if="message.role === 'user'" class="d-flex align-items-start">
                     <v-avatar size="32" color="blue" class="mr-2">
-                      <span class="text-caption text-white">You</span>
+                      <span class="text-caption text-white">Bạn</span>
                     </v-avatar>
                     <div>
-                      <div class="text-subtitle-2 font-weight-medium">You</div>
+                      <div class="text-subtitle-2 font-weight-medium">Bạn</div>
                       <div class="chatgpt-message text-body-2 mt-1">
                         {{ message.content }}
                       </div>
@@ -360,7 +361,7 @@
                         <span class="text-caption text-white">AI</span>
                       </v-avatar>
                       <div>
-                        <div class="text-subtitle-2 font-weight-medium">ChatGPT Assistant</div>
+                        <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
                         <div class="chatgpt-message text-body-2 mt-1">
                           <span v-html="message.content"></span>
                           <span v-if="typingInProgress === item.vocabId &&
@@ -377,7 +378,7 @@
               <div class="chat-input-container d-flex mt-3">
                 <v-text-field
                   v-model="chatInputs[item.vocabId]"
-                  placeholder="Enter your message..."
+                  placeholder="Nhập tin nhắn của bạn..."
                   variant="outlined"
                   density="comfortable"
                   hide-details
@@ -403,7 +404,7 @@
       <v-card-actions class="d-flex align-center justify-space-between px-4 py-3 pagination-footer">
         <v-select
           v-model="filters.size"
-          label="Items per page"
+          label="Số mục trên trang"
           :items="[10, 20, 50, 100]"
           density="compact"
           variant="outlined"
@@ -422,7 +423,7 @@
         ></v-pagination>
 
         <div v-else class="text-caption text-medium-emphasis">
-          Showing {{ vocabulary.length }} item{{ vocabulary.length !== 1 ? 's' : '' }}
+          Hiển thị {{ vocabulary.length }} mục{{ vocabulary.length !== 1 ? '' : '' }}
         </div>
 
         <!-- Add Vocabulary Button -->
@@ -431,7 +432,7 @@
           prepend-icon="mdi-plus"
           @click="openAddDialog"
         >
-          Add Vocabulary
+          Thêm từ vựng
         </v-btn>
       </v-card-actions>
     </v-card>

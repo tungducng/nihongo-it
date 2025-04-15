@@ -2,7 +2,7 @@
   <!-- Navigation Header -->
   <v-app-bar flat class="px-3">
     <v-app-bar-title class="text-h6 font-weight-bold">
-      <router-link to="/" class="app-name text-decoration-none text-inherit">日本語 IT</router-link>
+      <router-link to="/" class="app-name text-decoration-none text-inherit">Nihongo IT</router-link>
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
@@ -11,24 +11,24 @@
     <div class="d-flex align-center navigation-links">
       <v-btn
         variant="text"
-        to="/dashboard"
+        to="/"
         class="mx-2"
       >
-        Dashboard
+        Trang chủ
       </v-btn>
       <v-btn
         variant="text"
         to="/learning-path"
         class="mx-2"
       >
-        Learning Path
+        Lộ trình học
       </v-btn>
       <v-btn
         variant="text"
         to="/vocabulary"
         class="mx-2"
       >
-        Vocabulary
+        Từ vựng
       </v-btn>
       <v-btn
         variant="text"
@@ -42,7 +42,7 @@
         to="/practice"
         class="mx-2"
       >
-        Practice
+        Luyện tập
       </v-btn>
     </div>
 
@@ -55,7 +55,7 @@
         to="/login"
         class="mx-1"
       >
-        Login
+        Đăng nhập
       </v-btn>
       <v-btn
         to="/register"
@@ -63,7 +63,7 @@
         variant="elevated"
         class="ml-2"
       >
-        Register
+        Đăng ký
       </v-btn>
     </div>
 
@@ -89,21 +89,21 @@
             </v-avatar>
             <div>
               <div class="text-subtitle-1 font-weight-medium">{{ username }}</div>
-              <div class="text-caption text-medium-emphasis">{{ userLevel }} Level</div>
+              <div class="text-caption text-medium-emphasis">Trình độ {{ userLevel }}</div>
             </div>
           </div>
         </v-card-text>
         <v-divider></v-divider>
         <v-list>
           <v-list-item to="/profile" prepend-icon="mdi-account-outline">
-            <v-list-item-title>My Profile</v-list-item-title>
+            <v-list-item-title>Hồ sơ cá nhân</v-list-item-title>
           </v-list-item>
           <v-list-item to="/settings" prepend-icon="mdi-cog-outline">
-            <v-list-item-title>Settings</v-list-item-title>
+            <v-list-item-title>Cài đặt</v-list-item-title>
           </v-list-item>
           <v-divider></v-divider>
           <v-list-item @click="logout" prepend-icon="mdi-logout">
-            <v-list-item-title>Logout</v-list-item-title>
+            <v-list-item-title>Đăng xuất</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-card>

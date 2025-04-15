@@ -9,14 +9,14 @@
               <v-text-field
                 v-model="searchQuery"
                 prepend-inner-icon="mdi-magnify"
-                placeholder="日本語 or English で検索"
+                placeholder="Tìm kiếm bằng tiếng Việt hoặc tiếng Nhật"
                 hide-details
                 variant="plain"
                 density="comfortable"
                 class="search-input"
                 @keyup.enter="searchVocabulary"
               ></v-text-field>
-              <v-btn color="primary" @click="searchVocabulary" class="search-btn">検索</v-btn>
+              <v-btn color="primary" @click="searchVocabulary" class="search-btn">Tìm</v-btn>
             </v-card>
           </v-col>
         </v-row>
@@ -28,8 +28,8 @@
       <v-row class="mt-6">
         <v-col cols="12">
           <h1 class="welcome-header">
-            こんにちは、{{ username }}さん！
-            <small>Welcome to your Japanese IT learning journey</small>
+            Xin chào, {{ username }}!
+            <small>Chào mừng bạn đến với hành trình học tiếng Nhật IT</small>
           </h1>
         </v-col>
       </v-row>
@@ -38,7 +38,7 @@
         <!-- Progress & Level Section -->
         <v-col cols="12" md="4">
           <v-card class="daily-progress">
-            <v-card-title>Today's Progress</v-card-title>
+            <v-card-title>Tiến độ hôm nay</v-card-title>
             <v-card-text>
               <v-progress-circular
                 :model-value="dailyGoalProgress"
@@ -51,12 +51,12 @@
 
               <div class="progress-details mt-4">
                 <p>
-                  <strong>{{ dailyProgress.minutesStudied }} minutes</strong>
-                  studied today
+                  <strong>{{ dailyProgress.minutesStudied }} phút</strong>
+                  đã học hôm nay
                 </p>
                 <p>
-                  Daily goal:
-                  <strong>{{ studyPlan.dailyGoalMinutes }} minutes</strong>
+                  Mục tiêu hàng ngày:
+                  <strong>{{ studyPlan.dailyGoalMinutes }} phút</strong>
                 </p>
               </div>
             </v-card-text>
@@ -65,10 +65,10 @@
 
         <v-col cols="12" md="8">
           <v-card class="current-level">
-            <v-card-title>Your Level: {{ currentLevel }}</v-card-title>
+            <v-card-title>Trình độ hiện tại: {{ currentLevel }}</v-card-title>
             <v-card-text>
-              <p>Start your journey to master Japanese IT terminology!</p>
-              <v-btn color="primary" to="/learning-path" class="mt-4">View Learning Path</v-btn>
+              <p>Bắt đầu hành trình chinh phục thuật ngữ IT tiếng Nhật!</p>
+              <v-btn color="primary" to="/learning-path" class="mt-4">Xem lộ trình học</v-btn>
             </v-card-text>
           </v-card>
         </v-col>
@@ -76,14 +76,14 @@
 
       <!-- Two Column Layout -->
       <v-row class="mt-6">
-        <!-- Left Column - Trending Searches -->
-        <v-col cols="12" md="4">
+        <!-- Left Column - Translation Box -->
+        <v-col cols="12" md="8">
           <!-- Add Translation Box -->
           <v-card class="translation-card mb-6">
             <v-card-title class="translation-title">
               <div class="d-flex align-center">
                 <v-icon color="amber-darken-2" class="me-2">mdi-translate</v-icon>
-                ベトナム翻訳
+                Công cụ dịch thuật
               </div>
             </v-card-title>
             <v-card-text class="pa-0">
@@ -99,11 +99,11 @@
                     >
                       <v-btn value="vn-to-jp" size="small">
                         <v-icon size="small">mdi-arrow-right</v-icon>
-                        ベトナム語→日本語
+                        Tiếng Việt → Tiếng Nhật
                       </v-btn>
                       <v-btn value="jp-to-vn" size="small">
                         <v-icon size="small">mdi-arrow-right</v-icon>
-                        日本語→ベトナム語
+                        Tiếng Nhật → Tiếng Việt
                       </v-btn>
                     </v-btn-toggle>
                   </div>
@@ -111,8 +111,8 @@
 
                 <v-textarea
                   v-model="translationText"
-                  :label="translationDirection === 'vn-to-jp' ? 'ベトナム語のテキスト' : '日本語のテキスト'"
-                  placeholder="ここに翻訳したい文章を入力してください"
+                  :label="translationDirection === 'vn-to-jp' ? 'Nhập văn bản tiếng Việt' : 'Nhập văn bản tiếng Nhật'"
+                  placeholder="Nhập văn bản cần dịch ở đây..."
                   variant="outlined"
                   rows="5"
                   class="translation-input px-3"
@@ -124,61 +124,31 @@
                     color="primary"
                     @click="goToTranslationPage"
                   >
-                    翻訳する
+                    Dịch ngay
                   </v-btn>
                 </div>
               </div>
             </v-card-text>
           </v-card>
 
-          <v-card class="search-ranking-card">
-            <v-card-title class="search-ranking-title">
-              <v-icon color="primary" size="small" class="me-2">mdi-magnify</v-icon>
-              みんなの検索ランキング
-            </v-card-title>
-            <v-card-text class="pa-0">
-              <v-list class="ranking-list">
-                <v-list-item
-                  v-for="(term, index) in trendingSearches"
-                  :key="index"
-                  :to="`/vocabulary/search?keyword=${term.keyword}`"
-                  class="ranking-item"
-                >
-                  <template v-slot:prepend>
-                    <div class="ranking-number" :class="index < 3 ? 'top-rank' : ''">{{ index + 1 }}</div>
-                  </template>
-                  <v-list-item-title>{{ term.keyword }}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-              <div class="text-center pa-3">
-                <v-btn size="small" variant="text" color="primary" to="/vocabulary/trending">
-                  もっとランキングを見る
-                </v-btn>
-              </div>
-            </v-card-text>
-          </v-card>
-
           <!-- Feature Card -->
-          <v-card class="feature-card mt-6" color="primary" variant="outlined">
-            <v-card-title>Try Our New Furigana Generator!</v-card-title>
+          <v-card class="feature-card mb-6" color="primary" variant="outlined">
+            <v-card-title>Công cụ tạo Furigana mới!</v-card-title>
             <v-card-text>
-              <p>Generate furigana for any Japanese text. Perfect for studying kanji pronunciation and creating learning materials.</p>
+              <p>Tạo furigana cho bất kỳ văn bản tiếng Nhật nào. Hoàn hảo để học cách phát âm kanji và tạo tài liệu học tập.</p>
             </v-card-text>
             <v-card-actions>
               <v-btn to="/furigana" color="primary" variant="flat">
-                Try it now
+                Thử ngay
                 <v-icon end>mdi-arrow-right</v-icon>
               </v-btn>
             </v-card-actions>
           </v-card>
-        </v-col>
 
-        <!-- Right Column - Recommended Lessons -->
-        <v-col cols="12" md="8">
           <!-- Translation Results Section (conditionally shown) -->
           <v-card v-if="translationResult" class="mb-6 translation-result-card">
             <v-card-title class="d-flex justify-space-between align-center">
-              <span>翻訳結果</span>
+              <span>Kết quả dịch</span>
               <v-btn icon size="small" @click="clearTranslation">
                 <v-icon>mdi-close</v-icon>
               </v-btn>
@@ -188,7 +158,7 @@
               <div class="result-container">
                 <div class="original-text mb-4">
                   <div class="text-caption text-medium-emphasis mb-1">
-                    {{ translationDirection === 'vn-to-jp' ? 'ベトナム語:' : '日本語:' }}
+                    {{ translationDirection === 'vn-to-jp' ? 'Tiếng Việt:' : 'Tiếng Nhật:' }}
                   </div>
                   <div class="original-content pa-3 bg-grey-lighten-4 rounded">
                     {{ translationText }}
@@ -197,7 +167,7 @@
 
                 <div class="translated-text">
                   <div class="text-caption text-medium-emphasis mb-1">
-                    {{ translationDirection === 'vn-to-jp' ? '日本語:' : 'ベトナム語:' }}
+                    {{ translationDirection === 'vn-to-jp' ? 'Tiếng Nhật:' : 'Tiếng Việt:' }}
                   </div>
                   <div class="translated-content pa-3 bg-indigo-lighten-5 rounded japanese-text">
                     {{ translationResult }}
@@ -211,7 +181,7 @@
                     prepend-icon="mdi-content-copy"
                     @click="copyTranslation"
                   >
-                    コピー
+                    Sao chép
                   </v-btn>
                   <v-btn
                     size="small"
@@ -220,14 +190,15 @@
                     prepend-icon="mdi-share-variant"
                     :to="`/translations?text=${encodeURIComponent(translationText)}&dir=${translationDirection}&result=${encodeURIComponent(translationResult)}`"
                   >
-                    詳細を見る
+                    Xem chi tiết
                   </v-btn>
                 </div>
               </div>
             </v-card-text>
           </v-card>
 
-          <h2 class="section-title mb-4">Recommended for Today</h2>
+          <!-- Recommended Lessons -->
+          <h2 class="section-title mb-4">Bài học đề xuất hôm nay</h2>
 
           <v-row>
             <v-col v-for="lesson in suggestedLessons" :key="lesson.id" cols="12" sm="6">
@@ -244,17 +215,17 @@
                           : 'warning'
                     "
                   >
-                    {{ lesson.type }}
+                    {{ lesson.type === 'vocabulary' ? 'Từ vựng' : lesson.type === 'conversation' ? 'Hội thoại' : 'Ngữ pháp' }}
                   </v-chip>
                   <v-chip size="small" class="ml-2">{{ lesson.level }}</v-chip>
-                  <span class="ml-2">{{ lesson.estimatedMinutes }} min</span>
+                  <span class="ml-2">{{ lesson.estimatedMinutes }} phút</span>
                 </v-card-subtitle>
                 <v-card-text>
                   {{ lesson.description }}
                 </v-card-text>
                 <v-card-actions>
                   <v-btn :to="`/${lesson.type}?lessonId=${lesson.id}`" color="primary" variant="tonal">
-                    Start Lesson
+                    Bắt đầu học
                   </v-btn>
                 </v-card-actions>
               </v-card>
@@ -262,7 +233,7 @@
           </v-row>
 
           <!-- Recent Vocabulary Section -->
-          <h2 class="section-title mb-4 mt-6">Recently Added Vocabulary</h2>
+          <h2 class="section-title mb-4 mt-6">Từ vựng mới thêm gần đây</h2>
           <v-card variant="outlined" class="recent-vocab-card">
             <v-list class="recent-vocab-list">
               <v-list-item
@@ -290,9 +261,42 @@
             </v-list>
             <div class="text-center pa-3">
               <v-btn color="primary" variant="text" to="/vocabulary">
-                View All Vocabulary
+                Xem tất cả từ vựng
               </v-btn>
             </div>
+          </v-card>
+        </v-col>
+
+        <!-- Right Column - Search Ranking (moved from left to right) -->
+        <v-col cols="12" md="4">
+          <v-card class="search-ranking-card">
+            <v-card-title class="search-ranking-title">
+              <div class="d-flex align-center w-100">
+                <v-icon color="grey-darken-3" size="large" class="me-3">mdi-magnify</v-icon>
+                <span class="ranking-title-text">Từ khóa tìm kiếm phổ biến</span>
+              </div>
+            </v-card-title>
+            <v-card-text class="pa-0">
+              <v-list class="ranking-list" density="compact">
+                <v-list-item
+                  v-for="(term, index) in trendingSearches"
+                  :key="index"
+                  :to="`/vocabulary/search?keyword=${term.keyword}`"
+                  class="ranking-item"
+                  density="compact"
+                >
+                  <template v-slot:prepend>
+                    <div class="ranking-number" :class="index < 3 ? 'top-rank' : ''">{{ index + 1 }}</div>
+                  </template>
+                  <v-list-item-title class="ranking-item-text">{{ term.keyword }}</v-list-item-title>
+                </v-list-item>
+              </v-list>
+              <div class="text-center pa-3">
+                <v-btn size="small" variant="text" color="primary" to="/vocabulary/trending">
+                  Xem thêm
+                </v-btn>
+              </div>
+            </v-card-text>
           </v-card>
         </v-col>
       </v-row>
@@ -562,23 +566,31 @@ export default class HomeView extends Vue {
 }
 
 .search-ranking-card {
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
 .search-ranking-title {
   font-size: 1.1rem;
-  background-color: #f8f8f8;
-  padding: 10px 16px;
+  font-weight: 600;
+  background-color: #f5f5f5;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
 }
 
 .ranking-list {
   padding: 0;
+  background-color: #fff;
 }
 
 .ranking-item {
   border-bottom: 1px solid #f0f0f0;
   transition: background-color 0.2s;
+  padding: 8px 16px;
 
   &:hover {
     background-color: #f9f9f9;
@@ -586,21 +598,20 @@ export default class HomeView extends Vue {
 }
 
 .ranking-number {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-color: #e0e0e0;
+  min-width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  background-color: #757575;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: 0.9rem;
   font-weight: bold;
-  color: #616161;
+  color: white;
   margin-right: 12px;
 
   &.top-rank {
     background-color: #3949ab;
-    color: white;
   }
 }
 
@@ -698,5 +709,14 @@ export default class HomeView extends Vue {
 .japanese-text {
   font-family: 'Noto Sans JP', sans-serif;
   line-height: 1.6;
+}
+
+.ranking-title-text {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.ranking-item-text {
+  font-size: 0.95rem;
 }
 </style>

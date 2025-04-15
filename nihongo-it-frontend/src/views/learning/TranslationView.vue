@@ -6,17 +6,17 @@
           <v-btn icon class="mr-3" @click="$router.go(-1)">
             <v-icon>mdi-arrow-left</v-icon>
           </v-btn>
-          <h1 class="text-h4 font-weight-bold">Translation Tool</h1>
+          <h1 class="text-h4 font-weight-bold">Công cụ dịch thuật</h1>
         </div>
       </v-col>
     </v-row>
 
     <v-row>
-      <v-col cols="12" md="8" class="mx-auto">
+      <v-col cols="12" md="12" class="mx-auto">
         <v-card class="translation-card mt-4">
           <v-card-title class="translation-card-title">
             <v-icon color="amber-darken-2" class="mr-2">mdi-translate</v-icon>
-            <span>日本語・ベトナム語 翻訳</span>
+            <span>Dịch Tiếng Nhật - Tiếng Việt</span>
           </v-card-title>
 
           <v-card-text>
@@ -30,45 +30,29 @@
                 >
                   <v-btn value="vn-to-jp" class="translation-toggle-btn">
                     <v-icon class="mr-1">mdi-arrow-right</v-icon>
-                    ベトナム語 → 日本語
+                    Tiếng Việt → Tiếng Nhật
                   </v-btn>
                   <v-btn value="jp-to-vn" class="translation-toggle-btn">
                     <v-icon class="mr-1">mdi-arrow-right</v-icon>
-                    日本語 → ベトナム語
+                    Tiếng Nhật → Tiếng Việt
                   </v-btn>
                 </v-btn-toggle>
 
-                <!-- Economy Mode Toggle -->
+                <!-- Model Selection Switch -->
                 <div class="d-flex align-center mt-2">
-                  <v-btn-toggle
-                    v-model="economyMode"
-                    color="primary"
-                    mandatory
+                  <v-switch
+                    v-model="useGpt4"
+                    :color="useGpt4 ? 'primary' : 'success'"
+                    hide-details
                     density="compact"
-                    class="model-toggle"
-                  >
-                    <v-btn
-                      :value="true"
-                      prepend-icon="mdi-lightning-bolt"
-                      class="model-toggle-btn"
-                      color="success"
-                    >
-                      GPT-3.5 Turbo
-                      <v-tooltip activator="parent" location="bottom">
-                        More affordable option (20x cheaper)
-                      </v-tooltip>
-                    </v-btn>
-                    <v-btn
-                      :value="false"
-                      prepend-icon="mdi-star"
-                      class="model-toggle-btn"
-                    >
-                      GPT-4o
-                      <v-tooltip activator="parent" location="bottom">
-                        Higher accuracy for specialized terminology
-                      </v-tooltip>
-                    </v-btn>
-                  </v-btn-toggle>
+                    class="mx-2"
+                  ></v-switch>
+                  <span class="text-body-2" :class="{'text-primary': useGpt4}">
+                    Bật GPT-4o
+                    <v-tooltip activator="parent" location="end">
+                      {{ useGpt4 ? 'Độ chính xác cao hơn cho thuật ngữ chuyên ngành nhưng đắt hơn 20 lần' : 'Bật để có độ chính xác cao hơn' }}
+                    </v-tooltip>
+                  </span>
                 </div>
               </v-col>
             </v-row>
@@ -77,12 +61,12 @@
               <v-col cols="12" md="6">
                 <div class="input-section">
                   <div class="text-subtitle-1 font-weight-medium mb-2">
-                    {{ translationDirection === 'vn-to-jp' ? 'ベトナム語' : '日本語' }}
+                    {{ translationDirection === 'vn-to-jp' ? 'Tiếng Việt' : 'Tiếng Nhật' }}
                   </div>
                   <v-textarea
                     v-model="sourceText"
-                    :label="translationDirection === 'vn-to-jp' ? 'Enter Vietnamese text' : '日本語を入力'"
-                    :placeholder="translationDirection === 'vn-to-jp' ? 'Nhập văn bản tiếng Việt tại đây...' : '日本語のテキストを入力してください...'"
+                    :label="translationDirection === 'vn-to-jp' ? 'Nhập văn bản tiếng Việt' : 'Nhập văn bản tiếng Nhật'"
+                    :placeholder="translationDirection === 'vn-to-jp' ? 'Nhập văn bản tiếng Việt tại đây...' : 'Nhập văn bản tiếng Nhật tại đây...'"
                     variant="outlined"
                     rows="8"
                     hide-details
@@ -96,7 +80,7 @@
                       @click="copyText(sourceText)"
                       :disabled="!sourceText"
                     >
-                      Copy
+                      Sao chép
                     </v-btn>
                     <v-btn
                       size="small"
@@ -105,7 +89,7 @@
                       @click="clearSourceText"
                       :disabled="!sourceText"
                     >
-                      Clear
+                      Xóa
                     </v-btn>
                   </div>
                 </div>
@@ -114,7 +98,7 @@
               <v-col cols="12" md="6">
                 <div class="output-section">
                   <div class="text-subtitle-1 font-weight-medium mb-2">
-                    {{ translationDirection === 'vn-to-jp' ? '日本語' : 'ベトナム語' }}
+                    {{ translationDirection === 'vn-to-jp' ? 'Tiếng Nhật' : 'Tiếng Việt' }}
                   </div>
                   <div
                     class="translation-output"
@@ -122,13 +106,13 @@
                   >
                     <div v-if="translating" class="translation-loading pa-4">
                       <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                      <span class="ml-2">Translating...</span>
+                      <span class="ml-2">Đang dịch...</span>
                     </div>
                     <div v-else-if="translationResult" class="translation-text pa-4">
                       {{ translationResult }}
                     </div>
                     <div v-else class="empty-translation pa-4">
-                      Translation will appear here
+                      Bản dịch sẽ hiển thị ở đây
                     </div>
                   </div>
                   <div class="d-flex justify-space-between align-center mt-2">
@@ -139,7 +123,7 @@
                       @click="copyText(translationResult)"
                       :disabled="!translationResult"
                     >
-                      Copy
+                      Sao chép
                     </v-btn>
                     <v-btn
                       size="small"
@@ -149,7 +133,7 @@
                       @click="speakText(translationResult)"
                       :disabled="!translationResult"
                     >
-                      Speak
+                      Đọc
                     </v-btn>
                   </div>
                 </div>
@@ -166,7 +150,7 @@
                   @click="translateText"
                 >
                   <v-icon left>mdi-translate</v-icon>
-                  Translate
+                  Dịch
                 </v-btn>
               </v-col>
             </v-row>
@@ -175,14 +159,14 @@
             <v-row v-if="translationHistory.length > 0" class="mt-6">
               <v-col cols="12">
                 <div class="d-flex justify-space-between align-center mb-3">
-                  <h3 class="text-h6">Translation History</h3>
+                  <h3 class="text-h6">Lịch sử dịch</h3>
                   <v-btn
                     size="small"
                     variant="text"
                     color="error"
                     @click="clearHistory"
                   >
-                    Clear History
+                    Xóa lịch sử
                   </v-btn>
                 </div>
                 <v-list>
@@ -220,11 +204,11 @@
         <v-card class="mt-6 related-vocab-card">
           <v-card-title>
             <v-icon color="primary" class="mr-2">mdi-information-outline</v-icon>
-            Related Vocabulary
+            Từ vựng liên quan
           </v-card-title>
           <v-card-text>
             <p class="text-body-2 text-medium-emphasis mb-4">
-              Here are some commonly used IT vocabulary terms related to your translation:
+              Dưới đây là một số thuật ngữ IT thường được sử dụng liên quan đến bản dịch của bạn:
             </p>
             <v-row>
               <v-col
@@ -279,7 +263,7 @@ export default defineComponent({
     const translating = ref(false);
     const translationDirection = ref('vn-to-jp'); // Default: Vietnamese to Japanese
     const translationHistory = ref<TranslationHistoryItem[]>([]);
-    const economyMode = ref(true); // Default: Use economy model (GPT-3.5 Turbo)
+    const useGpt4 = ref(false); // Default: Use GPT-3.5 Turbo (false = don't use GPT-4)
 
     // Mock related vocabulary (could be fetched based on translation content)
     const relatedVocabulary = ref<VocabularyTerm[]>([
@@ -352,8 +336,8 @@ export default defineComponent({
           headers['Authorization'] = `Bearer ${authToken}`;
         }
 
-        // Choose endpoint based on economy mode
-        const endpoint = economyMode.value ? 'translate/economy' : 'translate';
+        // Choose endpoint based on GPT-4 selection
+        const endpoint = useGpt4.value ? 'translate' : 'translate/economy';
 
         // Call the translation API with auth headers
         const response = await fetch(`${apiUrl}/api/v1/ai/${endpoint}?direction=${translationDirection.value}`, {
@@ -365,9 +349,9 @@ export default defineComponent({
         if (!response.ok) {
           // Handle authentication errors specifically
           if (response.status === 401 || response.status === 403) {
-            throw new Error('Authentication required. Please log in to use the translation service.');
+            throw new Error('Bạn cần đăng nhập để sử dụng dịch vụ dịch thuật.');
           }
-          throw new Error(`Translation failed: ${response.statusText}`);
+          throw new Error(`Dịch thuật thất bại: ${response.statusText}`);
         }
 
         const data = await response.json();
@@ -377,7 +361,7 @@ export default defineComponent({
         addToHistory();
       } catch (error) {
         console.error('Translation error:', error);
-        alert(error instanceof Error ? error.message : 'Translation failed. Please try again later.');
+        alert(error instanceof Error ? error.message : 'Dịch thuật thất bại. Vui lòng thử lại sau.');
       } finally {
         translating.value = false;
       }
@@ -394,7 +378,7 @@ export default defineComponent({
       navigator.clipboard.writeText(text)
         .then(() => {
           // Optional: Show a success message
-          alert('Copied to clipboard!');
+          alert('Đã sao chép vào clipboard!');
         })
         .catch(err => {
           console.error('Failed to copy text: ', err);
@@ -422,7 +406,7 @@ export default defineComponent({
         direction: translationDirection.value,
         source: sourceText.value,
         result: translationResult.value,
-        isEconomy: economyMode.value,
+        isEconomy: !useGpt4.value, // false means GPT-4, true means economy
         timestamp: Date.now()
       });
 
@@ -436,11 +420,11 @@ export default defineComponent({
       translationDirection.value = item.direction;
       sourceText.value = item.source;
       translationResult.value = item.result;
-      economyMode.value = item.isEconomy || false;
+      useGpt4.value = !item.isEconomy; // Convert from isEconomy to useGpt4
     };
 
     const clearHistory = () => {
-      if (confirm('Are you sure you want to clear your translation history?')) {
+      if (confirm('Bạn có chắc chắn muốn xóa lịch sử dịch?')) {
         translationHistory.value = [];
       }
     };
@@ -450,7 +434,7 @@ export default defineComponent({
       translationResult,
       translating,
       translationDirection,
-      economyMode,
+      useGpt4,
       relatedVocabulary,
       translationHistory,
       translateText,
@@ -513,15 +497,6 @@ export default defineComponent({
 
 .translation-toggle-btn {
   min-width: 150px;
-}
-
-.model-toggle {
-  width: 100%;
-}
-
-.model-toggle-btn {
-  flex-grow: 1;
-  padding: 5px 10px;
 }
 
 .japanese-text {

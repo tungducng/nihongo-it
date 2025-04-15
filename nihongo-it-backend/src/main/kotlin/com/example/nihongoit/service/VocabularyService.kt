@@ -137,9 +137,9 @@ class VocabularyService(
         val vocabulary = vocabularyRepository.findById(vocabId)
             .orElseThrow { BusinessException("Vocabulary not found") }
 
-        if (vocabulary.createdBy.userId != currentUserId) {
-            throw BusinessException("You can only update vocabulary you created")
-        }
+//        if (vocabulary.createdBy?.userId != currentUserId) {
+//            throw BusinessException("You can only update vocabulary you created")
+//        }
 
         val updatedVocabulary = vocabulary.copy(
             hiragana = request.hiragana,
@@ -171,9 +171,9 @@ class VocabularyService(
         val vocabulary = vocabularyRepository.findById(vocabId)
             .orElseThrow { BusinessException("Vocabulary not found") }
 
-        if (vocabulary.createdBy.userId != currentUserId) {
-            throw BusinessException("You can only delete vocabulary you created")
-        }
+//        if (vocabulary.createdBy.userId != currentUserId) {
+//            throw BusinessException("You can only delete vocabulary you created")
+//        }
 
         vocabularyRepository.delete(vocabulary)
 
@@ -272,7 +272,7 @@ class VocabularyService(
             category = vocabulary.category,
             jlptLevel = vocabulary.jlptLevel,
             createdAt = vocabulary.createdAt,
-            createdBy = vocabulary.createdBy.email,
+            createdBy = vocabulary.createdBy?.email,
             isSaved = isSaved,
         )
     }

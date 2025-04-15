@@ -18,10 +18,10 @@ data class VocabularyEntity(
     @Column(name = "katakana")
     val katakana: String?,
 
-    @Column(name = "hiragana", nullable = false)
+    @Column(name = "hiragana")
     val hiragana: String?,
 
-    @Column(name = "meaning", nullable = false, length = 255)
+    @Column(name = "meaning", length = 255)
     val meaning: String, //vietnamese meaning
 
     @Column(name = "example_sentence", columnDefinition = "text")
@@ -42,10 +42,10 @@ data class VocabularyEntity(
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by", referencedColumnName = "user_id")
-    val createdBy: UserEntity,
+    val createdBy: UserEntity?,
 
     @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now(),
+    val createdAt: LocalDateTime?,
 
     @OneToMany(mappedBy = "vocabulary", cascade = [CascadeType.ALL])
     val flashcards: MutableList<FlashcardEntity> = mutableListOf(),

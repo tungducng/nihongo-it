@@ -14,8 +14,8 @@ export interface VocabularyItem {
   exampleAudioPath?: string | null
   category: string | null
   jlptLevel: string
-  createdAt: string
-  createdBy: string
+  createdAt: string | null
+  createdBy: string | null
   updatedAt?: boolean  // Changed from isSaved to match API response
   isSaved?: boolean    // Keep this for backward compatibility
 

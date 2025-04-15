@@ -9,7 +9,6 @@ import jakarta.validation.constraints.Size
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateVocabularyRequestDto(
-    @get:NotBlank
     @get:Size(max = 100, message = "Hiragana cannot exceed 100 characters")
     @JsonProperty("hiragana")
     val hiragana: String? = null,

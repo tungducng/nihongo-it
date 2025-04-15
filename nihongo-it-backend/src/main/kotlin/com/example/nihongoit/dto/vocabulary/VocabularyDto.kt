@@ -34,10 +34,10 @@ data class VocabularyDto(
     val exampleSentenceTranslation: String?,
 
     @JsonProperty("audioPath")
-    val audioPath: String?,
+    val audioPath: String? = null,
 
     @JsonProperty("category")
-    val category: String?,
+    val category: String? = null,
 
     @JsonProperty("jlptLevel")
     val jlptLevel: JlptLevel,
@@ -46,10 +46,10 @@ data class VocabularyDto(
     @JsonDeserialize(using = LocalDateTimeDeserializer::class)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
     @JsonSerialize(using = LocalDateTimeSerializer::class)
-    val createdAt: LocalDateTime,
+    val createdAt: LocalDateTime? = null,
 
     @JsonProperty("createdBy")
-    val createdBy: String,
+    val createdBy: String? = null,
 
     @JsonProperty("isSaved")
     val isSaved: Boolean = false,

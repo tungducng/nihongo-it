@@ -168,8 +168,10 @@
               <!-- Vocabulary (Hiragana/Katakana) with Meaning -->
               <div class="content-cell vocabulary-cell column-border" style="width: 450px;">
                 <div class="d-flex align-center">
-                  <span class="text-body-2 text-wrap hiragana-text">{{ item.hiragana }}</span>
-                  <span v-if="item.katakana" class="text-caption ml-2 text-medium-emphasis text-wrap">({{ item.katakana }})</span>
+                  <span class="text-body-2 text-wrap hiragana-text">
+                    {{ item.katakana ? item.katakana : item.hiragana }}
+                  </span>
+                  <span v-if="item.katakana && item.hiragana" class="text-caption ml-2 text-medium-emphasis text-wrap">({{ item.hiragana }})</span>
                 </div>
                 <div class="meaning-text text-caption mt-1 text-medium-emphasis text-wrap">
                   {{ item.meaning }}
@@ -275,7 +277,7 @@
                 </div>
                 <div class="mr-4 mb-1">
                   <span class="text-caption text-medium-emphasis">Created on:</span>
-                  <span class="text-caption ml-1">{{ formatDate(item.createdAt) }}</span>
+                  <span class="text-caption ml-1">{{ formatDate(item.createdAt ?? '') }}</span>
                 </div>
                 <div class="ms-auto">
                   <v-btn

@@ -273,11 +273,11 @@
               <div class="additional-info d-flex flex-wrap mt-2">
                 <div class="mr-4 mb-1">
                   <span class="text-caption text-medium-emphasis">Created by:</span>
-                  <span class="text-caption ml-1">{{ item.createdBy }}</span>
+                  <span class="text-caption ml-1">{{ item.createdBy || 'Admin' }}</span>
                 </div>
                 <div class="mr-4 mb-1">
                   <span class="text-caption text-medium-emphasis">Created on:</span>
-                  <span class="text-caption ml-1">{{ formatDate(item.createdAt ?? '') }}</span>
+                  <span class="text-caption ml-1">{{ formatDate(item.createdAt ?? '1999') }}</span>
                 </div>
                 <div class="ms-auto">
                   <v-btn

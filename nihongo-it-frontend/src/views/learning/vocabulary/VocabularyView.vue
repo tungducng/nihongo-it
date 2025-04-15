@@ -304,13 +304,28 @@
                   <div>
                     <div class="text-subtitle-2 font-weight-medium">ChatGPT Assistant</div>
                     <div class="chatgpt-message text-body-2 mt-1">
-                      <p v-html="item.aiExplanation"></p>
+                      <p v-html="displayedText[item.vocabId] || ''"></p>
+                      <span v-if="typingInProgress === item.vocabId && typingExamples[item.vocabId] === undefined" class="typing-cursor">|</span>
 
-                      <div v-if="item.aiExamples && item.aiExamples.length > 0" class="mt-3">
+                      <div v-if="item.aiExamples && item.aiExamples.length > 0 && typingExamples[item.vocabId] !== undefined" class="mt-3">
                         <p class="font-weight-medium">Câu ví dụ:</p>
                         <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-2">
-                          <p class="example-text">{{ example.japanese }}</p>
-                          <p class="text-caption ml-3">{{ example.vietnamese }}</p>
+                          <template v-if="typingExamples[item.vocabId] > exIndex || typingExamples[item.vocabId] === -1">
+                            <!-- Fully displayed examples -->
+                            <p class="example-text">{{ example.japanese }}</p>
+                            <p class="text-caption ml-3">{{ example.vietnamese }}</p>
+                          </template>
+                          <template v-else-if="typingExamples[item.vocabId] === exIndex">
+                            <!-- Currently typing example -->
+                            <p class="example-text">
+                              {{ getExampleProperty(example, 'japaneseDisplayed') || '' }}
+                              <span v-if="isJapaneseComplete(example) && !hasVietnameseStarted(example)" class="typing-cursor">|</span>
+                            </p>
+                            <p v-if="hasVietnameseStarted(example)" class="text-caption ml-3">
+                              {{ getExampleProperty(example, 'vietnameseDisplayed') || '' }}
+                              <span class="typing-cursor">|</span>
+                            </p>
+                          </template>
                         </div>
                       </div>
                     </div>
@@ -346,7 +361,12 @@
                       </v-avatar>
                       <div>
                         <div class="text-subtitle-2 font-weight-medium">ChatGPT Assistant</div>
-                        <div class="chatgpt-message text-body-2 mt-1" v-html="message.content"></div>
+                        <div class="chatgpt-message text-body-2 mt-1">
+                          <span v-html="message.content"></span>
+                          <span v-if="typingInProgress === item.vocabId &&
+                                      msgIndex === (item.chatHistory?.length - 1)"
+                                class="typing-cursor">|</span>
+                        </div>
                       </div>
                     </div>
                   </v-card>
@@ -426,6 +446,14 @@ import authService from '@/services/auth.service'
 import type { VocabularyItem, VocabularyFilter, ExampleSentence, ChatMessage } from '@/services/vocabulary.service'
 import axios from 'axios'
 
+// Extended interface for examples with typing animation
+interface AnimatedExample {
+  japanese: string;
+  vietnamese: string;
+  japaneseDisplayed?: string;
+  vietnameseDisplayed?: string;
+}
+
 @Component({
   name: 'VocabularyView'
 })
@@ -442,6 +470,10 @@ export default class VocabularyView extends Vue {
   chatInputs: Record<string, string> = {}
   playingAudioId: string | null = null
   playingExampleAudioId: string | null = null
+  typingInProgress: string | null = null
+  displayedText: Record<string, string> = {}
+  typingSpeed = 20 // ms between characters
+  typingExamples: Record<string, number> = {} // Track which example is currently being animated
 
   filters = {
     keyword: null as string | null,
@@ -877,8 +909,14 @@ export default class VocabularyView extends Vue {
           this.vocabulary[vocabIndex].aiExplanation = data.explanation;
           this.vocabulary[vocabIndex].aiExamples = data.examples || [];
 
+          // Initialize the displayed text as empty
+          this.displayedText[vocabId] = '';
+
           // Add to visible chatGPT items
           this.chatGPTItems.push(vocabId);
+
+          // Start the typing animation
+          this.animateTyping(vocabId, data.explanation);
         }
       })
       .catch(error => {
@@ -893,6 +931,84 @@ export default class VocabularyView extends Vue {
         this.loadingChatGPT = null;
       });
     }
+  }
+
+  animateTyping(vocabId: string, text: string) {
+    this.typingInProgress = vocabId;
+    let currentIndex = 0;
+    this.displayedText[vocabId] = '';
+
+    const typeNextChar = () => {
+      if (currentIndex < text.length) {
+        this.displayedText[vocabId] += text.charAt(currentIndex);
+        currentIndex++;
+        setTimeout(typeNextChar, this.typingSpeed);
+      } else {
+        // Start animating examples after main text is complete
+        const vocabItem = this.vocabulary.find(item => item.vocabId === vocabId);
+        if (vocabItem?.aiExamples && vocabItem.aiExamples.length > 0) {
+          this.typingExamples[vocabId] = 0;
+          this.animateExamples(vocabId, vocabItem.aiExamples);
+        } else {
+          this.typingInProgress = null;
+        }
+      }
+    };
+
+    typeNextChar();
+  }
+
+  animateExamples(vocabId: string, examples: any[]) {
+    if (!examples || examples.length === 0 || this.typingExamples[vocabId] >= examples.length) {
+      this.typingExamples[vocabId] = -1; // All examples are displayed
+      this.typingInProgress = null;
+      return;
+    }
+
+    const currentExampleIndex = this.typingExamples[vocabId];
+    const example = examples[currentExampleIndex] as AnimatedExample;
+
+    // Animate Japanese text first
+    this.animateExampleText(vocabId, 'japanese', example.japanese, () => {
+      // Then animate Vietnamese text
+      this.animateExampleText(vocabId, 'vietnamese', example.vietnamese, () => {
+        // Move to next example
+        this.typingExamples[vocabId]++;
+        setTimeout(() => {
+          this.animateExamples(vocabId, examples);
+        }, 300); // Pause between examples
+      });
+    });
+  }
+
+  animateExampleText(vocabId: string, field: string, text: string, callback: () => void) {
+    let currentIndex = 0;
+    const exampleIndex = this.typingExamples[vocabId];
+
+    // Initialize the example text if needed
+    const vocabIndex = this.vocabulary.findIndex(item => item.vocabId === vocabId);
+    if (vocabIndex !== -1 && this.vocabulary[vocabIndex].aiExamples) {
+      const example = this.vocabulary[vocabIndex].aiExamples[exampleIndex] as any;
+      if (!example[field + 'Displayed']) {
+        example[field + 'Displayed'] = '';
+      }
+    }
+
+    const typeNextChar = () => {
+      if (currentIndex < text.length) {
+        const vocabIndex = this.vocabulary.findIndex(item => item.vocabId === vocabId);
+        if (vocabIndex !== -1 && this.vocabulary[vocabIndex].aiExamples) {
+          const example = this.vocabulary[vocabIndex].aiExamples[exampleIndex] as any;
+          example[field + 'Displayed'] = text.substring(0, currentIndex + 1);
+        }
+        currentIndex++;
+        setTimeout(typeNextChar, this.typingSpeed);
+      } else {
+        callback();
+      }
+    };
+
+    typeNextChar();
   }
 
   async sendChatMessage(vocabId: string) {
@@ -973,10 +1089,15 @@ export default class VocabularyView extends Vue {
           ? data.message
           : "I'm sorry, I don't have a specific response for that. Could you try asking something else?";
 
+        // Add empty response message first (for typing animation)
+        const aiMessageIndex = this.vocabulary[vocabIndex].chatHistory!.length;
         this.vocabulary[vocabIndex].chatHistory!.push({
           role: 'assistant',
-          content: responseMessage
+          content: '' // Empty content initially
         });
+
+        // Start typing animation for the response
+        this.animateTypingChatResponse(vocabId, responseMessage, vocabIndex, aiMessageIndex);
       }
     } catch (error) {
       console.error('Error sending chat message:', error);
@@ -999,6 +1120,45 @@ export default class VocabularyView extends Vue {
         });
       }
     }
+  }
+
+  animateTypingChatResponse(vocabId: string, text: string, vocabIndex: number, messageIndex: number) {
+    this.typingInProgress = vocabId;
+    let currentIndex = 0;
+
+    const typeNextChar = () => {
+      if (currentIndex < text.length) {
+        if (this.vocabulary[vocabIndex]?.chatHistory &&
+            this.vocabulary[vocabIndex].chatHistory![messageIndex]) {
+          this.vocabulary[vocabIndex].chatHistory![messageIndex].content =
+            text.substring(0, currentIndex + 1);
+        }
+        currentIndex++;
+        setTimeout(typeNextChar, this.typingSpeed);
+      } else {
+        this.typingInProgress = null;
+      }
+    };
+
+    typeNextChar();
+  }
+
+  // Helper method to safely access example display properties
+  getExampleProperty(example: any, property: string): string {
+    return example && example[property] ? example[property] : '';
+  }
+
+  // Check if example has complete Japanese text
+  isJapaneseComplete(example: any): boolean {
+    return example &&
+           example.japaneseDisplayed &&
+           example.japanese &&
+           example.japaneseDisplayed.length === example.japanese.length;
+  }
+
+  // Check if Vietnamese display has started
+  hasVietnameseStarted(example: any): boolean {
+    return example && example.vietnameseDisplayed ? true : false;
   }
 }
 </script>
@@ -1184,4 +1344,18 @@ export default class VocabularyView extends Vue {
     margin-top: 5px
     color: #666
     font-style: italic
+
+.typing-cursor
+  display: inline-block
+  width: 2px
+  height: 16px
+  background: #333
+  margin-left: 2px
+  animation: blink 0.7s infinite
+
+@keyframes blink
+  0%, 100%
+    opacity: 1
+  50%
+    opacity: 0
 </style>

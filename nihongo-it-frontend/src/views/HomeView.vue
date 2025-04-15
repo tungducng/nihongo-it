@@ -438,33 +438,29 @@ export default class HomeView extends Vue {
     this.translating = true;
 
     try {
-      // In a real implementation, you would call your backend API
-      // For now, we'll simulate a delay and just provide a mock response
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Get the backend API URL
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-      // Simple mock responses for demonstration
-      if (this.translationDirection === 'vn-to-jp') {
-        // Vietnamese to Japanese sample (replace with actual API call)
-        if (this.translationText.toLowerCase().includes('xin chào')) {
-          this.translationResult = 'こんにちは';
-        } else if (this.translationText.toLowerCase().includes('cảm ơn')) {
-          this.translationResult = 'ありがとう';
-        } else {
-          this.translationResult = `[日本語翻訳: "${this.translationText}"]`;
-        }
-      } else {
-        // Japanese to Vietnamese sample (replace with actual API call)
-        if (this.translationText.includes('こんにちは')) {
-          this.translationResult = 'Xin chào';
-        } else if (this.translationText.includes('ありがとう')) {
-          this.translationResult = 'Cảm ơn';
-        } else {
-          this.translationResult = `[Tiếng Việt: "${this.translationText}"]`;
-        }
+      // Call the translation API
+      const response = await fetch(`${apiUrl}/api/v1/ai/translate?direction=${this.translationDirection}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'text/plain',
+          'Accept': 'application/json'
+        },
+        body: this.translationText
+      });
+
+      if (!response.ok) {
+        throw new Error(`Translation failed: ${response.statusText}`);
       }
+
+      const data = await response.json();
+      this.translationResult = data.translation;
     } catch (error) {
       console.error('Translation error:', error);
-      // Show error toast
+      // Create a user-friendly error message
+      this.translationResult = 'Sorry, an error occurred during translation. Please try again later.';
     } finally {
       this.translating = false;
     }

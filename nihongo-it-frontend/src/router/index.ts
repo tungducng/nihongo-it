@@ -88,6 +88,12 @@ const routes = [
     component: () => import('@/views/learning/FuriganaView.vue'),
     // No requiresAuth - publicly accessible for demonstrating furigana
   },
+  {
+    path: '/translations',
+    name: 'translations',
+    component: () => import('@/views/learning/TranslationView.vue'),
+    // No requiresAuth - publicly accessible for translations
+  },
 ]
 
 const router = createRouter({

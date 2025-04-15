@@ -26,4 +26,17 @@ class ChatService(
         )
         return response.result.output.text
     }
+    
+    fun getEconomyResponse(prompt: String): String {
+        val response: ChatResponse = chatModel.call(
+            Prompt(
+                prompt,
+                OpenAiChatOptions.builder()
+                    .model("gpt-3.5-turbo")
+                    .temperature(0.4)
+                    .build(),
+            ),
+        )
+        return response.result.output.text
+    }
 }

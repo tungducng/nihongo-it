@@ -10,8 +10,10 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.RequestBody
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import org.springframework.security.access.prepost.PreAuthorize
 
 @RestController
 @RequestMapping("/api/v1/ai")
@@ -31,6 +33,90 @@ class ChatController(
         return chatService.getResponseOptions(prompt)
     }
 
+    /**
+     * Translate text between Vietnamese and Japanese
+     * This endpoint requires authentication
+     */
+    @PostMapping("/translate")
+    fun translate(
+        @RequestBody text: String,
+        @RequestParam direction: String // "vn-to-jp" or "jp-to-vn"
+    ): TranslationResponse {
+        val sourceLang = if (direction == "vn-to-jp") "Vietnamese" else "Japanese"
+        val targetLang = if (direction == "vn-to-jp") "Japanese" else "Vietnamese"
+        
+        val prompt = """
+            Act as a professional translator from $sourceLang to $targetLang.
+            Translate the following text accurately and naturally:
+            
+            $text
+            
+            Only provide the translation without any explanations or notes.
+            If the text contains specialized IT terminology, ensure those terms are translated correctly using appropriate industry terms.
+            
+            Return the response as JSON in this format:
+            {"translation":"<translated text here>"}
+        """.trimIndent()
+        
+        val response = chatService.getResponseOptions(prompt)
+        
+        // Clean the response by removing markdown code blocks
+        val cleanedResponse = response
+            .replace("```json", "")
+            .replace("```", "")
+            .trim()
+        
+        return try {
+            // Parse the JSON response
+            objectMapper.readValue(cleanedResponse, TranslationResponse::class.java)
+        } catch (e: Exception) {
+            // If the response is not valid JSON, create a response with the raw text
+            TranslationResponse(cleanedResponse)
+        }
+    }
+    
+    /**
+     * Economy translation endpoint using GPT-3.5 Turbo for lower cost translations
+     * This endpoint requires authentication
+     */
+    @PostMapping("/translate/economy")
+    fun translateEconomy(
+        @RequestBody text: String,
+        @RequestParam direction: String // "vn-to-jp" or "jp-to-vn"
+    ): TranslationResponse {
+        val sourceLang = if (direction == "vn-to-jp") "Vietnamese" else "Japanese"
+        val targetLang = if (direction == "vn-to-jp") "Japanese" else "Vietnamese"
+        
+        val prompt = """
+            Act as a professional translator from $sourceLang to $targetLang.
+            Translate the following text accurately and naturally:
+            
+            $text
+            
+            Only provide the translation without any explanations or notes.
+            If the text contains specialized IT terminology, ensure those terms are translated correctly using appropriate industry terms.
+            
+            Return the response as JSON in this format:
+            {"translation":"<translated text here>"}
+        """.trimIndent()
+        
+        val response = chatService.getEconomyResponse(prompt)
+        
+        // Clean the response by removing markdown code blocks
+        val cleanedResponse = response
+            .replace("```json", "")
+            .replace("```", "")
+            .trim()
+        
+        return try {
+            // Parse the JSON response
+            objectMapper.readValue(cleanedResponse, TranslationResponse::class.java)
+        } catch (e: Exception) {
+            // If the response is not valid JSON, create a response with the raw text
+            TranslationResponse(cleanedResponse)
+        }
+    }
+
     @PostMapping("/vocabulary/list")
     fun getListVocabulary(
         @RequestParam category: String,
@@ -47,7 +133,6 @@ class ChatController(
 
         return vocabularyList
     }
-
 
     @PostMapping("/vocabulary/explain")
     fun explainVocabulary(
@@ -179,4 +264,11 @@ data class VocabularyInfo(
     val reading: String,
     val meaning: String,
     val example: String
+)
+
+/**
+ * Data class for translation response
+ */
+data class TranslationResponse(
+    val translation: String
 )

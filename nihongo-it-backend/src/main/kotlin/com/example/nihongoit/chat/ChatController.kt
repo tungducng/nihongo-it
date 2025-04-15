@@ -67,7 +67,7 @@ class ChatController(
         1. Một lời giải thích ngắn gọn bằng tiếng Việt
         2. Hai câu ví dụ kèm bản dịch tiếng Việt
         Định dạng theo kiểu JSON như ví dụ này:
-        {"explanation":"Unit testing là việc kiểm tra các thành phần hoặc module riêng lẻ của phần mềm một cách độc lập để xác minh chúng hoạt động chính xác.","examples":[{"japanese":"単体テストを行うことで、バグを早期に発見できます。","vietnamese":"Bằng cách thực hiện kiểm thử đơn vị, có thể phát hiện lỗi sớm.","note":"Thảo luận về lợi ích của kiểm thử đơn vị."},{"japanese":"プログラムの各モジュールに対して単体テストを作成しました。","vietnamese":"Tôi đã tạo các bài kiểm tra đơn vị cho mỗi module của chương trình.","note":"Mô tả hành động tạo các bài kiểm tra đơn vị."}]}
+        {"explanation":"Unit testing là việc kiểm tra các thành phần hoặc module riêng lẻ của phần mềm một cách độc lập để xác minh chúng hoạt động chính xác.","examples":[{"japanese":"単体テストを行うことで、バグを早期に発見できます。","vietnamese":"Bằng cách thực hiện kiểm thử đơn vị, có thể phát hiện lỗi sớm."},{"japanese":"プログラムの各モジュールに対して単体テストを作成しました。","vietnamese":"Tôi đã tạo các bài kiểm tra đơn vị cho mỗi module của chương trình."}]}
     """.trimIndent()
         val response = chatService.getResponseOptions(prompt)
         // Clean the response by removing markdown code blocks

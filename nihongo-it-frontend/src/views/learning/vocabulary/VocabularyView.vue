@@ -311,7 +311,6 @@
                         <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-2">
                           <p class="example-text">{{ example.japanese }}</p>
                           <p class="text-caption ml-3">{{ example.vietnamese }}</p>
-                          <p v-if="example.note" class="text-caption ml-3 font-italic">{{ example.note }}</p>
                         </div>
                       </div>
                     </div>

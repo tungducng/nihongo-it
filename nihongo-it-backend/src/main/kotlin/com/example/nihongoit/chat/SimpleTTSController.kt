@@ -1,4 +1,4 @@
-package com.example.nihongoit.controller
+package com.example.nihongoit.chat
 
 import org.springframework.ai.openai.OpenAiAudioSpeechModel
 import org.springframework.ai.openai.OpenAiAudioSpeechOptions

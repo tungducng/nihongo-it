@@ -46,23 +46,41 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
     }
   }
 
+  async function fetchVocabularyByTerm(term: string) {
+    loading.value = true
+    error.value = null
+
+    try {
+      const vocabulary = await vocabularyService.getVocabularyByTerm(term)
+      currentVocabulary.value = vocabulary
+      await fetchRelatedTerms(vocabulary)
+      return vocabulary
+    } catch (err: any) {
+      console.error('Error fetching vocabulary details:', err)
+      error.value = err.response?.data?.message || 'Failed to load vocabulary details'
+      const toast = useToast()
+      toast.error(error.value || 'Failed to load vocabulary details', {
+        position: 'top',
+        duration: 3000
+      })
+      return null
+    } finally {
+      loading.value = false
+    }
+  }
+
   async function fetchSavedVocabulary(page = 0, size = 10, keyword?: string, sort?: string) {
     savedLoading.value = true
     error.value = null
 
     try {
       const filter: VocabularyFilter = {
+        keyword: keyword || null,
+        jlptLevel: null,
+        topicName: null,
         page,
-        size
-      }
-
-      // Add keyword and sort if provided
-      if (keyword) {
-        filter.keyword = keyword
-      }
-
-      if (sort) {
-        filter.sort = sort
+        size,
+        sort: sort || null
       }
 
       const response = await vocabularyService.getSavedVocabulary(filter)
@@ -104,13 +122,14 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
 
   async function fetchRelatedTerms(vocabulary: VocabularyItem) {
     try {
-      // Fetch related terms based on category or JLPT level
-      const filters = {
-        category: vocabulary.category,
+      // Fetch related terms based on topicName or JLPT level
+      const filters: VocabularyFilter = {
+        keyword: null,
+        topicName: vocabulary.topicName || null,
         jlptLevel: vocabulary.jlptLevel,
         page: 0,
         size: 5
-      } as VocabularyFilter
+      }
 
       const response = await vocabularyService.getVocabulary(filters)
 
@@ -233,6 +252,7 @@ export const useVocabularyStore = defineStore('vocabulary', () => {
 
     // Actions
     fetchVocabularyById,
+    fetchVocabularyByTerm,
     fetchRelatedTerms,
     fetchSavedVocabulary,
     toggleFavorite,

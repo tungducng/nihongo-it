@@ -6,41 +6,38 @@ import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
+import java.util.UUID
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class CreateVocabularyRequestDto(
-    @get:Size(max = 100, message = "Hiragana cannot exceed 100 characters")
-    @JsonProperty("hiragana")
-    val hiragana: String? = null,
+    @get:NotBlank(message = "Term is required")
+    @get:Size(max = 100, message = "Term cannot exceed 100 characters")
+    @JsonProperty("term")
+    val term: String,
 
     @get:NotBlank(message = "Meaning is required")
     @get:Size(max = 255, message = "Meaning cannot exceed 255 characters")
     @JsonProperty("meaning")
     val meaning: String,
 
-    @get:Size(max = 100, message = "Kanji cannot exceed 100 characters")
-    @JsonProperty("kanji")
-    val kanji: String? = null,
+    @get:Size(max = 100, message = "Pronunciation cannot exceed 100 characters")
+    @JsonProperty("pronunciation")
+    val pronunciation: String? = null,
 
-    @get:Size(max = 100, message = "Katakana cannot exceed 100 characters")
-    @JsonProperty("katakana")
-    val katakana: String? = null,
+    @get:Size(max = 500, message = "Example cannot exceed 500 characters")
+    @JsonProperty("example")
+    val example: String? = null, //example sentence
 
-    @get:Size(max = 500, message = "Example sentence cannot exceed 500 characters")
-    @JsonProperty("exampleSentence")
-    val exampleSentence: String? = null, //example sentence
-
-    @get:Size(max = 500, message = "Example sentence translation cannot exceed 500 characters")
-    @JsonProperty("exampleSentenceTranslation")
-    val exampleSentenceTranslation: String? = null, //vietnamese meaning
+    @get:Size(max = 500, message = "Example meaning cannot exceed 500 characters")
+    @JsonProperty("exampleMeaning")
+    val exampleMeaning: String? = null, //vietnamese meaning
 
     @JsonProperty("audioPath")
     val audioPath: String? = null,
 
-    @get:Size(max = 50, message = "Category cannot exceed 50 characters")
-    @get:Pattern(regexp = "^(Programming|Web Development|AI/Machine Learning|Cyber Security|Database|Technology|Computer Hardware|Networking|Software Testing|Project Management|General IT)$", message = "Category must be one of: Programming, Web Development, AI/Machine Learning, Cyber Security, Database, Networking, Database Management, Networking, Software Testing, Project Management")
-    @JsonProperty("category")
-    val category: String? = null,
+    @get:NotBlank(message = "Topic Name is required")
+    @JsonProperty("topicName")
+    val topicName: String,
 
     @get:NotNull(message = "JLPT level is required")
     @get:Pattern(regexp = "^(N5|N4|N3|N2|N1)$", message = "JLPT level must be one of: N5, N4, N3, N2, N1")

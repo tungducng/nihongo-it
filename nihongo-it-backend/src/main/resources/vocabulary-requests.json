@@ -1,0 +1,42 @@
+{
+  "create": {
+    "term": "アルゴリズム",
+    "meaning": "Thuật toán",
+    "pronunciation": "あるごりずむ",
+    "example": "効率的なアルゴリズムを設計する",
+    "exampleMeaning": "Thiết kế thuật toán hiệu quả",
+    "topicName": "アルゴリズムとデータ構造",
+    "jlptLevel": "N3"
+  },
+  "update": {
+    "term": "アルゴリズム",
+    "meaning": "Thuật toán",
+    "pronunciation": "あるごりずむ",
+    "example": "最適なアルゴリズムを作成する",
+    "exampleMeaning": "Tạo thuật toán tối ưu",
+    "topicName": "アルゴリズムとデータ構造",
+    "jlptLevel": "N3"
+  },
+  "filter": {
+    "jlptLevel": "N3",
+    "topicName": "プログラミング言語",
+    "keyword": "データ",
+    "page": 0,
+    "size": 20,
+    "sort": "date_desc"
+  },
+  "saved": {
+    "keyword": "プログラミング",
+    "page": 0,
+    "size": 20,
+    "sort": "alpha_asc"
+  },
+  "errors": {
+    "topic_not_found": {
+      "result": {
+        "status": "NG",
+        "message": "Topic 'NonExistentTopic' does not exist"
+      }
+    }
+  }
+} 

@@ -213,7 +213,6 @@ class FlashcardService(
             frontText = frontText,
             backText = backText,
             notes = null,
-            tags = vocabulary.category
         )
         
         // Initialize with FSRS default values
@@ -235,12 +234,8 @@ class FlashcardService(
         val sb = StringBuilder()
         
         // Add kanji if available
-        if (!vocabulary.kanji.isNullOrBlank()) {
-            sb.append(vocabulary.kanji)
-        } else if (!vocabulary.katakana.isNullOrBlank()) {
-            sb.append(vocabulary.katakana)
-        } else {
-            sb.append(vocabulary.hiragana)
+        if (!vocabulary.term.isNullOrBlank()) {
+            sb.append(vocabulary.term)
         }
         
         return sb.toString()
@@ -255,19 +250,19 @@ class FlashcardService(
         sb.append("\n\n")
         
         // Add reading if kanji was used on front
-        if (!vocabulary.kanji.isNullOrBlank()) {
+        if (!vocabulary.term.isNullOrBlank()) {
             sb.append("Reading: ")
-            sb.append(vocabulary.hiragana)
+            sb.append(vocabulary.term)
             sb.append("\n\n")
         }
         
         // Add example if available
-        if (!vocabulary.exampleSentence.isNullOrBlank()) {
+        if (!vocabulary.example.isNullOrBlank()) {
             sb.append("Example: ")
-            sb.append(vocabulary.exampleSentence)
-            if (!vocabulary.exampleSentenceTranslation.isNullOrBlank()) {
+            sb.append(vocabulary.example)
+            if (!vocabulary.exampleMeaning.isNullOrBlank()) {
                 sb.append("\n")
-                sb.append(vocabulary.exampleSentenceTranslation)
+                sb.append(vocabulary.exampleMeaning)
             }
         }
         

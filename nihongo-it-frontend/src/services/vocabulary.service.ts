@@ -1,37 +1,34 @@
 import axios from 'axios'
+import authService from './auth.service'
 
 // Types
 export interface VocabularyItem {
   vocabId: string
-  hiragana: string | null
-  kanji: string | null
-  katakana: string | null
+  term: string
   meaning: string
-  exampleSentence: string | null
-  exampleSentenceTranslation: string | null
-  audioPath: string | null
-  audioUrl?: string | null
-  exampleAudioPath?: string | null
-  category: string | null
+  pronunciation?: string
+  example?: string
+  exampleMeaning?: string
+  audioPath?: string
   jlptLevel: string
-  createdAt: string | null
-  createdBy: string | null
-  updatedAt?: boolean  // Changed from isSaved to match API response
-  isSaved?: boolean    // Keep this for backward compatibility
+  topicId?: string
+  topicName?: string
+  createdAt?: string
+  isSaved: boolean
 
-  // AI-related properties
+  // For chat interface
   aiExplanation?: string
   aiExamples?: ExampleSentence[]
   chatHistory?: ChatMessage[]
 }
 
 export interface VocabularyFilter {
-  jlptLevel?: string | null
-  category?: string | null
-  keyword?: string | null
-  page?: number
-  size?: number
-  sort?: string
+  keyword: string | null
+  jlptLevel: string | null
+  topicName: string | null
+  page: number
+  size: number
+  sort?: string | null
 }
 
 export interface PagedResponse<T> {
@@ -49,117 +46,179 @@ export interface ExampleSentence {
 }
 
 export interface ChatMessage {
-  role: 'user' | 'assistant'
+  role: string
   content: string
 }
 
-const API_URL = '/api/v1/vocabulary'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+// Helper function to get auth header
+function authHeader() {
+  const token = authService.getToken();
+  return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
 
 class VocabularyService {
   // Get vocabulary with filters
   async getVocabulary(filter: VocabularyFilter): Promise<PagedResponse<VocabularyItem>> {
     try {
-      const response = await axios.get(API_URL, {
-        params: filter,
-        headers: {
-          'Accept': 'application/json'
+      const response = await axios.get(`${API_URL}/api/v1/vocabulary`, {
+        headers: { ...authHeader() },
+        params: {
+          keyword: filter.keyword || undefined,
+          jlptLevel: filter.jlptLevel || undefined,
+          topicName: filter.topicName || undefined,
+          page: filter.page,
+          size: filter.size,
+          sort: filter.sort || undefined,
         }
       })
-
-      // Transform the response data to match our expected format
-      const data = response.data;
-      if (data && Array.isArray(data.content)) {
-        // Add isSaved property if it doesn't exist and handle audioUrl
-        data.content = data.content.map((item: VocabularyItem) => ({
-          ...item,
-          isSaved: item.isSaved || false,
-          audioPath: item.audioPath || item.audioUrl || null // Use audioUrl as fallback
-        }));
-      }
-
-      console.log('API Response:', data);
-      return data;
+      return response.data
     } catch (error) {
-      console.error('Error in getVocabulary:', error);
-      throw error;
+      console.error('Error fetching vocabulary:', error)
+      throw error
     }
   }
 
   // Get vocabulary by ID
   async getVocabularyById(id: string): Promise<VocabularyItem> {
     try {
-      const response = await axios.get(`${API_URL}/${id}`, {
-        headers: { 'Accept': 'application/json' }
+      const response = await axios.get(`${API_URL}/api/v1/vocabulary/${id}`, {
+        headers: { ...authHeader() }
       })
-
-      // Handle the data nested in the response
-      const vocabItem = response.data.data || response.data;
-      return {
-        ...vocabItem,
-        isSaved: vocabItem.isSaved || false,
-        audioPath: vocabItem.audioPath || vocabItem.audioUrl || null // Use audioUrl as fallback
-      };
+      return response.data.data
     } catch (error) {
-      console.error('Error in getVocabularyById:', error);
-      throw error;
+      console.error(`Error fetching vocabulary with ID ${id}:`, error)
+      throw error
+    }
+  }
+
+  // Get vocabulary by term
+  async getVocabularyByTerm(term: string): Promise<VocabularyItem> {
+    try {
+      const response = await axios.get(`${API_URL}/api/v1/vocabulary/term/${term}`, {
+        headers: { ...authHeader() }
+      })
+      return response.data.data
+    } catch (error) {
+      console.error(`Error fetching vocabulary with term ${term}:`, error)
+      throw error
     }
   }
 
   // Save vocabulary to user's notebook
   async saveVocabulary(id: string): Promise<VocabularyItem> {
     try {
-      const response = await axios.post(`${API_URL}/${id}/save`, null, {
-        headers: { 'Accept': 'application/json' }
+      const response = await axios.post(`${API_URL}/api/v1/vocabulary/${id}/save`, {}, {
+        headers: { ...authHeader() }
       })
-      return {
-        ...response.data,
-        isSaved: true
-      };
+      return response.data
     } catch (error) {
-      console.error('Error in saveVocabulary:', error);
-      throw error;
+      console.error(`Error saving vocabulary ${id}:`, error)
+      throw error
     }
   }
 
   // Remove vocabulary from user's notebook
   async removeSavedVocabulary(id: string): Promise<VocabularyItem> {
     try {
-      const response = await axios.delete(`${API_URL}/${id}/save`, {
-        headers: { 'Accept': 'application/json' }
+      const response = await axios.delete(`${API_URL}/api/v1/vocabulary/${id}/save`, {
+        headers: { ...authHeader() }
       })
-      return {
-        ...response.data,
-        isSaved: false
-      };
+      return response.data
     } catch (error) {
-      console.error('Error in removeSavedVocabulary:', error);
-      throw error;
+      console.error(`Error removing saved vocabulary ${id}:`, error)
+      throw error
     }
   }
 
   // Get saved vocabulary
-  async getSavedVocabulary(filter: VocabularyFilter | URLSearchParams): Promise<PagedResponse<VocabularyItem>> {
-    let url = '/api/v1/vocabulary/saved'
-
+  async getSavedVocabulary(filter: VocabularyFilter): Promise<PagedResponse<VocabularyItem>> {
     try {
-      if (filter instanceof URLSearchParams) {
-        url += `?${filter.toString()}`
-        const response = await axios.get(url)
-        return response.data
-      } else {
-        // Build query params the old way
-        const params = new URLSearchParams()
-        if (filter.page !== undefined) params.append('page', filter.page.toString())
-        if (filter.size !== undefined) params.append('size', filter.size.toString())
-        if (filter.keyword) params.append('keyword', filter.keyword)
-        if (filter.sort) params.append('sort', filter.sort)
-
-        url += `?${params.toString()}`
-        const response = await axios.get(url)
-        return response.data
-      }
+      const response = await axios.get(`${API_URL}/api/v1/vocabulary/saved`, {
+        headers: { ...authHeader() },
+        params: {
+          keyword: filter.keyword || undefined,
+          page: filter.page,
+          size: filter.size,
+          sort: filter.sort || undefined,
+        }
+      })
+      return response.data
     } catch (error) {
       console.error('Error fetching saved vocabulary:', error)
+      throw error
+    }
+  }
+
+  async getCategories(): Promise<any> {
+    try {
+      const response = await axios.get(`${API_URL}/api/v1/vocabulary/categories`, {
+        headers: { ...authHeader() }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching categories:', error)
+      throw error
+    }
+  }
+
+  async getJlptLevels(): Promise<any> {
+    try {
+      const response = await axios.get(`${API_URL}/api/v1/vocabulary/jlpt-levels`, {
+        headers: { ...authHeader() }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching JLPT levels:', error)
+      throw error
+    }
+  }
+
+  async getTopics(): Promise<any> {
+    try {
+      const response = await axios.get(`${API_URL}/api/v1/topics`, {
+        headers: { ...authHeader() }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error fetching topics:', error)
+      throw error
+    }
+  }
+
+  async getTopicsByCategory(categoryId: string): Promise<any> {
+    try {
+      const response = await axios.get(`${API_URL}/api/v1/vocabulary/categories/${categoryId}/topics`, {
+        headers: { ...authHeader() }
+      })
+      return response.data
+    } catch (error) {
+      console.error(`Error fetching topics for category ${categoryId}:`, error)
+      throw error
+    }
+  }
+
+  async createVocabulary(vocabulary: any): Promise<any> {
+    try {
+      const response = await axios.post(`${API_URL}/api/v1/vocabulary`, vocabulary, {
+        headers: { ...authHeader() }
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error creating vocabulary:', error)
+      throw error
+    }
+  }
+
+  async updateVocabulary(id: string, vocabulary: any): Promise<any> {
+    try {
+      const response = await axios.put(`${API_URL}/api/v1/vocabulary/${id}`, vocabulary, {
+        headers: { ...authHeader() }
+      })
+      return response.data
+    } catch (error) {
+      console.error(`Error updating vocabulary:`, error)
       throw error
     }
   }

@@ -31,14 +31,14 @@
           <div class="word-container">
             <div class="d-flex align-center mb-1">
               <h2 class="text-h4 japanese-text">
-                {{ (vocabulary.kanji ?? vocabulary.hiragana ?? vocabulary.katakana ?? '').toString() }}
+                {{ vocabulary.term || '' }}
               </h2>
               <v-chip :color="getJlptColor(vocabulary.jlptLevel)" class="ml-4">
                 {{ vocabulary.jlptLevel }}
               </v-chip>
             </div>
-            <div v-if="vocabulary.kanji && vocabulary.hiragana" class="reading-container text-h6 text-medium-emphasis">
-              {{ vocabulary.hiragana }}
+            <div v-if="vocabulary.pronunciation" class="reading-container text-h6 text-medium-emphasis">
+              {{ vocabulary.pronunciation }}
             </div>
           </div>
           <v-spacer></v-spacer>
@@ -72,14 +72,14 @@
           </section>
 
           <!-- Example Section -->
-          <section v-if="vocabulary.exampleSentence" class="example-section mb-6">
+          <section v-if="vocabulary.example" class="example-section mb-6">
             <h3 class="section-title">
               <v-icon color="primary" class="mr-2">mdi-format-quote-open</v-icon>
               Example
             </h3>
             <v-card flat color="background" class="example-card pa-4">
               <p class="japanese-text mb-2" v-html="vocabularyStore.processedExample"></p>
-              <p class="text-body-2 text-medium-emphasis">{{ vocabulary.exampleSentenceTranslation }}</p>
+              <p class="text-body-2 text-medium-emphasis">{{ vocabulary.exampleMeaning }}</p>
 
               <div class="d-flex justify-end">
                 <v-btn icon size="small" @click="playExampleAudio" color="primary" variant="text">
@@ -89,23 +89,20 @@
             </v-card>
           </section>
 
-          <!-- Category and Notes Section -->
+          <!-- Topic and Notes Section -->
           <div class="d-flex flex-wrap">
             <section class="category-section me-6 mb-6" style="min-width: 200px">
               <h3 class="section-title">
                 <v-icon color="primary" class="mr-2">mdi-tag</v-icon>
-                Category
+                Topic
               </h3>
-              <v-chip color="success" variant="outlined">{{ vocabulary.category || 'Uncategorized' }}</v-chip>
+              <v-chip color="success" variant="outlined">{{ vocabulary.topicName || 'Uncategorized' }}</v-chip>
             </section>
           </div>
 
           <!-- Additional Info -->
           <section class="additional-info-section mt-4">
             <div class="d-flex flex-wrap text-caption text-medium-emphasis">
-              <div class="me-4 mb-2">
-                <span class="font-weight-medium">Created by:</span> {{ vocabulary.createdBy || 'Admin' }}
-              </div>
               <div class="me-4 mb-2">
                 <span class="font-weight-medium">Created on:</span> {{ formatDate(vocabulary.createdAt || '1999') }}
               </div>
@@ -137,7 +134,7 @@
           Related Vocabulary
         </v-card-title>
         <v-card-subtitle class="text-caption px-6 pb-2">
-          Other vocabulary terms in the same category or JLPT level
+          Other vocabulary terms in the same topic or JLPT level
         </v-card-subtitle>
 
         <v-card-text class="px-6 py-4">
@@ -153,9 +150,9 @@
               >
                 <div class="d-flex align-center">
                   <div>
-                    <div class="font-weight-bold text-subtitle-1">{{ item.kanji ?? item.hiragana ?? item.katakana }}</div>
+                    <div class="font-weight-bold text-subtitle-1">{{ item.term }}</div>
                     <div class="text-caption text-medium-emphasis mb-1">{{ item.meaning }}</div>
-                    <div v-if="item.kanji && item.hiragana" class="text-caption japanese-text">{{ item.hiragana }}</div>
+                    <div v-if="item.pronunciation" class="text-caption japanese-text">{{ item.pronunciation }}</div>
                   </div>
                   <v-spacer></v-spacer>
                   <v-chip size="small" :color="getJlptColor(item.jlptLevel)">{{ item.jlptLevel }}</v-chip>
@@ -193,10 +190,10 @@ const vocabulary = computed(() => vocabularyStore.currentVocabulary!)
 
 // Watch for route change
 watch(
-  () => route.params.id,
-  async (newId) => {
-    if (newId) {
-      await loadVocabulary(newId as string)
+  () => route.params.term,
+  async (newTerm) => {
+    if (newTerm) {
+      await loadVocabulary(newTerm as string)
     }
   }
 )
@@ -204,23 +201,23 @@ watch(
 // Lifecycle hooks
 onMounted(async () => {
   vocabularyStore.reset()
-  const vocabId = route.params.id as string
-  if (vocabId) {
-    await loadVocabulary(vocabId)
+  const term = route.params.term as string
+  if (term) {
+    await loadVocabulary(term)
   }
 })
 
 // Methods
-async function loadVocabulary(id: string) {
-  const vocab = await vocabularyStore.fetchVocabularyById(id)
-  if (vocab?.exampleSentence) {
+async function loadVocabulary(term: string) {
+  const vocab = await vocabularyStore.fetchVocabularyByTerm(term)
+  if (vocab?.example) {
     try {
       // Use a simple implementation for furigana if module is not available
-      const processedText = vocab.exampleSentence
+      const processedText = vocab.example
       vocabularyStore.setProcessedExample(processedText)
     } catch (error) {
       console.error('Error processing example sentence:', error)
-      vocabularyStore.setProcessedExample(vocab.exampleSentence) // Use original text as fallback
+      vocabularyStore.setProcessedExample(vocab.example) // Use original text as fallback
     }
   }
 }
@@ -254,7 +251,11 @@ function formatDate(dateString?: string): string {
 }
 
 function goToVocabularyDetail(id: string) {
-  router.push({ name: 'vocabularyDetail', params: { id } })
+  // Get the term from the vocabulary item with the matching ID
+  const item = vocabularyStore.relatedVocabulary.find(item => item.vocabId === id)
+  if (item && item.term) {
+    router.push({ name: 'vocabularyDetail', params: { term: item.term } })
+  }
 }
 
 async function playAudio() {
@@ -263,7 +264,7 @@ async function playAudio() {
 }
 
 async function playExampleAudio() {
-  if (!vocabulary.value?.exampleSentence) return
+  if (!vocabulary.value?.example) return
   await playAudioHelper(null, true)
 }
 
@@ -305,16 +306,12 @@ async function playAudioHelper(audioPath: string | null | undefined, isExampleSe
     // Determine which text to use for speech
     let textToSpeak = ''
 
-    if (isExampleSentence && vocabulary.value.exampleSentence) {
-      textToSpeak = vocabulary.value.exampleSentence
+    if (isExampleSentence && vocabulary.value.example) {
+      textToSpeak = vocabulary.value.example
     } else {
-      // Use vocabulary word based on priority: katakana -> kanji -> hiragana
-      if (vocabulary.value.katakana) {
-        textToSpeak = vocabulary.value.katakana
-      } else if (vocabulary.value.kanji) {
-        textToSpeak = vocabulary.value.kanji
-      } else if (vocabulary.value.hiragana) {
-        textToSpeak = vocabulary.value.hiragana
+      // Use vocabulary term or pronunciation
+      if (vocabulary.value.term) {
+        textToSpeak = vocabulary.value.term
       } else {
         toast.warning('No Japanese text available for this vocabulary', {
           position: 'top',

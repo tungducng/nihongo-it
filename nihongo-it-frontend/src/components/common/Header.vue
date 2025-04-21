@@ -95,10 +95,10 @@
         </v-card-text>
         <v-divider></v-divider>
         <v-list>
-          <v-list-item to="/profile" prepend-icon="mdi-account-outline">
+          <v-list-item to="/account/profile" prepend-icon="mdi-account-outline">
             <v-list-item-title>Hồ sơ cá nhân</v-list-item-title>
           </v-list-item>
-          <v-list-item to="/settings" prepend-icon="mdi-cog-outline">
+          <v-list-item to="/account-settings" prepend-icon="mdi-cog-outline">
             <v-list-item-title>Cài đặt</v-list-item-title>
           </v-list-item>
           <v-divider></v-divider>

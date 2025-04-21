@@ -11,6 +11,7 @@ import com.example.nihongoit.dto.vocabulary.VocabularyDto
 import com.example.nihongoit.dto.vocabulary.VocabularyFilterRequestDto
 import com.example.nihongoit.entity.JlptLevel
 import com.example.nihongoit.security.PreAuthFilter
+import com.example.nihongoit.service.CategoryService
 import com.example.nihongoit.service.VocabularyService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -23,13 +24,17 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.util.*
 
 @RestController
 @RequestMapping("/api/v1/vocabulary")
 @Tag(name = "Vocabulary", description = "API endpoints for managing Japanese IT vocabulary, including CRUD operations and user notebook")
-class VocabularyController(private val vocabularyService: VocabularyService) {
+class VocabularyController(
+    private val vocabularyService: VocabularyService,
+    private val categoryService: CategoryService
+) {
 
     @PreAuthFilter(hasAnyRole = ["ADMIN", "USER"])
     @PostMapping(produces = [MediaType.APPLICATION_JSON_VALUE], consumes = [MediaType.APPLICATION_JSON_VALUE])
@@ -76,7 +81,30 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
         @Parameter(description = "Unique identifier of the vocabulary entry", required = true)
         @PathVariable vocabId: UUID
     ): GetVocabularyResponseDto {
-        return vocabularyService.getVocabulary(vocabId)
+        return vocabularyService.getVocabularybyId(vocabId)
+    }
+
+
+    @GetMapping("/term/{term}", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "Get vocabulary by term",
+        description = "Retrieves a specific vocabulary entry by its Japanese term"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Successfully retrieved vocabulary",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = GetVocabularyResponseDto::class))]
+            ),
+            ApiResponse(responseCode = "404", description = "Vocabulary not found")
+        ]
+    )
+    fun getVocabularyByTerm(
+        @Parameter(description = "Japanese term of the vocabulary entry", required = true)
+        @PathVariable term: String
+    ): GetVocabularyResponseDto {
+        return vocabularyService.getVocabularyByTerm(term)
     }
 
     @GetMapping(produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -100,8 +128,8 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
         @Parameter(description = "Filter by JLPT level")
         @RequestParam(required = false) jlptLevel: JlptLevel?,
         
-        @Parameter(description = "Filter by category")
-        @RequestParam(required = false) category: String?,
+        @Parameter(description = "Filter by topic name")
+        @RequestParam(required = false) topicName: String?,
         
         @Parameter(description = "Search by keyword in hiragana, kanji, or meaning")
         @RequestParam(required = false) keyword: String?,
@@ -111,6 +139,9 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
         
         @Parameter(description = "Page size")
         @RequestParam(defaultValue = "20") size: Int,
+        
+        @Parameter(description = "Sort option")
+        @RequestParam(required = false) sort: String?,
     ): PagedVocabularyResponseDto {
         // Validate page and size parameters to prevent invalid values
         val validPage = if (page < 0) 0 else page
@@ -118,10 +149,11 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
         
         val filter = VocabularyFilterRequestDto(
             jlptLevel = jlptLevel,
-            category = category,
+            topicName = topicName,
             keyword = keyword,
             page = validPage,
             size = validSize,
+            sort = sort
         )
         return vocabularyService.filterVocabulary(filter)
     }
@@ -148,7 +180,7 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
     fun updateVocabulary(
         @Parameter(description = "Unique identifier of the vocabulary to update", required = true)
         @PathVariable vocabId: UUID,
-        
+
         @Parameter(description = "Updated vocabulary details", required = true)
         @Valid @RequestBody request: UpdateVocabularyRequestDto,
     ): UpdateVocabularyResponseDto {
@@ -179,12 +211,12 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
     ): ResponseDto {
         return vocabularyService.deleteVocabulary(vocabId)
     }
-
+    
     @PreAuthFilter(hasAnyRole = ["ADMIN", "USER"])
     @PostMapping("/{vocabId}/save", produces = [MediaType.APPLICATION_JSON_VALUE])
     @Operation(
-        summary = "Save vocabulary to user's notebook",
-        description = "Adds a vocabulary entry to the current user's personal notebook for later review",
+        summary = "Save vocabulary to user's notebook by ID",
+        description = "Adds a vocabulary entry to the current user's personal notebook using ID (legacy method)",
         security = [SecurityRequirement(name = "bearerAuth")]
     )
     @ApiResponses(
@@ -277,6 +309,26 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
         return result
     }
 
+    @GetMapping("/topics", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "Get all topics for vocabulary",
+        description = "Returns a list of all available topics for organizing vocabulary entries"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Successfully retrieved topics list",
+                content = [Content(mediaType = "application/json")]
+            )
+        ]
+    )
+    fun getAllTopics(): ResponseEntity<List<TopicDTO>> {
+        // Get all topics regardless of category
+        // This is the primary organization structure for vocabulary items
+        return ResponseEntity.ok(categoryService.getAllTopics())
+    }
+
     @GetMapping("/categories", produces = [MediaType.APPLICATION_JSON_VALUE])
     @Operation(
         summary = "Get available vocabulary categories",
@@ -291,21 +343,9 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
             )
         ]
     )
-    fun getCategories(): List<String> {
-        // Fixed list for now - could be retrieved from the database in the future
-        val categories = listOf(
-            "Programming",
-            "Database",
-            "Networking",
-            "AI",
-            "Cloud",
-            "Mobile",
-            "Web",
-            "Security",
-            "DevOps",
-            "General IT",
-        )
-        return categories
+    fun getCategories(): List<CategoryDTO> {
+        // Get categories from the database
+        return categoryService.getAllCategories()
     }
 
 
@@ -326,5 +366,27 @@ class VocabularyController(private val vocabularyService: VocabularyService) {
     fun getJlptLevels(): List<JlptLevel> {
         val levels = JlptLevel.entries
         return levels
+    }
+
+    @GetMapping("/categories/{categoryId}/topics", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "Get topics for a category",
+        description = "Returns all topics belonging to a specific category"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Successfully retrieved topics list",
+                content = [Content(mediaType = "application/json")]
+            ),
+            ApiResponse(responseCode = "404", description = "Category not found")
+        ]
+    )
+    fun getTopicsByCategory(
+        @Parameter(description = "Category ID", required = true)
+        @PathVariable categoryId: UUID
+    ): ResponseEntity<List<TopicDTO>> {
+        return ResponseEntity.ok(categoryService.getTopicsForCategory(categoryId))
     }
 }

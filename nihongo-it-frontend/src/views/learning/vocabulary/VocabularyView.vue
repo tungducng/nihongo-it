@@ -46,12 +46,14 @@
             ></v-select>
           </v-col>
 
-          <!-- Category Filter -->
+          <!-- Topic Filter -->
           <v-col cols="12" sm="5">
             <v-select
-              v-model="filters.category"
-              label="Danh mục"
-              :items="categories"
+              v-model="filters.topicName"
+              label="Chủ đề"
+              :items="topics"
+              item-title="name"
+              item-value="name"
               clearable
               hide-details
               density="comfortable"
@@ -86,14 +88,14 @@
                 Trình độ: {{ filters.jlptLevel }}
               </v-chip>
               <v-chip
-                v-if="filters.category"
+                v-if="filters.topicName"
                 size="small"
                 color="success"
                 class="mr-2 mb-1"
                 closable
-                @click:close="clearFilter('category')"
+                @click:close="clearFilter('topicName')"
               >
-                Danh mục: {{ filters.category }}
+                Chủ đề: {{ filters.topicName }}
               </v-chip>
               <v-btn
                 size="small"
@@ -138,8 +140,8 @@
             <div class="d-flex px-4 py-3 text-subtitle-2 font-weight-bold w-100">
               <div class="header-cell column-border" style="width: 80px;">Trình độ</div>
               <div class="header-cell column-border" style="width: 450px;">Từ vựng</div>
-              <div class="header-cell column-border" style="width: 200px;">Kanji</div>
-              <div class="header-cell column-border" style="width: 150px;">Danh mục</div>
+              <div class="header-cell column-border" style="width: 200px;">Cách đọc</div>
+              <div class="header-cell column-border" style="width: 150px;">Chủ đề</div>
               <div class="header-cell column-border" style="flex-grow: 1;">Thao tác</div>
             </div>
           </div>
@@ -165,35 +167,34 @@
                 </v-chip>
               </div>
 
-              <!-- Vocabulary (Hiragana/Katakana) with Meaning -->
+              <!-- Vocabulary Term with Meaning -->
               <div class="content-cell vocabulary-cell column-border" style="width: 450px;">
                 <div class="d-flex align-center">
-                  <span class="text-body-2 text-wrap hiragana-text">
-                    {{ item.katakana ? item.katakana : item.hiragana }}
+                  <span class="text-body-2 text-wrap japanese-text">
+                    {{ item.term }}
                   </span>
-                  <span v-if="item.katakana && item.hiragana" class="text-caption ml-2 text-medium-emphasis text-wrap">({{ item.hiragana }})</span>
                 </div>
                 <div class="meaning-text text-caption mt-1 text-medium-emphasis text-wrap">
                   {{ item.meaning }}
                 </div>
               </div>
 
-              <!-- Kanji -->
+              <!-- Pronunciation -->
               <div class="content-cell text-center column-border" style="width: 200px;">
-                <span v-if="item.kanji" class="japanese-text kanji-text">{{ item.kanji }}</span>
+                <span v-if="item.pronunciation" class="japanese-text">{{ item.pronunciation }}</span>
                 <span v-else class="text-medium-emphasis">—</span>
               </div>
 
-              <!-- Category -->
+              <!-- Topic Name -->
               <div class="content-cell text-center column-border" style="width: 150px;">
                 <v-chip
-                  v-if="item.category"
+                  v-if="item.topicName"
                   size="x-small"
                   color="success"
                   variant="outlined"
                   class="category-chip"
                 >
-                  {{ item.category }}
+                  {{ item.topicName }}
                 </v-chip>
                 <span v-else class="text-medium-emphasis">—</span>
               </div>
@@ -205,7 +206,7 @@
                     icon="mdi-volume-high"
                     size="small"
                     variant="text"
-                    @click.stop="playAudio(item.audioPath || item.audioUrl || null, item)"
+                    @click.stop="playAudio(item.audioPath || null, item)"
                     class="mr-2 action-btn"
                     color="blue"
                     title="Phát âm"
@@ -250,15 +251,15 @@
 
             <!-- Expanded Content (Example Sentences) -->
             <div v-if="expandedItems.includes(item.vocabId)" class="expanded-content py-2 px-4" @click.stop>
-              <div v-if="item.exampleSentence" class="example-sentence my-2">
+              <div v-if="item.example" class="example-sentence my-2">
                 <div class="d-flex align-items-center">
                   <v-icon class="mr-2" size="x-small" color="grey">mdi-format-quote-open</v-icon>
-                  <div class="flex-grow-1 japanese-text">{{ item.exampleSentence }}</div>
+                  <div class="flex-grow-1 japanese-text">{{ item.example }}</div>
                   <v-btn
                     icon="mdi-volume-high"
                     size="x-small"
                     variant="text"
-                    @click.stop="playAudio(item.exampleAudioPath || null, item, true)"
+                    @click.stop="playAudio(null, item, true)"
                     color="blue"
                     title="Phát âm câu ví dụ"
                     class="action-btn"
@@ -266,16 +267,12 @@
                     :disabled="playingExampleAudioId !== null && playingExampleAudioId !== item.vocabId || playingAudioId !== null"
                   ></v-btn>
                 </div>
-                <div v-if="item.exampleSentenceTranslation" class="example-translation ml-6 mt-1 text-caption text-medium-emphasis">
-                  {{ item.exampleSentenceTranslation }}
+                <div v-if="item.exampleMeaning" class="example-translation ml-6 mt-1 text-caption text-medium-emphasis">
+                  {{ item.exampleMeaning }}
                 </div>
               </div>
 
               <div class="additional-info d-flex flex-wrap mt-2">
-                <div class="mr-4 mb-1">
-                  <span class="text-caption text-medium-emphasis">Tạo bởi:</span>
-                  <span class="text-caption ml-1">{{ item.createdBy || 'Admin' }}</span>
-                </div>
                 <div class="mr-4 mb-1">
                   <span class="text-caption text-medium-emphasis">Ngày tạo:</span>
                   <span class="text-caption ml-1">{{ formatDate(item.createdAt ?? '1999') }}</span>
@@ -343,34 +340,34 @@
                 >
                   <!-- User Message -->
                   <div v-if="message.role === 'user'" class="d-flex align-items-start">
-                    <v-avatar size="32" color="blue" class="mr-2">
+                <v-avatar size="32" color="blue" class="mr-2">
                       <span class="text-caption text-white">Bạn</span>
-                    </v-avatar>
-                    <div>
+                </v-avatar>
+                <div>
                       <div class="text-subtitle-2 font-weight-medium">Bạn</div>
-                      <div class="chatgpt-message text-body-2 mt-1">
+                  <div class="chatgpt-message text-body-2 mt-1">
                         {{ message.content }}
-                      </div>
-                    </div>
                   </div>
+                </div>
+              </div>
 
                   <!-- AI Response -->
                   <v-card v-else flat class="chatgpt-card pa-3">
-                    <div class="d-flex align-items-start">
-                      <v-avatar size="32" color="green" class="mr-2">
-                        <span class="text-caption text-white">AI</span>
-                      </v-avatar>
-                      <div>
+                <div class="d-flex align-items-start">
+                  <v-avatar size="32" color="green" class="mr-2">
+                    <span class="text-caption text-white">AI</span>
+                  </v-avatar>
+                  <div>
                         <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
-                        <div class="chatgpt-message text-body-2 mt-1">
+                    <div class="chatgpt-message text-body-2 mt-1">
                           <span v-html="message.content"></span>
                           <span v-if="typingInProgress === item.vocabId &&
                                       msgIndex === (item.chatHistory?.length - 1)"
                                 class="typing-cursor">|</span>
-                        </div>
-                      </div>
                     </div>
-                  </v-card>
+                  </div>
+                </div>
+              </v-card>
                 </div>
               </template>
 
@@ -479,37 +476,28 @@ export default class VocabularyView extends Vue {
   filters = {
     keyword: null as string | null,
     jlptLevel: null as string | null,
-    category: null as string | null,
+    topicName: null as string | null,
     page: 0,
     size: 10
   } as VocabularyFilter
 
   // Filter options
   jlptLevels = ['N1', 'N2', 'N3', 'N4', 'N5']
-  categories = [
-    'Programming',
-    'Web Development',
-    'AI/Machine Learning',
-    'Cyber Security',
-    'Database',
-    'Technology',
-    'Computer Hardware',
-    'Project Management',
-    'Networking',
-    'Software Testing'
-  ]
+  topics: any[] = []
+
   // Computed Properties
   get hasActiveFilters(): boolean {
     return !!(
       this.filters.keyword ||
       this.filters.jlptLevel ||
-      this.filters.category
+      this.filters.topicName
     )
   }
 
   // Lifecycle Hooks
   async mounted() {
-    this.fetchVocabulary();
+    await this.fetchVocabulary();
+    await this.fetchTopics();
   }
 
   // Methods
@@ -595,6 +583,14 @@ export default class VocabularyView extends Vue {
     }
   }
 
+  async fetchTopics() {
+    try {
+      this.topics = await vocabularyService.getTopics();
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+    }
+  }
+
   changePage(page: number) {
     this.currentPage = page;
     this.filters.page = page - 1; // API uses 0-based indexing
@@ -612,7 +608,7 @@ export default class VocabularyView extends Vue {
     this.fetchVocabulary();
   }
 
-  clearFilter(filterName: 'keyword' | 'jlptLevel' | 'category') {
+  clearFilter(filterName: 'keyword' | 'jlptLevel' | 'topicName') {
     this.filters[filterName] = null;
     this.fetchVocabulary();
   }
@@ -620,7 +616,7 @@ export default class VocabularyView extends Vue {
   clearAllFilters() {
     this.filters.keyword = null;
     this.filters.jlptLevel = null;
-    this.filters.category = null;
+    this.filters.topicName = null;
     this.filters.page = 0;
     this.currentPage = 1;
     this.fetchVocabulary();
@@ -710,33 +706,21 @@ export default class VocabularyView extends Vue {
 
         if (!currentItem) {
           toast.warning('Could not identify vocabulary item', {
-            position: 'top',
-            duration: 3000
-          });
-          return;
-        }
+        position: 'top',
+        duration: 3000
+      });
+      return;
+    }
 
         // Determine which text to use for speech
         let textToSpeak = '';
 
-        if (isExampleSentence && currentItem.exampleSentence) {
+        if (isExampleSentence && currentItem.example) {
           // Use example sentence if requested and available
-          textToSpeak = currentItem.exampleSentence;
+          textToSpeak = currentItem.example;
         } else {
-          // Use vocabulary word based on priority: katakana -> kanji -> hiragana
-          if (currentItem.katakana) {
-            textToSpeak = currentItem.katakana;
-          } else if (currentItem.kanji) {
-            textToSpeak = currentItem.kanji;
-          } else if (currentItem.hiragana) {
-            textToSpeak = currentItem.hiragana;
-          } else {
-            toast.warning('No Japanese text available for this vocabulary', {
-              position: 'top',
-              duration: 3000
-            });
-            return;
-          }
+          // Use term for vocabulary pronunciation
+          textToSpeak = currentItem.term;
         }
 
         // Show loading indicator
@@ -780,7 +764,7 @@ export default class VocabularyView extends Vue {
           }
         };
 
-        await audio.play();
+      await audio.play();
       }
     } catch (error) {
       console.error('Error generating or playing TTS audio:', error);
@@ -793,10 +777,10 @@ export default class VocabularyView extends Vue {
         });
       } else {
         toast.error(error instanceof Error ? error.message : 'Failed to generate speech', {
-          position: 'top',
-          duration: 3000
-        });
-      }
+        position: 'top',
+        duration: 3000
+      });
+    }
     } finally {
       // Reset loading state if no audio was played (in case of error)
       // For successful audio playback, the onended event will handle this
@@ -834,8 +818,8 @@ export default class VocabularyView extends Vue {
   }
 
   viewDetails(item: VocabularyItem) {
-    // To be implemented - show detailed view or navigate to detail page
-    this.$router.push(`/vocabulary/${item.vocabId}`);
+    // Navigate to detail page using the term
+    this.$router.push(`/vocabulary/term/${item.term}`);
   }
 
   openAddDialog() {
@@ -862,10 +846,10 @@ export default class VocabularyView extends Vue {
         return;
       }
 
-      // Initialize chat input for this item if not exists
-      if (!this.chatInputs[vocabId]) {
-        this.chatInputs[vocabId] = '';
-      }
+        // Initialize chat input for this item if not exists
+        if (!this.chatInputs[vocabId]) {
+          this.chatInputs[vocabId] = '';
+        }
 
       // Get the backend API URL
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -873,12 +857,11 @@ export default class VocabularyView extends Vue {
       // Query the AI for vocabulary explanation
       axios.post(`${apiUrl}/api/v1/ai/vocabulary/explain`, null, {
         params: {
-          kanji: vocabItem.kanji || '',
-          hiragana: vocabItem.hiragana || '',
-          katakana: vocabItem.katakana || '',
+          term: vocabItem.term || '',
+          pronunciation: vocabItem.pronunciation || '',
           meaning: vocabItem.meaning || '',
-          category: vocabItem.category || '',
-          exampleSentence: vocabItem.exampleSentence || ''
+          topicName: vocabItem.topicName || '',
+          example: vocabItem.example || ''
         }
       })
       .then(response => {
@@ -1048,7 +1031,7 @@ export default class VocabularyView extends Vue {
       // Get the backend API URL
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-      const vocabWord = vocabItem.hiragana || '';
+      const vocabWord = vocabItem.term || '';
 
       const response = await axios.post(`${apiUrl}/api/v1/ai/vocabulary/chat`, null, {
         params: {

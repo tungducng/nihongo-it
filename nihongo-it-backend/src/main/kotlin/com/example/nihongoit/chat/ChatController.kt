@@ -136,17 +136,16 @@ class ChatController(
 
     @PostMapping("/vocabulary/explain")
     fun explainVocabulary(
-        @RequestParam kanji: String?,
-        @RequestParam hiragana: String,
-        @RequestParam(required = false) katakana: String?,
+        @RequestParam term: String,
+        @RequestParam(required = false) pronunciation: String?,
         @RequestParam meaning: String,
-        @RequestParam(required = false) category: String?,
-        @RequestParam(required = false) exampleSentence: String?
+        @RequestParam(required = false) topicName: String?,
+        @RequestParam(required = false) example: String?
     ): String {
-        val word = if (kanji.isNullOrBlank()) hiragana else "$kanji ($hiragana)"
+        val wordDisplay = if (pronunciation.isNullOrBlank()) term else "$term ($pronunciation)"
         val prompt = """
         Hãy đóng vai trò như một giáo viên tiếng Nhật cho học sinh Việt Nam. Tạo một lời giải thích bằng tiếng Việt cho từ vựng này:
-        Từ: $word
+        Từ: $wordDisplay
         Ý nghĩa bằng tiếng Việt: $meaning
         Vui lòng cung cấp:
         1. Một lời giải thích ngắn gọn bằng tiếng Việt

@@ -5,44 +5,42 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Entity
-@Table(name = "vocabulary")
+@Table(name = "vocabulary", 
+    uniqueConstraints = [
+        UniqueConstraint(columnNames = ["term"], name = "uk_vocabulary_term")
+    ]
+)
 data class VocabularyEntity(
     @Id
     @GeneratedValue(generator = "UUID")
     @Column(name = "vocab_id", updatable = false, nullable = false)
     val vocabId: UUID? = null,
 
-    @Column(name = "kanji")
-    val kanji: String?,
+    @Column(name = "term", nullable = false, unique = true)
+    val term: String?, // japanese term (kanji, hiragana, katakana)
 
-    @Column(name = "katakana")
-    val katakana: String?,
+    @Column(name = "meaning", nullable = false)
+    val meaning: String, // vietnamese meaning
 
-    @Column(name = "hiragana")
-    val hiragana: String?,
+    @Column(name = "pronunciation")
+    val pronunciation: String?, // VD: かんすう (có thể null)
 
-    @Column(name = "meaning", length = 255)
-    val meaning: String, //vietnamese meaning
+    @Column(name = "example", columnDefinition = "text")
+    val example: String?, // VD: 私は日本語を勉強しています。 (có thể null)
 
-    @Column(name = "example_sentence", columnDefinition = "text")
-    val exampleSentence: String?,
-
-    @Column(name = "example_sentence_translation", columnDefinition = "text")
-    val exampleSentenceTranslation: String?, //vietnamese meaning
+    @Column(name = "example_meaning", columnDefinition = "text")
+    val exampleMeaning: String?, // vietnamese meaning of the example
 
     @Column(name = "audio_path")
     val audioPath: String?,
-
-    @Column(name = "category", length = 50)
-    val category: String?,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "jlpt_level")
     val jlptLevel: JlptLevel,
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by", referencedColumnName = "user_id")
-    val createdBy: UserEntity?,
+    @JoinColumn(name = "topic_id")
+    val topic: TopicEntity,
 
     @Column(name = "created_at")
     val createdAt: LocalDateTime?,

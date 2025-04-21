@@ -68,7 +68,15 @@
             </v-alert>
           </v-card-text>
 
-          <v-card-actions v-if="user" class="justify-center">
+          <v-card-actions v-if="user" class="justify-space-between">
+            <v-btn
+              color="secondary"
+              variant="outlined"
+              @click="navigateToSettings"
+              class="px-6"
+            >
+              Account Settings
+            </v-btn>
             <v-btn
               color="primary"
               @click="logout"
@@ -123,6 +131,10 @@ export default class ProfileView extends Vue {
 
   async fetchProfile(): Promise<void> {
     await this.authStore.fetchCurrentUser()
+  }
+
+  navigateToSettings(): void {
+    this.$router.push({ name: 'accountSettings' })
   }
 
   logout(): void {

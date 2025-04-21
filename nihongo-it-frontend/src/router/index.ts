@@ -21,16 +21,26 @@ const routes = [
     beforeEnter: redirectIfAuthenticated
   },
   {
-    path: '/profile',
+    path: '/learning-progress',
+    name: 'learningProgress',
+    component: () => import('@/views/learning/LearningProgressView.vue'),
+  },
+  {
+    path: '/learning/vocabulary-storage',
+    name: 'vocabularyStorage',
+    component: () => import('@/views/learning/VocabularyStorageView.vue'),
+  },
+  {
+    path: '/account/profile',
     name: 'profile',
     component: () => import('@/views/auth/ProfileView.vue'),
     meta: { requiresAuth: true }
   },
   {
-    path: '/learning-path',
-    name: 'learningPath',
-    component: () => import('@/views/learning/LearningPathView.vue'),
-    meta: { requiresAuth: true }, // Personalized content requires auth
+    path: '/account-settings',
+    name: 'accountSettings',
+    component: () => import('@/views/auth/AccountSettingsView.vue'),
+    meta: { requiresAuth: true }
   },
   {
     path: '/conversation',
@@ -53,7 +63,7 @@ const routes = [
     meta: { requiresAuth: true }, // Saved content requires auth
   },
   {
-    path: '/vocabulary/:id',
+    path: '/vocabulary/term/:term',
     name: 'vocabularyDetail',
     component: () => import('@/views/learning/vocabulary/VocabularyDetailView.vue'),
     meta: { requiresAuth: true }, // Personalized content requires auth
@@ -63,12 +73,6 @@ const routes = [
     name: 'exercises',
     component: () => import('@/views/learning/ExercisesView.vue'),
     // No requiresAuth - publicly accessible
-  },
-  {
-    path: '/progress',
-    name: 'progress',
-    component: () => import('@/views/learning/ProgressView.vue'),
-    meta: { requiresAuth: true }, // Personal progress requires auth
   },
   {
     path: '/flashcards',
@@ -93,6 +97,24 @@ const routes = [
     name: 'translations',
     component: () => import('@/views/learning/TranslationView.vue'),
     // No requiresAuth - publicly accessible for translations
+  },
+  {
+    path: '/coach',
+    name: 'coachHome',
+    component: () => import('@/views/learning/CoachHomeView.vue'),
+    // No requiresAuth - publicly accessible for demo
+  },
+  {
+    path: '/learning/course/:courseId',
+    name: 'lessonDetail',
+    component: () => import('@/views/learning/LessonDetailView.vue'),
+    // No requiresAuth - publicly accessible for demo
+  },
+  {
+    path: '/learning/lesson/:lessonId',
+    name: 'lesson',
+    component: () => import('@/views/learning/LessonView.vue'),
+    // This would be implemented later for individual lessons
   },
 ]
 

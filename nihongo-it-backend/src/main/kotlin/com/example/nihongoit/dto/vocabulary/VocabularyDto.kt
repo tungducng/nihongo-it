@@ -15,41 +15,38 @@ data class VocabularyDto(
     @JsonProperty("vocabId")
     val vocabId: UUID,
 
-    @JsonProperty("hiragana")
-    val hiragana: String?,
-
-    @JsonProperty("kanji")
-    val kanji: String?,
-
-    @JsonProperty("katakana")
-    val katakana: String?,
+    @JsonProperty("term")
+    val term: String,
 
     @JsonProperty("meaning")
     val meaning: String,
 
-    @JsonProperty("exampleSentence")
-    val exampleSentence: String?,
+    @JsonProperty("pronunciation")
+    val pronunciation: String?,
 
-    @JsonProperty("exampleSentenceTranslation")
-    val exampleSentenceTranslation: String?,
+    @JsonProperty("example")
+    val example: String?,
+
+    @JsonProperty("exampleMeaning")
+    val exampleMeaning: String?,
 
     @JsonProperty("audioPath")
     val audioPath: String? = null,
 
-    @JsonProperty("category")
-    val category: String? = null,
-
     @JsonProperty("jlptLevel")
     val jlptLevel: JlptLevel,
+
+    @JsonProperty("topicId")
+    val topicId: UUID? = null,
+
+    @JsonProperty("topicName")
+    val topicName: String? = null,
 
     @JsonProperty("createdAt")
     @JsonDeserialize(using = LocalDateTimeDeserializer::class)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
     @JsonSerialize(using = LocalDateTimeSerializer::class)
     val createdAt: LocalDateTime? = null,
-
-    @JsonProperty("createdBy")
-    val createdBy: String? = null,
 
     @JsonProperty("isSaved")
     val isSaved: Boolean = false,

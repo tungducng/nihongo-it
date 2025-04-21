@@ -15,6 +15,7 @@ import com.example.nihongoit.entity.VocabularyEntity
 import com.example.nihongoit.exception.BusinessException
 import com.example.nihongoit.repository.UserRepository
 import com.example.nihongoit.repository.VocabularyRepository
+import com.example.nihongoit.repository.TopicRepository
 import com.example.nihongoit.util.UserAuthUtil
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -27,6 +28,7 @@ import java.util.*
 class VocabularyService(
     private val vocabularyRepository: VocabularyRepository,
     private val userRepository: UserRepository,
+    private val topicRepository: TopicRepository,
     private val userAuthUtil: UserAuthUtil,
 ) {
 
@@ -38,28 +40,50 @@ class VocabularyService(
         val user = userRepository.findById(currentUserId)
             .orElseThrow { BusinessException("User not found") }
 
-
-        // Check if at least one of hiragana, kanji, or katakana is provided
-        if (request.hiragana.isNullOrBlank() && request.kanji.isNullOrBlank() && request.katakana.isNullOrBlank()) {
+        // Check if term is provided
+        if (request.term.isBlank()) {
             return CreateVocabularyResponseDto(
                 result = ResponseDto(
                     status = ResponseType.NG,
-                    message = "At least one of hiragana, kanji, or katakana must be provided",
+                    message = "Term must be provided",
+                ),
+            )
+        }
+        
+        // Check if vocabulary with this term already exists
+        if (vocabularyRepository.existsByTerm(request.term)) {
+            return CreateVocabularyResponseDto(
+                result = ResponseDto(
+                    status = ResponseType.NG,
+                    message = "Vocabulary with term '${request.term}' already exists",
                 ),
             )
         }
 
+        // Find topic by name - now required
+        val topic = request.topicName.let {
+            val topics = topicRepository.findByName(it)
+            if (topics.isEmpty()) {
+                return CreateVocabularyResponseDto(
+                    result = ResponseDto(
+                        status = ResponseType.NG,
+                        message = "Topic '${request.topicName}' does not exist",
+                    ),
+                )
+            } else {
+                topics.first()
+            }
+        }
+
         val vocabulary = VocabularyEntity(
-            hiragana = request.hiragana,
-            kanji = request.kanji,
-            katakana = request.katakana,
+            term = request.term,
             meaning = request.meaning,
-            exampleSentence = request.exampleSentence,
-            exampleSentenceTranslation = request.exampleSentenceTranslation,
+            pronunciation = request.pronunciation,
+            example = request.example,
+            exampleMeaning = request.exampleMeaning,
             audioPath = request.audioPath,
-            category = request.category,
             jlptLevel = JlptLevel.valueOf(request.jlptLevel),
-            createdBy = user,
+            topic = topic,
             createdAt = LocalDateTime.now(),
         )
 
@@ -73,7 +97,7 @@ class VocabularyService(
     }
 
     @Transactional(readOnly = true)
-    fun getVocabulary(vocabId: UUID): GetVocabularyResponseDto {
+    fun getVocabularybyId(vocabId: UUID): GetVocabularyResponseDto {
         val currentUserId = userAuthUtil.getCurrentUserId()
         val vocabulary = vocabularyRepository.findById(vocabId)
             .orElseThrow { BusinessException("Vocabulary not found") }
@@ -92,6 +116,92 @@ class VocabularyService(
     }
 
     @Transactional(readOnly = true)
+    fun getVocabularyByTerm(term: String): GetVocabularyResponseDto {
+        val currentUserId = userAuthUtil.getCurrentUserId()
+        val vocabulary = vocabularyRepository.findByTerm(term)
+            .orElseThrow { BusinessException("Vocabulary not found with term: $term") }
+
+        val isSaved = currentUserId?.let { userId ->
+            vocabulary.savedByUsers.any { it.userId == userId }
+        } ?: false
+
+        return GetVocabularyResponseDto(
+            result = ResponseDto(
+                status = ResponseType.OK,
+                message = "Vocabulary retrieved successfully",
+            ),
+            data = mapToResponse(vocabulary, isSaved),
+        )
+    }
+
+    @Transactional
+    fun updateVocabulary(vocabId: UUID, request: UpdateVocabularyRequestDto): UpdateVocabularyResponseDto {
+        val currentUserId = userAuthUtil.getCurrentUserId()
+            ?: throw BusinessException("User not authenticated")
+
+        val vocabulary = vocabularyRepository.findById(vocabId)
+            .orElseThrow { BusinessException("Vocabulary not found") }
+
+        // Check if the new term is blank
+        if (request.term.isBlank()) {
+            return UpdateVocabularyResponseDto(
+                result = ResponseDto(
+                    status = ResponseType.NG,
+                    message = "Term cannot be blank"
+                ),
+                data = mapToResponse(vocabulary)
+            )
+        }
+
+        // Check if the term is being updated and if the new term already exists
+        if (request.term != vocabulary.term && vocabularyRepository.existsByTerm(request.term)) {
+            return UpdateVocabularyResponseDto(
+                result = ResponseDto(
+                    status = ResponseType.NG,
+                    message = "Vocabulary with term '${request.term}' already exists"
+                ),
+                data = mapToResponse(vocabulary)
+            )
+        }
+
+        // Find topic by name if provided - now required to exist
+        val topic = request.topicName?.let {
+            val topics = topicRepository.findByName(it)
+            if (topics.isEmpty()) {
+                return UpdateVocabularyResponseDto(
+                    result = ResponseDto(
+                        status = ResponseType.NG,
+                        message = "Topic '${request.topicName}' does not exist",
+                    ),
+                    data = mapToResponse(vocabulary),
+                )
+            } else {
+                topics.first()
+            }
+        } ?: vocabulary.topic
+
+        val updatedVocabulary = vocabulary.copy(
+            term = request.term,
+            meaning = request.meaning,
+            pronunciation = request.pronunciation,
+            example = request.example,
+            exampleMeaning = request.exampleMeaning,
+            audioPath = request.audioPath,
+            jlptLevel = JlptLevel.valueOf(request.jlptLevel),
+            topic = topic
+        )
+
+        val savedVocab = vocabularyRepository.save(updatedVocabulary)
+        return UpdateVocabularyResponseDto(
+            result = ResponseDto(
+                status = ResponseType.OK,
+                message = "Vocabulary updated successfully",
+            ),
+            data = mapToResponse(savedVocab),
+        )
+    }
+
+    @Transactional(readOnly = true)
     fun filterVocabulary(filter: VocabularyFilterRequestDto): PagedVocabularyResponseDto {
         val pageable = PageRequest.of(filter.page, filter.size)
         val currentUserId = userAuthUtil.getCurrentUserId()
@@ -103,8 +213,8 @@ class VocabularyService(
             filter.jlptLevel != null -> {
                 vocabularyRepository.findByJlptLevel(filter.jlptLevel, pageable)
             }
-            filter.category != null -> {
-                vocabularyRepository.findByCategory(filter.category, pageable)
+            filter.topicName != null -> {
+                vocabularyRepository.findByTopicName(filter.topicName, pageable)
             }
             else -> {
                 vocabularyRepository.findAll(pageable)
@@ -130,50 +240,12 @@ class VocabularyService(
     }
 
     @Transactional
-    fun updateVocabulary(vocabId: UUID, request: UpdateVocabularyRequestDto): UpdateVocabularyResponseDto {
-        val currentUserId = userAuthUtil.getCurrentUserId()
-            ?: throw BusinessException("User not authenticated")
-
-        val vocabulary = vocabularyRepository.findById(vocabId)
-            .orElseThrow { BusinessException("Vocabulary not found") }
-
-//        if (vocabulary.createdBy?.userId != currentUserId) {
-//            throw BusinessException("You can only update vocabulary you created")
-//        }
-
-        val updatedVocabulary = vocabulary.copy(
-            hiragana = request.hiragana,
-            kanji = request.kanji,
-            katakana = request.katakana,
-            meaning = request.meaning,
-            exampleSentence = request.exampleSentence,
-            exampleSentenceTranslation = request.exampleSentenceTranslation,
-            audioPath = request.audioPath,
-            category = request.category,
-            jlptLevel = JlptLevel.valueOf(request.jlptLevel),
-        )
-
-        val savedVocab = vocabularyRepository.save(updatedVocabulary)
-        return UpdateVocabularyResponseDto(
-            result = ResponseDto(
-                status = ResponseType.OK,
-                message = "Vocabulary updated successfully",
-            ),
-            data = mapToResponse(savedVocab),
-        )
-    }
-
-    @Transactional
     fun deleteVocabulary(vocabId: UUID): ResponseDto {
         val currentUserId = userAuthUtil.getCurrentUserId()
             ?: throw BusinessException("User not authenticated")
 
         val vocabulary = vocabularyRepository.findById(vocabId)
             .orElseThrow { BusinessException("Vocabulary not found") }
-
-//        if (vocabulary.createdBy.userId != currentUserId) {
-//            throw BusinessException("You can only delete vocabulary you created")
-//        }
 
         vocabularyRepository.delete(vocabulary)
 
@@ -200,6 +272,7 @@ class VocabularyService(
         return mapToResponse(vocabulary, true)
     }
 
+
     @Transactional
     fun removeVocabularyFromNotebook(vocabId: UUID): VocabularyDto {
         val currentUserId = userAuthUtil.getCurrentUserId()
@@ -213,6 +286,8 @@ class VocabularyService(
 
         return mapToResponse(vocabulary, false)
     }
+
+
 
     @Transactional(readOnly = true)
     fun getSavedVocabulary(filter: VocabularyFilterRequestDto): PagedVocabularyResponseDto {
@@ -253,8 +328,8 @@ class VocabularyService(
             "date_desc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending())
             "jlpt_asc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("jlptLevel").ascending())
             "jlpt_desc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("jlptLevel").descending())
-            "alpha_asc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("hiragana").ascending())
-            "alpha_desc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("hiragana").descending())
+            "alpha_asc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("term").ascending())
+            "alpha_desc" -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("term").descending())
             else -> PageRequest.of(page, size, org.springframework.data.domain.Sort.by("createdAt").descending())
         }
     }
@@ -262,17 +337,16 @@ class VocabularyService(
     private fun mapToResponse(vocabulary: VocabularyEntity, isSaved: Boolean = false): VocabularyDto {
         return VocabularyDto(
             vocabId = vocabulary.vocabId!!,
-            hiragana = vocabulary.hiragana,
-            kanji = vocabulary.kanji,
-            katakana = vocabulary.katakana,
+            term = vocabulary.term ?: "",
             meaning = vocabulary.meaning,
-            exampleSentence = vocabulary.exampleSentence,
-            exampleSentenceTranslation = vocabulary.exampleSentenceTranslation,
+            pronunciation = vocabulary.pronunciation,
+            example = vocabulary.example,
+            exampleMeaning = vocabulary.exampleMeaning,
             audioPath = vocabulary.audioPath,
-            category = vocabulary.category,
             jlptLevel = vocabulary.jlptLevel,
+            topicId = vocabulary.topic.topicId,
+            topicName = vocabulary.topic.name,
             createdAt = vocabulary.createdAt,
-            createdBy = vocabulary.createdBy?.email,
             isSaved = isSaved,
         )
     }

@@ -278,7 +278,7 @@
                     variant="outlined"
                     color="primary"
                     size="small"
-                    @click.stop="navigateToDetail(item.vocabId)"
+                    @click.stop="navigateToDetail(item.term)"
                   >
                     Xem chi tiết
                   </v-btn>
@@ -1306,8 +1306,8 @@ function handleTopicSelect(topic: Topic) {
   currentPage.value = 1 // Reset pagination
 }
 
-function navigateToDetail(vocabId: string) {
-  router.push({ name: 'vocabulary-detail', params: { id: vocabId } })
+function navigateToDetail(term: string) {
+  router.push({ name: 'vocabularyPronunciation', params: { term } })
 }
 </script>
 

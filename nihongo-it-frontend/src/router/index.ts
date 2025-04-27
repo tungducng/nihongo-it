@@ -75,6 +75,12 @@ const routes = [
     meta: { requiresAuth: true }, // Personalized content requires auth
   },
   {
+    path: '/vocabulary/pronunciation/:term',
+    name: 'vocabularyPronunciation',
+    component: () => import('@/views/learning/vocabulary/VocabularyPronunciationView.vue'),
+    meta: { requiresAuth: true }, // Pronunciation scoring requires auth
+  },
+  {
     path: '/exercises',
     name: 'exercises',
     component: () => import('@/views/learning/ExercisesView.vue'),

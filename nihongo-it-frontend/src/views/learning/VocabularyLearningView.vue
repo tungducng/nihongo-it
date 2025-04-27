@@ -347,7 +347,11 @@ interface Topic {
   id: string
   name: string
   meaning: string
-  categoryId: string
+  categoryId?: string
+  category?: {
+    id: string
+    name: string
+  }
   displayOrder: number
   vocabularyCount?: number
 }
@@ -386,7 +390,10 @@ const jlptLevels = ref<string[]>([])
 // Computed
 const availableTopics = computed(() => {
   if (!tempSelectedCategory.value) return []
-  return topics.value.filter(t => t.categoryId === tempSelectedCategory.value)
+  return topics.value.filter(t => {
+    const topicCategoryId = t.categoryId || (t.category && t.category.id)
+    return topicCategoryId === tempSelectedCategory.value
+  })
 })
 
 const hasActiveFilters = computed(() => {
@@ -425,7 +432,22 @@ async function fetchCategories() {
   try {
     loading.value = true
     const response = await vocabularyService.getCategories()
-    categories.value = response
+    console.log('Categories API response:', response)
+
+    if (Array.isArray(response)) {
+      categories.value = response.map(category => {
+        return {
+          id: category.id || category.categoryId,
+          name: category.name,
+          meaning: category.meaning,
+          displayOrder: category.displayOrder || 0
+        }
+      })
+      console.log('Processed categories:', categories.value)
+    } else {
+      console.error('Categories response is not an array:', response)
+      categories.value = []
+    }
   } catch (error) {
     console.error('Error fetching categories:', error)
     toast.error('Failed to load categories', {
@@ -441,7 +463,25 @@ async function fetchTopics() {
   try {
     loading.value = true
     const response = await vocabularyService.getTopics()
-    topics.value = response
+    console.log('Topics API response:', response)
+
+    if (Array.isArray(response)) {
+      topics.value = response.map(topic => {
+        // Make sure each topic has the required fields
+        return {
+          id: topic.id || topic.topicId,
+          name: topic.name,
+          meaning: topic.meaning,
+          categoryId: topic.categoryId || topic.category?.id,
+          displayOrder: topic.displayOrder || 0,
+          vocabularyCount: topic.vocabularyCount || 0
+        }
+      })
+      console.log('Processed topics:', topics.value)
+    } else {
+      console.error('Topics response is not an array:', response)
+      topics.value = []
+    }
   } catch (error) {
     console.error('Error fetching topics:', error)
     toast.error('Failed to load topics', {
@@ -536,12 +576,22 @@ function getImagePath(categoryName: string): string {
 }
 
 function getTopicsCount(category: Category): number {
-  return topics.value.filter(t => t.categoryId === category.id).length
+  const matchingTopics = topics.value.filter(t => {
+    const topicCategoryId = t.categoryId || (t.category && t.category.id)
+    return topicCategoryId === category.id
+  })
+  console.log(`Topics for category ${category.name}:`, matchingTopics)
+  return matchingTopics.length
 }
 
 function getTopicsByCategory(category: Category): Topic[] {
-  return topics.value.filter(t => t.categoryId === category.id)
-    .sort((a, b) => a.displayOrder - b.displayOrder)
+  const matchingTopics = topics.value.filter(t => {
+    const topicCategoryId = t.categoryId || (t.category && t.category.id)
+    return topicCategoryId === category.id
+  })
+
+  console.log(`Filtered topics for ${category.name}:`, matchingTopics)
+  return matchingTopics.sort((a, b) => a.displayOrder - b.displayOrder)
 }
 
 function getVocabularyCount(topic: Topic): number | string {
@@ -553,6 +603,34 @@ function selectCategory(category: Category) {
   tempSelectedCategory.value = category.id
   selectedCategory.value = category
   selectedTopic.value = null
+
+  // Fetch topics specifically for this category if needed
+  fetchTopicsByCategory(category.id)
+    .then(categoryTopics => {
+      console.log(`Fetched topics for category ${category.name}:`, categoryTopics);
+      if (categoryTopics && categoryTopics.length > 0) {
+        // Update topics if we got results
+        const updatedTopics = [...topics.value];
+
+        // Add or update topics for this category
+        categoryTopics.forEach((newTopic: Topic) => {
+          const existingIndex = updatedTopics.findIndex(t => t.id === newTopic.id);
+          if (existingIndex >= 0) {
+            updatedTopics[existingIndex] = {
+              ...newTopic,
+              categoryId: category.id
+            };
+          } else {
+            updatedTopics.push({
+              ...newTopic,
+              categoryId: category.id
+            });
+          }
+        });
+
+        topics.value = updatedTopics;
+      }
+    });
 }
 
 function backToTopics() {

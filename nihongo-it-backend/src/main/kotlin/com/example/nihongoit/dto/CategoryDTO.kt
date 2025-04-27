@@ -1,7 +1,13 @@
 package com.example.nihongoit.dto
 
 import com.example.nihongoit.entity.CategoryEntity
+import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -12,7 +18,17 @@ data class CategoryDTO(
     val meaning: String? = null,
     val displayOrder: Int = 0,
     val topicCount: Int? = null,
+
+    @JsonProperty("createdAt")
+    @JsonDeserialize(using = LocalDateTimeDeserializer::class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+    @JsonSerialize(using = LocalDateTimeSerializer::class)
     val createdAt: LocalDateTime? = null,
+
+    @JsonProperty("updatedAt")
+    @JsonDeserialize(using = LocalDateTimeDeserializer::class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+    @JsonSerialize(using = LocalDateTimeSerializer::class)
     val updatedAt: LocalDateTime? = null
 )
 

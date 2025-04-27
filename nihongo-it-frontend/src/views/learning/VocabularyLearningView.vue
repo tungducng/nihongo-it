@@ -29,7 +29,7 @@
           hide-details
           single-line
           density="compact"
-          @update:model-value="filterVocabulary"
+          @update:model-value="debouncedFilterVocabulary"
         ></v-text-field>
       </div>
     </div>
@@ -70,8 +70,14 @@
       </div>
     </div>
 
+    <!-- Loading Indicator -->
+    <div v-if="loading" class="text-center py-8">
+      <v-progress-circular indeterminate color="primary"></v-progress-circular>
+      <p class="text-body-1 text-medium-emphasis mt-3">Loading...</p>
+    </div>
+
     <!-- Main Content -->
-    <div class="main-content">
+    <div v-else class="main-content">
       <!-- Category View (when no category is selected) -->
       <div v-if="!selectedCategory" class="category-section">
         <div v-for="category in categories" :key="category.id" class="mb-6">
@@ -86,7 +92,7 @@
               class="category-lesson-card mb-4"
               variant="outlined"
               rounded="lg"
-              @click="selectCategory(category.name)"
+              @click="selectCategory(category)"
             >
               <v-img
                 :src="getImagePath(category.name)"
@@ -149,7 +155,7 @@
           </div>
         </div>
 
-        <div v-if="filteredVocabulary.length === 0" class="text-center py-8">
+        <div v-if="vocabularyItems.length === 0" class="text-center py-8">
           <v-icon size="large" icon="mdi-book-search-outline" class="mb-4"></v-icon>
           <h3 class="text-h6">Không tìm thấy từ vựng</h3>
           <p class="text-body-1 text-medium-emphasis">
@@ -158,8 +164,20 @@
         </div>
 
         <div v-else>
+          <!-- Pagination at the top -->
+          <div class="d-flex justify-center mb-4" v-if="totalPages > 1">
+            <v-pagination
+              v-model="currentPage"
+              :length="totalPages"
+              :total-visible="5"
+              rounded="circle"
+              size="small"
+              @update:modelValue="handlePageChange"
+            ></v-pagination>
+          </div>
+
           <v-card
-            v-for="item in filteredVocabulary"
+            v-for="item in vocabularyItems"
             :key="item.vocabId"
             class="vocabulary-item mb-4"
             variant="outlined"
@@ -252,6 +270,18 @@
               </div>
             </div>
           </v-card>
+
+          <!-- Pagination at the bottom -->
+          <div class="d-flex justify-center mt-4" v-if="totalPages > 1">
+            <v-pagination
+              v-model="currentPage"
+              :length="totalPages"
+              :total-visible="5"
+              rounded="circle"
+              size="small"
+              @update:modelValue="handlePageChange"
+            ></v-pagination>
+          </div>
         </div>
       </div>
     </div>
@@ -306,167 +336,187 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import vocabularyService from '@/services/vocabulary.service'
+import type { VocabularyItem, VocabularyFilter } from '@/services/vocabulary.service'
+import { useToast } from 'vue-toast-notification'
+
+// Define interfaces for the data structures
+interface Topic {
+  id: string
+  name: string
+  meaning: string
+  categoryId: string
+  displayOrder: number
+  vocabularyCount?: number
+}
+
+interface Category {
+  id: string
+  name: string
+  meaning: string
+  displayOrder: number
+}
 
 const router = useRouter()
+const toast = useToast()
 
-// State
+// State for API data
+const loading = ref(false)
+const categories = ref<Category[]>([])
+const topics = ref<Topic[]>([])
+const vocabularyItems = ref<VocabularyItem[]>([])
+const totalItems = ref(0)
+const totalPages = ref(0)
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+// UI state
 const search = ref('')
-const selectedJlptLevel = ref(null)
-const selectedCategory = ref(null)
-const selectedTopic = ref(null)
-const expandedItems = ref([])
+const selectedJlptLevel = ref<string | null>(null)
+const selectedCategory = ref<Category | null>(null)
+const selectedTopic = ref<Topic | null>(null)
+const expandedItems = ref<string[]>([])
 const showFilterDialog = ref(false)
-const tempSelectedCategory = ref(null)
-const tempSelectedTopic = ref(null)
-
-// Filter options
-const jlptLevels = ['N1', 'N2', 'N3', 'N4', 'N5']
-
-// Mock data for categories (from SQL)
-const categories = [
-  { id: '1', name: 'IT基礎', meaning: 'IT Basics', displayOrder: 1 },
-  { id: '2', name: 'プログラミング', meaning: 'Programming', displayOrder: 2 },
-  { id: '3', name: 'ウェブ開発', meaning: 'Web Development', displayOrder: 3 },
-  { id: '4', name: 'データベース', meaning: 'Database', displayOrder: 4 },
-  { id: '5', name: 'AI・データ', meaning: 'Artificial Intelligence / Data', displayOrder: 5 },
-  { id: '6', name: 'コミュニケーション', meaning: 'Communication & Teamwork', displayOrder: 6 },
-  { id: '7', name: 'キャリア実務', meaning: 'Project & Reality', displayOrder: 7 }
-]
-
-// Mock data for topics (from SQL)
-const topics = [
-  // IT Basics
-  { id: '101', name: 'コンピューターの構造', meaning: 'Computer Architecture', categoryId: '1', displayOrder: 1 },
-  { id: '102', name: 'オペレーティングシステム', meaning: 'Operating System', categoryId: '1', displayOrder: 2 },
-  { id: '103', name: 'ハードウェア', meaning: 'Hardware', categoryId: '1', displayOrder: 3 },
-  { id: '104', name: 'ソフトウェア', meaning: 'Software', categoryId: '1', displayOrder: 4 },
-  { id: '105', name: 'コンピューターネットワーク', meaning: 'Computer Network', categoryId: '1', displayOrder: 5 },
-  { id: '106', name: 'IT共通用語', meaning: 'General Terms in IT', categoryId: '1', displayOrder: 6 },
-
-  // Programming
-  { id: '201', name: 'プログラミング言語', meaning: 'Programming Language', categoryId: '2', displayOrder: 1 },
-  { id: '202', name: 'アルゴリズムとデータ構造', meaning: 'Algorithms & Data Structures', categoryId: '2', displayOrder: 2 },
-  { id: '203', name: 'デバッグとエラーハンドリング', meaning: 'Debugging and Error Handling', categoryId: '2', displayOrder: 3 },
-  { id: '204', name: 'オブジェクト指向', meaning: 'Object Oriented', categoryId: '2', displayOrder: 4 },
-  { id: '205', name: 'コマンドライン・ターミナル', meaning: 'Command Line & Terminal', categoryId: '2', displayOrder: 5 },
-
-  // Web Development
-  { id: '301', name: 'フロントエンド', meaning: 'Frontend', categoryId: '3', displayOrder: 1 },
-  { id: '302', name: 'バックエンド', meaning: 'Backend', categoryId: '3', displayOrder: 2 },
-  { id: '303', name: 'システムアーキテクチャ', meaning: 'System Architecture', categoryId: '3', displayOrder: 3 },
-  { id: '304', name: 'DevOps・CI/CD', meaning: 'DevOps, CI/CD', categoryId: '3', displayOrder: 4 },
-
-  // Database
-  { id: '401', name: 'SQLの基本', meaning: 'Basic SQL', categoryId: '4', displayOrder: 1 },
-  { id: '402', name: 'データベース設計', meaning: 'Database Design', categoryId: '4', displayOrder: 2 },
-  { id: '403', name: 'NoSQL・新しい概念', meaning: 'NoSQL and other new concept', categoryId: '4', displayOrder: 3 },
-
-  // AI/Data
-  { id: '501', name: '機械学習', meaning: 'Machine Learning', categoryId: '5', displayOrder: 1 },
-  { id: '502', name: 'データ分析', meaning: 'Data Analysis', categoryId: '5', displayOrder: 2 },
-  { id: '503', name: '自然言語処理', meaning: 'Natural Language Processing', categoryId: '5', displayOrder: 3 }
-]
-
-// Mock data for vocabulary
-const vocabulary = [
-  {
-    vocabId: '1001',
-    term: 'コンピュータ',
-    pronunciation: 'こんぴゅーた',
-    meaning: 'Máy tính',
-    example: 'このコンピュータは新しいです。',
-    exampleMeaning: 'Máy tính này mới.',
-    jlptLevel: 'N5',
-    topicId: '101',
-    isSaved: false
-  },
-  {
-    vocabId: '1002',
-    term: 'プログラム',
-    pronunciation: 'ぷろぐらむ',
-    meaning: 'Chương trình',
-    example: '彼は新しいプログラムを作りました。',
-    exampleMeaning: 'Anh ấy đã tạo một chương trình mới.',
-    jlptLevel: 'N4',
-    topicId: '201',
-    isSaved: true
-  },
-  {
-    vocabId: '1003',
-    term: 'ウェブサイト',
-    pronunciation: 'うぇぶさいと',
-    meaning: 'Trang web',
-    example: '私たちは新しいウェブサイトを開発しています。',
-    exampleMeaning: 'Chúng tôi đang phát triển một trang web mới.',
-    jlptLevel: 'N4',
-    topicId: '301',
-    isSaved: false
-  },
-  {
-    vocabId: '1004',
-    term: 'データベース',
-    pronunciation: 'でーたべーす',
-    meaning: 'Cơ sở dữ liệu',
-    example: 'データベースからデータを取得します。',
-    exampleMeaning: 'Lấy dữ liệu từ cơ sở dữ liệu.',
-    jlptLevel: 'N3',
-    topicId: '401',
-    isSaved: false
-  },
-  {
-    vocabId: '1005',
-    term: '人工知能',
-    pronunciation: 'じんこうちのう',
-    meaning: 'Trí tuệ nhân tạo (AI)',
-    example: '人工知能は私たちの生活を変えました。',
-    exampleMeaning: 'Trí tuệ nhân tạo đã thay đổi cuộc sống của chúng ta.',
-    jlptLevel: 'N2',
-    topicId: '501',
-    isSaved: true
-  }
-]
+const tempSelectedCategory = ref<string | null>(null)
+const tempSelectedTopic = ref<string | null>(null)
+const jlptLevels = ref<string[]>([])
 
 // Computed
 const availableTopics = computed(() => {
   if (!tempSelectedCategory.value) return []
-  return topics.filter(t => t.categoryId === tempSelectedCategory.value)
+  return topics.value.filter(t => t.categoryId === tempSelectedCategory.value)
 })
 
 const hasActiveFilters = computed(() => {
   return selectedJlptLevel.value || selectedCategory.value || selectedTopic.value || search.value
 })
 
-const filteredVocabulary = computed(() => {
-  let result = [...vocabulary]
+// Debounce function for search
+let searchTimeout: any = null
+function debouncedFilterVocabulary() {
+  clearTimeout(searchTimeout)
+  searchTimeout = setTimeout(() => {
+    fetchVocabulary()
+  }, 500)
+}
 
-  if (selectedJlptLevel.value) {
-    result = result.filter(v => v.jlptLevel === selectedJlptLevel.value)
-  }
-
-  if (selectedTopic.value) {
-    result = result.filter(v => v.topicId === selectedTopic.value?.id)
-  } else if (selectedCategory.value) {
-    const topicIds = topics
-      .filter(t => t.categoryId === selectedCategory.value?.id)
-      .map(t => t.id)
-    result = result.filter(v => topicIds.includes(v.topicId))
-  }
-
-  if (search.value) {
-    const searchLower = search.value.toLowerCase()
-    result = result.filter(v =>
-      v.term.toLowerCase().includes(searchLower) ||
-      v.pronunciation?.toLowerCase().includes(searchLower) ||
-      v.meaning.toLowerCase().includes(searchLower)
-    )
-  }
-
-  return result
+// Lifecycle hooks
+onMounted(async () => {
+  await Promise.all([
+    fetchCategories(),
+    fetchTopics(),
+    fetchJlptLevels()
+  ])
 })
 
-// Methods
+// Watchers
+watch([selectedTopic], () => {
+  if (selectedTopic.value) {
+    // Reset pagination when topic changes
+    currentPage.value = 1
+    fetchVocabulary()
+  }
+})
+
+// API Methods
+async function fetchCategories() {
+  try {
+    loading.value = true
+    const response = await vocabularyService.getCategories()
+    categories.value = response
+  } catch (error) {
+    console.error('Error fetching categories:', error)
+    toast.error('Failed to load categories', {
+      position: 'top',
+      duration: 3000
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+async function fetchTopics() {
+  try {
+    loading.value = true
+    const response = await vocabularyService.getTopics()
+    topics.value = response
+  } catch (error) {
+    console.error('Error fetching topics:', error)
+    toast.error('Failed to load topics', {
+      position: 'top',
+      duration: 3000
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+async function fetchJlptLevels() {
+  try {
+    const response = await vocabularyService.getJlptLevels()
+    jlptLevels.value = response
+  } catch (error) {
+    console.error('Error fetching JLPT levels:', error)
+    // Use default values if API call fails
+    jlptLevels.value = ['N1', 'N2', 'N3', 'N4', 'N5']
+  }
+}
+
+async function fetchVocabulary() {
+  try {
+    loading.value = true
+
+    // Create filter object
+    const filter: VocabularyFilter = {
+      keyword: search.value || null,
+      jlptLevel: selectedJlptLevel.value,
+      topicName: selectedTopic.value?.name || null,
+      page: currentPage.value - 1, // API uses 0-based pagination
+      size: pageSize.value
+    }
+
+    const response = await vocabularyService.getVocabulary(filter)
+
+    if (response && Array.isArray(response.content)) {
+      vocabularyItems.value = response.content
+      totalItems.value = response.totalElements
+      totalPages.value = response.totalPages
+    } else {
+      vocabularyItems.value = []
+      totalItems.value = 0
+      totalPages.value = 0
+    }
+  } catch (error) {
+    console.error('Error fetching vocabulary:', error)
+    toast.error('Failed to load vocabulary', {
+      position: 'top',
+      duration: 3000
+    })
+    vocabularyItems.value = []
+    totalItems.value = 0
+    totalPages.value = 0
+  } finally {
+    loading.value = false
+  }
+}
+
+async function fetchTopicsByCategory(categoryId: string) {
+  try {
+    const response = await vocabularyService.getTopicsByCategory(categoryId)
+    return response
+  } catch (error) {
+    console.error(`Error fetching topics for category ${categoryId}:`, error)
+    toast.error('Failed to load topics for this category', {
+      position: 'top',
+      duration: 3000
+    })
+    return []
+  }
+}
+
+// Navigation and UI Methods
 function goBack() {
   router.back()
 }
@@ -482,32 +532,25 @@ function getImagePath(categoryName: string): string {
     'キャリア実務': 'career.png',
   }
 
-  return categoryImages[categoryName] || 'default.png'
+  return `/images/categories/${categoryImages[categoryName] || 'default.png'}`
 }
 
-function getTopicsCount(category) {
-  return topics.filter(t => t.categoryId === category.id).length
+function getTopicsCount(category: Category): number {
+  return topics.value.filter(t => t.categoryId === category.id).length
 }
 
-function getTopicsByCategory(category) {
-  return topics.filter(t => t.categoryId === category.id)
+function getTopicsByCategory(category: Category): Topic[] {
+  return topics.value.filter(t => t.categoryId === category.id)
     .sort((a, b) => a.displayOrder - b.displayOrder)
 }
 
-function getVocabularyCount(topic) {
-  return vocabulary.filter(v => v.topicId === topic.id).length
+function getVocabularyCount(topic: Topic): number | string {
+  // This would ideally come from the API, but for now we can return a placeholder
+  return topic.vocabularyCount || '?'
 }
 
-function selectCategory(categoryName: string) {
-  const category = categories.find(c => c.name === categoryName)
-  if (category) {
-    tempSelectedCategory.value = category.id
-    selectedCategory.value = category
-    selectedTopic.value = null
-  }
-}
-
-function selectTopic(category: Category) {
+function selectCategory(category: Category) {
+  tempSelectedCategory.value = category.id
   selectedCategory.value = category
   selectedTopic.value = null
 }
@@ -516,7 +559,7 @@ function backToTopics() {
   selectedTopic.value = null
 }
 
-function toggleExpand(vocabId) {
+function toggleExpand(vocabId: string) {
   const index = expandedItems.value.indexOf(vocabId)
   if (index === -1) {
     expandedItems.value.push(vocabId)
@@ -536,14 +579,16 @@ function updateTopicsForCategory() {
 }
 
 function applyFilters() {
-  // Apply JLPT filter directly
+  // Apply JLPT filter
 
   // Apply category & topic filters
   if (tempSelectedCategory.value) {
-    selectedCategory.value = categories.find(c => c.id === tempSelectedCategory.value)
+    selectedCategory.value = categories.value.find(c => c.id === tempSelectedCategory.value) || null
 
     if (tempSelectedTopic.value) {
-      selectedTopic.value = topics.find(t => t.id === tempSelectedTopic.value)
+      selectedTopic.value = topics.value.find(t => t.id === tempSelectedTopic.value) || null
+      // When topic is selected, fetch vocabulary
+      fetchVocabulary()
     } else {
       selectedTopic.value = null
     }
@@ -553,9 +598,14 @@ function applyFilters() {
   }
 
   showFilterDialog.value = false
+
+  // If we have JLPT filter but no topic, fetch vocabulary
+  if (selectedJlptLevel.value && !selectedTopic.value) {
+    fetchVocabulary()
+  }
 }
 
-function clearFilter(type) {
+function clearFilter(type: string) {
   if (type === 'jlptLevel') {
     selectedJlptLevel.value = null
   } else if (type === 'category') {
@@ -563,6 +613,11 @@ function clearFilter(type) {
     selectedTopic.value = null
   } else if (type === 'topic') {
     selectedTopic.value = null
+  }
+
+  // Fetch vocabulary with updated filters
+  if (selectedTopic.value || selectedJlptLevel.value) {
+    fetchVocabulary()
   }
 }
 
@@ -573,23 +628,60 @@ function clearAllFilters() {
   tempSelectedCategory.value = null
   tempSelectedTopic.value = null
   search.value = ''
+
+  // Reset to initial state
+  vocabularyItems.value = []
 }
 
-function filterVocabulary() {
-  // Search is handled by the computed property
+function handlePageChange(page: number) {
+  currentPage.value = page
+  fetchVocabulary()
 }
 
-function playAudio(item, isExample = false) {
-  console.log(`Playing audio for ${isExample ? 'example' : 'term'}: ${isExample ? item.example : item.term}`)
-  // In a real implementation, this would use the audio API or TTS service
+async function playAudio(item: VocabularyItem, isExample = false) {
+  const text = isExample ? item.example : item.term
+  console.log(`Playing audio for ${isExample ? 'example' : 'term'}: ${text}`)
+
+  // In a real implementation, this would call a TTS service or play an audio file
+  // For now, we'll just show a toast
+  toast.info(`Playing: ${text}`, {
+    position: 'top',
+    duration: 2000
+  })
 }
 
-function toggleSave(item) {
-  item.isSaved = !item.isSaved
-  console.log(`${item.isSaved ? 'Saved' : 'Unsaved'} vocabulary: ${item.term}`)
+async function toggleSave(item: VocabularyItem) {
+  try {
+    loading.value = true
+
+    if (item.isSaved) {
+      await vocabularyService.removeSavedVocabulary(item.vocabId)
+      toast.success('Removed from saved vocabulary', {
+        position: 'top',
+        duration: 2000
+      })
+    } else {
+      await vocabularyService.saveVocabulary(item.vocabId)
+      toast.success('Added to saved vocabulary', {
+        position: 'top',
+        duration: 2000
+      })
+    }
+
+    // Update the local state
+    item.isSaved = !item.isSaved
+  } catch (error) {
+    console.error('Error toggling save status:', error)
+    toast.error('Failed to update saved status', {
+      position: 'top',
+      duration: 3000
+    })
+  } finally {
+    loading.value = false
+  }
 }
 
-function getJlptColor(level) {
+function getJlptColor(level: string): string {
   switch (level) {
     case 'N1': return 'red'
     case 'N2': return 'orange'
@@ -602,16 +694,12 @@ function getJlptColor(level) {
 
 function handleTopicSelect(topic: Topic) {
   selectedTopic.value = topic
+  currentPage.value = 1 // Reset pagination
 }
 
 function navigateToDetail(vocabId: string) {
   router.push({ name: 'vocabulary-detail', params: { id: vocabId } })
 }
-
-// Lifecycle hooks
-onMounted(() => {
-  // In a real implementation, we would fetch categories, topics, and vocabulary
-})
 </script>
 
 <style scoped lang="scss">

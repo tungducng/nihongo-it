@@ -69,6 +69,12 @@ const routes = [
     meta: { requiresAuth: true }, // Personalized content requires auth
   },
   {
+    path: '/vocabulary/learning',
+    name: 'vocabularyLearning',
+    component: () => import('@/views/learning/VocabularyLearningView.vue'),
+    meta: { requiresAuth: true }, // Personalized content requires auth
+  },
+  {
     path: '/exercises',
     name: 'exercises',
     component: () => import('@/views/learning/ExercisesView.vue'),

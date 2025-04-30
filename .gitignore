@@ -1,0 +1,7 @@
+# Python virtual environment and cache files
+nihongo-it-python/venv/
+__pycache__/
+*.pyc
+*.so
+*.pyd
+.pytest_cache/

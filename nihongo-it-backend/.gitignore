@@ -40,3 +40,15 @@ out/
 
 ### Kotlin ###
 .kotlin
+
+
+### Application Configuration ###
+src/main/resources/application.yaml
+src/main/resources/application.yml
+src/main/resources/application-*.yaml
+src/main/resources/application-*.yml
+
+### Audio Samples ###
+src/main/resources/samples/
+*.mp3
+*.wav

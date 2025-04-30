@@ -21,7 +21,7 @@
       </v-card>
 
       <!-- Change Password -->
-      <v-card variant="outlined" class="setting-card mb-3" @click="navigateTo('/account/password')">
+      <v-card variant="outlined" class="setting-card mb-3" @click="navigateTo('/account/change-password')">
         <div class="d-flex align-center pa-4">
           <v-avatar color="primary" class="setting-icon">
             <v-icon color="white">mdi-key</v-icon>

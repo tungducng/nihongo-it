@@ -97,6 +97,24 @@ const routes = [
     name: 'coachHome',
     component: () => import('@/views/learning/CoachHomeView.vue'),
     // No requiresAuth - publicly accessible for demo
+  },
+  {
+    path: '/account/forgot-password',
+    name: 'forgotPassword',
+    component: () => import('@/views/auth/ForgotPasswordView.vue'),
+    // No requiresAuth - must be accessible to request password reset
+  },
+  {
+    path: '/account/reset-password',
+    name: 'resetPassword',
+    component: () => import('@/views/auth/ResetPasswordView.vue'),
+    // No requiresAuth - must be accessible to request password reset
+  },
+  {
+    path: '/account/change-password',
+    name: 'changePassword',
+    component: () => import('@/views/auth/ChangePasswordView.vue'),
+    meta: { requiresAuth: true } // Requires authentication to change password
   }
 ]
 

@@ -27,6 +27,12 @@
                 required
               ></v-text-field>
 
+              <div class="text-right mb-4">
+                <router-link to="/account/forgot-password" class="text-decoration-none forgot-password">
+                  Forgot Password?
+                </router-link>
+              </div>
+
               <v-btn
                 type="submit"
                 color="primary"
@@ -188,6 +194,12 @@ export default class LoginView extends Vue {
   color: #333
   margin-bottom: 1rem
   width: 100%
+
+.forgot-password
+  color: #666
+  font-size: 0.9rem
+  &:hover
+    color: #1976d2
 
 .or-divider
   position: relative

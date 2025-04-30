@@ -74,6 +74,9 @@ dependencies {
 
     // Add OAuth2 client support
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    
+    // Add Email support
+    implementation("org.springframework.boot:spring-boot-starter-mail")
 }
 
 dependencyManagement {

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import authService from '@/services/auth.service';
-import type { UserInfo, LoginRequest, SignupRequest } from '@/services/auth.service';
+import type { UserInfo, LoginRequest, SignupRequest, ChangePasswordRequest } from '@/services/auth.service';
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -128,6 +128,57 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function requestPasswordReset(email: string) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      console.log('Requesting password reset for:', email);
+      const response = await authService.requestPasswordReset(email);
+      return response.status === 'OK';
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Password reset request failed. Please try again.';
+      console.error('Password reset request error:', err);
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function resetPassword(token: string, password: string) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      console.log('Resetting password with token');
+      const response = await authService.resetPassword(token, password);
+      return response.status === 'OK';
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Password reset failed. Please try again.';
+      console.error('Password reset error:', err);
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function changePassword(request: ChangePasswordRequest) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      console.log('Changing password');
+      const response = await authService.changePassword(request);
+      return response.status === 'OK';
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Password change failed. Please try again.';
+      console.error('Password change error:', err);
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     user,
     loading,
@@ -138,6 +189,9 @@ export const useAuthStore = defineStore('auth', () => {
     register,
     fetchCurrentUser,
     logout,
-    initializeAuth
+    initializeAuth,
+    requestPasswordReset,
+    resetPassword,
+    changePassword
   };
 });

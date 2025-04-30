@@ -64,6 +64,31 @@ export interface GoogleLoginRequest {
   tokenId: string;
 }
 
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface PasswordResetResponse {
+  status: 'OK' | 'NG';
+  message?: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  password: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  status: 'OK' | 'NG';
+  message?: string;
+}
+
 class AuthService {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
@@ -154,6 +179,44 @@ class AuthService {
     } catch (error) {
       console.error('Google login error:', error)
       return { result: 'NG' }
+    }
+  }
+
+  async requestPasswordReset(email: string): Promise<PasswordResetResponse> {
+    console.log(`Requesting password reset for email: ${email}`);
+
+    try {
+      const response = await apiClient.post('/api/v1/auth/forgot-password', { email } as PasswordResetRequest);
+      return response.data;
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+      throw error;
+    }
+  }
+
+  async resetPassword(token: string, password: string): Promise<PasswordResetResponse> {
+    try {
+      console.log('Setting new password with token');
+      const response = await apiClient.post('/api/v1/auth/set-new-password', {
+        token,
+        password,
+        confirmPassword: password
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Password reset error:', error);
+      throw error;
+    }
+  }
+
+  async changePassword(request: ChangePasswordRequest): Promise<ChangePasswordResponse> {
+    try {
+      console.log('Changing password with current auth');
+      const response = await apiClient.post('/api/v1/auth/change-password', request);
+      return response.data;
+    } catch (error) {
+      console.error('Password change error:', error);
+      throw error;
     }
   }
 }

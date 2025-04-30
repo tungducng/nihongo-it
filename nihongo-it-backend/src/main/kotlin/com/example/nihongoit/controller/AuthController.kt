@@ -9,6 +9,10 @@ import com.example.nihongoit.dto.auth.LoginRequest
 import com.example.nihongoit.dto.auth.LoginResponseDto
 import com.example.nihongoit.dto.auth.SignupRequest
 import com.example.nihongoit.dto.auth.SignupResponseDto
+import com.example.nihongoit.dto.auth.PasswordResetRequestDto
+import com.example.nihongoit.dto.auth.PasswordResetResponseDto
+import com.example.nihongoit.dto.auth.ResetPasswordDto
+import com.example.nihongoit.dto.auth.ChangePasswordRequestDto
 import com.example.nihongoit.entity.UserEntity
 import com.example.nihongoit.exception.BusinessException
 import com.example.nihongoit.repository.RoleRepository
@@ -17,6 +21,7 @@ import com.example.nihongoit.security.JwtTokenUtil
 import com.example.nihongoit.security.PreAuthFilter
 import com.example.nihongoit.util.UserAuthUtil
 import com.example.nihongoit.service.GoogleAuthService
+import com.example.nihongoit.service.NotificationService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -37,6 +42,8 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDateTime
+import java.util.UUID
+import java.security.Principal
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -49,6 +56,7 @@ class AuthController(
     private val jwtTokenUtil: JwtTokenUtil,
     private val userAuthUtil: UserAuthUtil,
     private val googleAuthService: GoogleAuthService,
+    private val notificationService: NotificationService,
 ) {
     private val logger = LoggerFactory.getLogger(AuthController::class.java)
 
@@ -91,7 +99,7 @@ class AuthController(
         val updatedUser = user.copy(lastLogin = LocalDateTime.now())
         userRepository.save(updatedUser)
         logger.debug("Updated lastLogin for user with email: ${request.email}")
-        
+
         val token = jwtTokenUtil.generateToken(updatedUser)
         logger.debug("Login successful for user with email: ${request.email}")
 
@@ -230,11 +238,11 @@ class AuthController(
         @Valid @RequestBody request: GoogleLoginRequest
     ): LoginResponseDto {
         logger.debug("Google login attempt with token")
-        
+
         try {
             // Verify and process the Google token
             val token = googleAuthService.handleGoogleLogin(request.tokenId)
-            
+
             logger.debug("Google login successful")
             return LoginResponseDto(
                 result = ResponseType.OK,
@@ -244,6 +252,231 @@ class AuthController(
             logger.error("Google login error: ${e.message}", e)
             return LoginResponseDto(
                 result = ResponseType.NG,
+            )
+        }
+    }
+
+    @PostMapping("/change-password", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PreAuthFilter(hasAnyRole = ["user", "admin"])
+    @Operation(
+        summary = "Change password",
+        description = "Changes the user's password using their current password"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Password changed successfully",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = PasswordResetResponseDto::class))]
+            ),
+            ApiResponse(responseCode = "400", description = "Invalid current password")
+        ]
+    )
+    fun changePassword(
+        @Parameter(description = "Password change request", required = true)
+        @Valid @RequestBody request: ChangePasswordRequestDto
+    ): PasswordResetResponseDto {
+        // Get user email from the JWT token or principal
+        val email = userAuthUtil.getCurrentEmail()
+        
+        logger.debug("Change password request for user: $email")
+
+        if (email == null) {
+            logger.error("Authentication token is missing or invalid")
+            return PasswordResetResponseDto(
+                status = ResponseType.NG,
+                message = "Authentication required. Please log in again."
+            )
+        }
+
+        try {
+            // Get the authenticated user
+            val user = userRepository.findByEmail(email)
+                ?: return PasswordResetResponseDto(
+                    status = ResponseType.NG,
+                    message = "User not found"
+                )
+
+            // Verify that the current password is correct
+            if (!passwordEncoder.matches(request.currentPassword, user.password)) {
+                return PasswordResetResponseDto(
+                    status = ResponseType.NG,
+                    message = "Current password is incorrect"
+                )
+            }
+
+            // Update the user's password
+            val updatedUser = user.copy(
+                userId = user.userId,
+                email = user.email,
+                password = passwordEncoder.encode(request.newPassword),
+                fullName = user.fullName,
+                profilePicture = user.profilePicture,
+                currentLevel = user.currentLevel,
+                jlptGoal = user.jlptGoal,
+                isActive = user.isActive,
+                isEmailVerified = user.isEmailVerified,
+                verificationToken = user.verificationToken,
+                resetPasswordToken = user.resetPasswordToken,
+                resetPasswordExpires = user.resetPasswordExpires,
+                lastLogin = user.lastLogin,
+                streakCount = user.streakCount,
+                lastStudyDate = user.lastStudyDate,
+                points = user.points,
+                dailyGoalMinutes = user.dailyGoalMinutes,
+                reminderEnabled = user.reminderEnabled,
+                reminderTime = user.reminderTime,
+                notificationPreferences = user.notificationPreferences,
+                firebaseToken = user.firebaseToken,
+                role = user.role,
+                flashcards = user.flashcards,
+                createdAt = user.createdAt,
+                updatedAt = LocalDateTime.now()
+            )
+            userRepository.save(updatedUser)
+
+            logger.debug("Password changed successfully for user ID: ${user.userId}")
+
+            return PasswordResetResponseDto(
+                status = ResponseType.OK,
+                message = "Your password has been changed successfully"
+            )
+        } catch (e: Exception) {
+            logger.error("Error changing password: ${e.message}", e)
+            return PasswordResetResponseDto(
+                status = ResponseType.NG,
+                message = "An unexpected error occurred. Please try again."
+            )
+        }
+    }
+
+    @PostMapping("/forgot-password", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "Request password reset",
+        description = "Initiates the password reset process by sending an email with reset instructions"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Password reset email sent if email exists",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = PasswordResetResponseDto::class))]
+            )
+        ]
+    )
+    fun requestPasswordReset(
+        @Parameter(description = "Password reset request", required = true)
+        @Valid @RequestBody request: PasswordResetRequestDto
+    ): PasswordResetResponseDto {
+        logger.debug("Password reset request for email: ${request.email}")
+        
+        try {
+            // Find user by email
+            val user = userRepository.findByEmail(request.email)
+            
+            // If user exists, generate reset token and send email
+            if (user != null) {
+                // Generate reset token (UUID)
+                val resetToken = UUID.randomUUID().toString()
+                
+                // Set token expiration (30 minutes from now)
+                val tokenExpiration = LocalDateTime.now().plusMinutes(30)
+                
+                // Update user with reset token and expiration
+                val updatedUser = user.copy(
+                    resetPasswordToken = resetToken,
+                    resetPasswordExpires = tokenExpiration
+                )
+                userRepository.save(updatedUser)
+                
+                // Send password reset email with token
+                notificationService.sendPasswordResetEmail(request.email, resetToken)
+                
+                logger.debug("Password reset token generated for user: ${user.userId}")
+            } else {
+                logger.debug("Password reset requested for non-existent email: ${request.email}")
+                // Don't reveal that the email doesn't exist for security reasons
+            }
+            
+            // Always return success even if email doesn't exist (security best practice)
+            return PasswordResetResponseDto(
+                status = ResponseType.OK,
+                message = "If an account exists with that email, we've sent password reset instructions."
+            )
+        } catch (e: Exception) {
+            logger.error("Error processing password reset request: ${e.message}", e)
+            return PasswordResetResponseDto(
+                status = ResponseType.NG,
+                message = "An unexpected error occurred. Please try again."
+            )
+        }
+    }
+    
+    @PostMapping("/set-new-password", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "Reset password with token",
+        description = "Resets the user's password using the token sent via email"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Password reset successful",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = PasswordResetResponseDto::class))]
+            ),
+            ApiResponse(responseCode = "400", description = "Invalid or expired token, or passwords don't match")
+        ]
+    )
+    fun resetPassword(
+        @Parameter(description = "Reset password details", required = true)
+        @Valid @RequestBody request: ResetPasswordDto
+    ): PasswordResetResponseDto {
+        logger.debug("Reset password request with token")
+        
+        try {
+            // Validate password and confirmation match
+            if (request.password != request.confirmPassword) {
+                return PasswordResetResponseDto(
+                    status = ResponseType.NG,
+                    message = "Passwords do not match"
+                )
+            }
+            
+            // Find user by reset token
+            val user = userRepository.findByResetPasswordToken(request.token)
+                ?: return PasswordResetResponseDto(
+                    status = ResponseType.NG,
+                    message = "Invalid or expired reset token"
+                )
+            
+            // Check if token is expired
+            if (user.resetPasswordExpires == null || user.resetPasswordExpires!!.isBefore(LocalDateTime.now())) {
+                return PasswordResetResponseDto(
+                    status = ResponseType.NG,
+                    message = "Reset token has expired. Please request a new password reset."
+                )
+            }
+            
+            // Update user's password and clear reset token
+            val updatedUser = user.copy(
+                password = passwordEncoder.encode(request.password),
+                resetPasswordToken = null,
+                resetPasswordExpires = null,
+                updatedAt = LocalDateTime.now()
+            )
+            userRepository.save(updatedUser)
+            
+            logger.debug("Password reset successfully for user ID: ${user.userId}")
+            
+            return PasswordResetResponseDto(
+                status = ResponseType.OK,
+                message = "Your password has been reset successfully. You can now log in with your new password."
+            )
+        } catch (e: Exception) {
+            logger.error("Error resetting password: ${e.message}", e)
+            return PasswordResetResponseDto(
+                status = ResponseType.NG,
+                message = "An unexpected error occurred. Please try again."
             )
         }
     }

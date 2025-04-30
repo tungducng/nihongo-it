@@ -454,7 +454,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import vocabularyService from '@/services/vocabulary.service'
 import type { VocabularyItem, VocabularyFilter } from '@/services/vocabulary.service'
 import { useToast } from 'vue-toast-notification'
@@ -491,6 +491,7 @@ interface AnimatedExample {
 }
 
 const router = useRouter()
+const route = useRoute()
 const toast = useToast()
 
 // State for API data
@@ -547,22 +548,94 @@ function debouncedFilterVocabulary() {
   }, 500)
 }
 
+// Watchers
+watch([selectedTopic, selectedJlptLevel, selectedCategory, search, currentPage], () => {
+  // Save current search/filter state to localStorage
+  saveSearchState();
+
+  if (selectedTopic.value) {
+    // Reset pagination when topic changes
+    currentPage.value = 1
+    fetchVocabulary()
+  }
+})
+
+// Function to save search state to localStorage
+function saveSearchState() {
+  const searchState = {
+    search: search.value,
+    jlptLevel: selectedJlptLevel.value,
+    categoryId: selectedCategory.value?.id,
+    topicId: selectedTopic.value?.id,
+    page: currentPage.value
+  };
+
+  localStorage.setItem('vocabularyLearningSearchState', JSON.stringify(searchState));
+}
+
+// Function to restore search state from localStorage or URL params
+function restoreSearchState() {
+  // First check URL query parameters
+  const { search: querySearch, jlptLevel, categoryId, topicId, page } = route.query;
+
+  // Then check localStorage
+  let savedState = null;
+  const savedStateJson = localStorage.getItem('vocabularyLearningSearchState');
+  if (savedStateJson) {
+    try {
+      savedState = JSON.parse(savedStateJson);
+    } catch (e) {
+      console.error('Error parsing saved search state:', e);
+    }
+  }
+
+  // Apply state with URL parameters taking precedence over localStorage
+  if (querySearch) search.value = querySearch as string;
+  else if (savedState?.search) search.value = savedState.search;
+
+  if (jlptLevel) selectedJlptLevel.value = jlptLevel as string;
+  else if (savedState?.jlptLevel) selectedJlptLevel.value = savedState.jlptLevel;
+
+  // For category and topic, we need to load the actual objects
+  let categoryIdToRestore = (categoryId as string) || savedState?.categoryId;
+  let topicIdToRestore = (topicId as string) || savedState?.topicId;
+
+  if (categoryIdToRestore) {
+    const foundCategory = categories.value.find(c => c.id === categoryIdToRestore);
+    if (foundCategory) {
+      selectedCategory.value = foundCategory;
+      tempSelectedCategory.value = foundCategory.id;
+    }
+  }
+
+  if (topicIdToRestore) {
+    const foundTopic = topics.value.find(t => t.id === topicIdToRestore);
+    if (foundTopic) {
+      selectedTopic.value = foundTopic;
+      tempSelectedTopic.value = foundTopic.id;
+    }
+  }
+
+  // Restore page if available
+  if (page) currentPage.value = parseInt(page as string, 10);
+  else if (savedState?.page) currentPage.value = savedState.page;
+
+  // If we have any filters, fetch vocabulary
+  if (selectedTopic.value || selectedJlptLevel.value || search.value) {
+    fetchVocabulary();
+  }
+}
+
 // Lifecycle hooks
 onMounted(async () => {
   await Promise.all([
     fetchCategories(),
     fetchTopics(),
     fetchJlptLevels()
-  ])
-})
+  ]);
 
-// Watchers
-watch([selectedTopic], () => {
-  if (selectedTopic.value) {
-    // Reset pagination when topic changes
-    currentPage.value = 1
-    fetchVocabulary()
-  }
+  // After data is loaded, attempt to restore previous state
+  restoreSearchState();
 })
 
 // API Methods
@@ -1307,7 +1380,15 @@ function handleTopicSelect(topic: Topic) {
 }
 
 function navigateToDetail(term: string) {
-  router.push({ name: 'vocabularyPronunciation', params: { term } })
+  // Save the current search state before navigating away
+  saveSearchState();
+
+  // Add a 'from' parameter to indicate where we're coming from
+  router.push({
+    name: 'vocabularyPronunciation',
+    params: { term },
+    query: { from: 'vocabularyLearning' }
+  });
 }
 </script>
 

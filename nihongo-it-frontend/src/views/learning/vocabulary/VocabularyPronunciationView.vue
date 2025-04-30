@@ -9,7 +9,7 @@
     <!-- Error State -->
     <div v-else-if="error" class="error-container">
       <v-alert type="error" class="mb-4">{{ error }}</v-alert>
-      <v-btn @click="$router.push({ name: 'vocabulary' })" color="primary" variant="outlined">
+      <v-btn @click="navigateBack" color="primary" variant="outlined">
         <v-icon start>mdi-arrow-left</v-icon>
         Quay lại danh sách từ vựng
       </v-btn>
@@ -18,7 +18,7 @@
     <!-- Main Content -->
     <template v-else-if="vocabulary">
       <div class="d-flex align-center mb-6">
-        <v-btn icon @click="$router.back()" class="mr-3" color="secondary" variant="text">
+        <v-btn icon @click="navigateBack" class="mr-3" color="secondary" variant="text">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
         <h1 class="text-h5 font-weight-bold">Luyện phát âm</h1>
@@ -577,6 +577,44 @@ const resetRecording = () => {
   // Clear any existing media resources
   if (audioStream) {
     audioStream.getTracks().forEach(track => track.stop())
+  }
+}
+
+// Add navigateBack method
+const navigateBack = () => {
+  // Check if we can go back in the browser history
+  if (window.history.length > 2) {
+    // When we use the browser back button, the previous page's state should be preserved
+    router.back()
+  } else {
+    // If there's no history or we came directly to this page,
+    // navigate to vocabulary learning view preserving any query params
+    // Get any search parameters from the URL query
+    const params = { ...route.query };
+
+    // If we came from vocabulary learning view with a term parameter,
+    // try to keep track of the search/filter state in localStorage
+    // This ensures that even if we navigate directly, we can attempt to restore the previous state
+    const fromRoute = router.currentRoute.value.query.from;
+    if (fromRoute === 'vocabularyLearning' || params.from === 'vocabularyLearning') {
+      // Check if we have any saved state from VocabularyLearningView
+      const savedSearchState = localStorage.getItem('vocabularyLearningSearchState');
+      if (savedSearchState) {
+        try {
+          // Parse the saved state
+          const searchState = JSON.parse(savedSearchState);
+          // Apply it to our query params
+          Object.assign(params, searchState);
+        } catch (e) {
+          console.error('Error parsing saved search state:', e);
+        }
+      }
+    }
+
+    router.push({
+      name: 'vocabularyLearning',
+      query: params
+    });
   }
 }
 

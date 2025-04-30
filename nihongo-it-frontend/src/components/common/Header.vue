@@ -18,13 +18,6 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/learning-path"
-        class="mx-2"
-      >
-        Lộ trình học
-      </v-btn>
-      <v-btn
-        variant="text"
         to="/vocabulary"
         class="mx-2"
       >
@@ -36,13 +29,6 @@
         class="mx-2"
       >
         Furigana
-      </v-btn>
-      <v-btn
-        variant="text"
-        to="/practice"
-        class="mx-2"
-      >
-        Luyện tập
       </v-btn>
     </div>
 

@@ -30,6 +30,10 @@ spring:
       audio:
         speech:
           model: gpt-4o-mini-tts
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
   # Mail configuration for notifications
 #  mail:
 #    host: localhost
@@ -61,3 +65,4 @@ springdoc:
     path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
+  

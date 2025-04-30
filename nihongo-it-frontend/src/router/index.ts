@@ -75,6 +75,12 @@ const routes = [
     meta: { requiresAuth: true }, // Pronunciation scoring requires auth
   },
   {
+    path: '/speech-analyzer',
+    name: 'speechAnalyzer',
+    component: () => import('@/views/learning/SpeechAnalyzer.vue'),
+    meta: { requiresAuth: true }  // Require authentication for speech analysis
+  },
+  {
     path: '/furigana',
     name: 'furigana',
     component: () => import('@/views/learning/FuriganaView.vue'),

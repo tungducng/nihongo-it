@@ -5,3 +5,5 @@ __pycache__/
 *.so
 *.pyd
 .pytest_cache/
+
+logs

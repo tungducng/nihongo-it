@@ -1,5 +1,0 @@
-WARNING:main:Kaldi not available, will use simulated phoneme analysis
-INFO:     Started server process [76972]
-INFO:     Waiting for application startup.
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)

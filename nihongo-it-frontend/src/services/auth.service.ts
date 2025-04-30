@@ -37,6 +37,7 @@ export interface SignupRequest {
 export interface LoginResponse {
   result: 'OK' | 'NG';
   token?: string;
+  message?: string;
 }
 
 export interface SignupResponse {
@@ -57,6 +58,10 @@ export interface UserInfo {
 export interface GetCurrentUserResponse {
   status: 'OK' | 'NG';
   userInfo?: UserInfo;
+}
+
+export interface GoogleLoginRequest {
+  tokenId: string;
 }
 
 class AuthService {
@@ -131,6 +136,24 @@ class AuthService {
       console.error('Token validation error:', error);
       // If server is down or token is invalid, return false
       return false;
+    }
+  }
+
+  async loginWithGoogle(tokenId: string): Promise<LoginResponse> {
+    try {
+      console.log('Attempting Google login with token')
+      const response = await apiClient.post('/api/v1/auth/google-login', { tokenId })
+      const result = response.data
+
+      if (result.result === 'OK' && result.token) {
+        this.saveToken(result.token)
+        console.log('Token saved after Google login')
+      }
+
+      return result
+    } catch (error) {
+      console.error('Google login error:', error)
+      return { result: 'NG' }
     }
   }
 }

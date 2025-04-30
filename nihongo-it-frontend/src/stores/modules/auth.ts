@@ -102,12 +102,39 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function loginWithGoogle(tokenId: string) {
+    loading.value = true;
+    error.value = null;
+
+    try {
+      console.log('Attempting Google login with token');
+      const response = await authService.loginWithGoogle(tokenId);
+
+      if (response.result === 'OK' && response.token) {
+        console.log('Google login successful');
+        await fetchCurrentUser();
+        return true;
+      } else {
+        error.value = response.message || 'Google login failed';
+        console.error('Google login response indicated failure:', response);
+        return false;
+      }
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Google login failed. Please try again.';
+      console.error('Google login error:', err);
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     user,
     loading,
     error,
     isAuthenticated,
     login,
+    loginWithGoogle,
     register,
     fetchCurrentUser,
     logout,

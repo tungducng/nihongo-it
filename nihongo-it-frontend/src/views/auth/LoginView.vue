@@ -37,6 +37,15 @@
                 Login
               </v-btn>
 
+              <div class="text-center mt-4 mb-4">
+                <span class="or-divider">OR</span>
+              </div>
+
+              <!-- Google Login Button -->
+              <div class="google-login-container">
+                <GoogleLogin :callback="handleGoogleLogin" />
+              </div>
+
               <div class="text-center mt-4">
                 <router-link to="/register" class="text-decoration-none">
                   Don't have an account? Register
@@ -55,9 +64,13 @@ import { Component, Vue, Ref } from 'vue-facing-decorator'
 import { useAuthStore } from '@/stores'
 import { useToast } from 'vue-toast-notification'
 import 'vue-toast-notification/dist/theme-sugar.css'
+import { GoogleLogin } from 'vue3-google-login'
 
 @Component({
-  name: 'LoginView'
+  name: 'LoginView',
+  components: {
+    GoogleLogin
+  }
 })
 export default class LoginView extends Vue {
   private authStore = useAuthStore()
@@ -116,6 +129,28 @@ export default class LoginView extends Vue {
       password: this.password
     })
 
+    this.handleAuthResult(success)
+  }
+
+  async handleGoogleLogin(response: any): Promise<void> {
+    if (!response || !response.credential) {
+      const toast = this.getToast()
+      toast.error('Google login failed. Please try again.', {
+        position: 'top',
+        duration: 3000
+      })
+      return
+    }
+
+    console.log('Google login successful, processing credentials')
+    const success = await this.authStore.loginWithGoogle(response.credential)
+
+    this.handleAuthResult(success)
+  }
+
+  handleAuthResult(success: boolean): void {
+    const toast = this.getToast()
+
     if (success) {
       toast.success('Login successful!', {
         position: 'top',
@@ -153,6 +188,29 @@ export default class LoginView extends Vue {
   color: #333
   margin-bottom: 1rem
   width: 100%
+
+.or-divider
+  position: relative
+  display: inline-block
+  color: #777
+  font-size: 14px
+  margin: 10px 0
+  &:before, &:after
+    content: ""
+    position: absolute
+    top: 50%
+    width: 80px
+    height: 1px
+    background: #ddd
+  &:before
+    left: -90px
+  &:after
+    right: -90px
+
+.google-login-container
+  display: flex
+  justify-content: center
+  margin-bottom: 20px
 
 ::v-deep .v-text-field
   margin-bottom: 0.5rem

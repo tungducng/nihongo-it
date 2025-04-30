@@ -4,6 +4,7 @@ import com.example.nihongoit.dto.ResponseDto
 import com.example.nihongoit.dto.ResponseType
 import com.example.nihongoit.dto.user.UserDto
 import com.example.nihongoit.dto.auth.GetCurrentUserResponseDto
+import com.example.nihongoit.dto.auth.GoogleLoginRequest
 import com.example.nihongoit.dto.auth.LoginRequest
 import com.example.nihongoit.dto.auth.LoginResponseDto
 import com.example.nihongoit.dto.auth.SignupRequest
@@ -15,6 +16,7 @@ import com.example.nihongoit.repository.UserRepository
 import com.example.nihongoit.security.JwtTokenUtil
 import com.example.nihongoit.security.PreAuthFilter
 import com.example.nihongoit.util.UserAuthUtil
+import com.example.nihongoit.service.GoogleAuthService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
@@ -46,6 +48,7 @@ class AuthController(
     private val passwordEncoder: PasswordEncoder,
     private val jwtTokenUtil: JwtTokenUtil,
     private val userAuthUtil: UserAuthUtil,
+    private val googleAuthService: GoogleAuthService,
 ) {
     private val logger = LoggerFactory.getLogger(AuthController::class.java)
 
@@ -204,6 +207,44 @@ class AuthController(
         } catch (e: Exception) {
             logger.error("Error retrieving user info: ${e.message}", e)
             throw e
+        }
+    }
+
+    @PostMapping("/google-login", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "Google OAuth login",
+        description = "Authenticates a user with Google OAuth, returns JWT token on success"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Authentication successful",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = LoginResponseDto::class))]
+            ),
+            ApiResponse(responseCode = "400", description = "Invalid Google token")
+        ]
+    )
+    fun googleLogin(
+        @Parameter(description = "Google token ID", required = true)
+        @Valid @RequestBody request: GoogleLoginRequest
+    ): LoginResponseDto {
+        logger.debug("Google login attempt with token")
+        
+        try {
+            // Verify and process the Google token
+            val token = googleAuthService.handleGoogleLogin(request.tokenId)
+            
+            logger.debug("Google login successful")
+            return LoginResponseDto(
+                result = ResponseType.OK,
+                token = token
+            )
+        } catch (e: Exception) {
+            logger.error("Google login error: ${e.message}", e)
+            return LoginResponseDto(
+                result = ResponseType.NG,
+            )
         }
     }
 }

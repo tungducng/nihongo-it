@@ -71,6 +71,9 @@ dependencies {
 
     // Add Kuromoji for Japanese text analysis
     implementation("com.atilika.kuromoji:kuromoji-ipadic:0.9.0")
+
+    // Add OAuth2 client support
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 }
 
 dependencyManagement {

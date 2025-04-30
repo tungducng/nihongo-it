@@ -2,7 +2,7 @@
   <div class="dashboard">
     <!-- Search Bar -->
     <div class="search-bar py-3">
-      <v-container>
+    <v-container>
         <v-row align="center">
           <v-col cols="12" sm="8" md="6" lg="5" class="mx-auto">
             <v-card variant="outlined" class="search-card">
@@ -204,27 +204,27 @@
             <v-col v-for="lesson in suggestedLessons" :key="lesson.id" cols="12" sm="6">
               <v-card class="lesson-card">
                 <v-card-title class="lesson-title">{{ lesson.title }}</v-card-title>
-                <v-card-subtitle>
-                  <v-chip
-                    size="small"
-                    :color="
-                      lesson.type === 'vocabulary'
-                        ? 'info'
-                        : lesson.type === 'conversation'
-                          ? 'success'
-                          : 'warning'
-                    "
-                  >
+            <v-card-subtitle>
+              <v-chip
+                size="small"
+                :color="
+                  lesson.type === 'vocabulary'
+                    ? 'info'
+                    : lesson.type === 'conversation'
+                      ? 'success'
+                      : 'warning'
+                "
+              >
                     {{ lesson.type === 'vocabulary' ? 'Từ vựng' : lesson.type === 'conversation' ? 'Hội thoại' : 'Ngữ pháp' }}
-                  </v-chip>
-                  <v-chip size="small" class="ml-2">{{ lesson.level }}</v-chip>
+              </v-chip>
+              <v-chip size="small" class="ml-2">{{ lesson.level }}</v-chip>
                   <span class="ml-2">{{ lesson.estimatedMinutes }} phút</span>
-                </v-card-subtitle>
-                <v-card-text>
-                  {{ lesson.description }}
-                </v-card-text>
-                <v-card-actions>
-                  <v-btn :to="`/${lesson.type}?lessonId=${lesson.id}`" color="primary" variant="tonal">
+            </v-card-subtitle>
+            <v-card-text>
+              {{ lesson.description }}
+            </v-card-text>
+            <v-card-actions>
+              <v-btn :to="`/${lesson.type}?lessonId=${lesson.id}`" color="primary" variant="tonal">
                     Bắt đầu học
                   </v-btn>
                 </v-card-actions>

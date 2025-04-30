@@ -18,7 +18,7 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/vocabulary"
+        to="/vocabulary/learning"
         class="mx-2"
       >
         Từ vựng
@@ -84,7 +84,7 @@
           <v-list-item to="/account/profile" prepend-icon="mdi-account-outline">
             <v-list-item-title>Hồ sơ cá nhân</v-list-item-title>
           </v-list-item>
-          <v-list-item to="/account-settings" prepend-icon="mdi-cog-outline">
+          <v-list-item to="/account/settings" prepend-icon="mdi-cog-outline">
             <v-list-item-title>Cài đặt</v-list-item-title>
           </v-list-item>
           <v-divider></v-divider>

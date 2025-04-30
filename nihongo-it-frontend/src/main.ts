@@ -10,6 +10,7 @@ import 'vue-toast-notification/dist/theme-sugar.css'
 import { useAuthStore } from './stores'
 import axios from 'axios'
 import { handleSessionExpiration } from './utils/sessionHandler'
+import vue3GoogleLogin from 'vue3-google-login'
 
 // Configure axios defaults
 axios.defaults.headers.common['Accept'] = 'application/json'
@@ -79,6 +80,9 @@ app.use(vuetify)
 app.use(pinia)
 app.use(router)
 app.use(VueToast)
+app.use(vue3GoogleLogin, {
+  clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID_HERE',
+})
 
 // Initialize auth state before mounting the app
 const authStore = useAuthStore()

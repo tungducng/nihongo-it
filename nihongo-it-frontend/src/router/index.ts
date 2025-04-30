@@ -43,12 +43,6 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
-    path: '/conversation',
-    name: 'conversation',
-    component: () => import('@/views/learning/ConversationView.vue'),
-    // No requiresAuth - publicly accessible
-  },
-  {
     path: '/vocabulary',
     name: 'vocabulary',
     component: () => import('@/views/learning/vocabulary/VocabularyView.vue'),
@@ -81,24 +75,6 @@ const routes = [
     meta: { requiresAuth: true }, // Pronunciation scoring requires auth
   },
   {
-    path: '/exercises',
-    name: 'exercises',
-    component: () => import('@/views/learning/ExercisesView.vue'),
-    // No requiresAuth - publicly accessible
-  },
-  {
-    path: '/flashcards',
-    name: 'flashcards',
-    component: () => import('@/views/learning/FlashcardsView.vue'),
-    // meta: { requiresAuth: true },
-  },
-  {
-    path: '/flashcards/create',
-    name: 'flashcardsCreate',
-    component: () => import('@/views/learning/FlashcardCreateView.vue'),
-    // meta: { requiresAuth: true },
-  },
-  {
     path: '/furigana',
     name: 'furigana',
     component: () => import('@/views/learning/FuriganaView.vue'),
@@ -115,19 +91,7 @@ const routes = [
     name: 'coachHome',
     component: () => import('@/views/learning/CoachHomeView.vue'),
     // No requiresAuth - publicly accessible for demo
-  },
-  {
-    path: '/learning/course/:courseId',
-    name: 'lessonDetail',
-    component: () => import('@/views/learning/LessonDetailView.vue'),
-    // No requiresAuth - publicly accessible for demo
-  },
-  {
-    path: '/learning/lesson/:lessonId',
-    name: 'lesson',
-    component: () => import('@/views/learning/LessonView.vue'),
-    // This would be implemented later for individual lessons
-  },
+  }
 ]
 
 const router = createRouter({

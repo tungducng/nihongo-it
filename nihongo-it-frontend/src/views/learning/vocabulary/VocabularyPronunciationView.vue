@@ -3,7 +3,7 @@
     <!-- Loading State -->
     <div v-if="loading" class="loading-container">
       <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
-      <span class="mt-4 text-body-1">Loading vocabulary...</span>
+      <span class="mt-4 text-body-1">Đang tải dữ liệu từ vựng...</span>
     </div>
 
     <!-- Error State -->
@@ -11,7 +11,7 @@
       <v-alert type="error" class="mb-4">{{ error }}</v-alert>
       <v-btn @click="$router.push({ name: 'vocabulary' })" color="primary" variant="outlined">
         <v-icon start>mdi-arrow-left</v-icon>
-        Back to Vocabulary List
+        Quay lại danh sách từ vựng
       </v-btn>
     </div>
 
@@ -21,7 +21,7 @@
         <v-btn icon @click="$router.back()" class="mr-3" color="secondary" variant="text">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
-        <h1 class="text-h5 font-weight-bold">Pronunciation Practice</h1>
+        <h1 class="text-h5 font-weight-bold">Luyện phát âm</h1>
       </div>
 
       <!-- Vocabulary Card -->
@@ -42,7 +42,7 @@
           </div>
           <v-spacer></v-spacer>
           <div class="action-buttons">
-            <v-btn icon class="action-btn mr-2" @click="playAudio" color="primary" variant="text">
+            <v-btn icon class="action-btn mr-2" @click="playAudio" color="primary" variant="text" title="Nghe phát âm">
               <v-icon>mdi-volume-high</v-icon>
             </v-btn>
           </div>
@@ -55,12 +55,12 @@
           <section class="pronunciation-section mb-6">
             <h3 class="section-title d-flex align-center">
               <v-icon color="primary" class="mr-2">mdi-microphone</v-icon>
-              Pronunciation Practice
+              Luyện phát âm
               <v-tooltip location="top">
                 <template v-slot:activator="{ props }">
                   <v-icon v-bind="props" class="ml-2" size="small">mdi-information</v-icon>
                 </template>
-                Click the record button and pronounce the vocabulary term to check your pronunciation accuracy.
+                Nhấn vào nút ghi âm và đọc từ vựng để kiểm tra độ chính xác phát âm của bạn.
               </v-tooltip>
             </h3>
 
@@ -77,7 +77,7 @@
                     <v-icon size="32">{{ isRecording ? 'mdi-stop' : 'mdi-microphone' }}</v-icon>
                   </v-btn>
                   <div class="mt-2 text-center text-body-2">
-                    {{ isRecording ? 'Recording... Click to stop' : 'Click to start recording' }}
+                    {{ isRecording ? 'Đang ghi âm... Nhấn để dừng' : 'Nhấn để bắt đầu ghi âm' }}
                   </div>
                 </div>
 
@@ -95,14 +95,14 @@
                   prepend-icon="mdi-play"
                   @click="playRecordedAudio"
                 >
-                  Play your recording
+                  Nghe bản ghi âm của bạn
                 </v-btn>
               </div>
             </v-card>
 
             <!-- Results Section -->
             <div v-if="hasScore" class="results-container">
-              <h4 class="text-h6 mb-3">Pronunciation Score</h4>
+              <h4 class="text-h6 mb-3">Điểm phát âm của bạn</h4>
 
               <v-card class="score-card mb-4" variant="outlined">
                 <v-card-text>
@@ -111,7 +111,7 @@
                       <div class="text-h4 font-weight-bold" :class="scoreColorClass">
                         {{ pronounciationScore }}%
                       </div>
-                      <div class="text-body-2 text-medium-emphasis">Accuracy Score</div>
+                      <div class="text-body-2 text-medium-emphasis">Độ chính xác</div>
                     </div>
 
                     <v-rating
@@ -131,7 +131,7 @@
                 variant="tonal"
                 class="mb-4"
               >
-                {{ pronunciationFeedback }}
+                {{ getVietnameseFeedback(pronounciationScore) }}
               </v-alert>
 
               <v-btn
@@ -141,7 +141,7 @@
                 @click="resetRecording"
                 prepend-icon="mdi-refresh"
               >
-                Try Again
+                Thử lại
               </v-btn>
             </div>
           </section>
@@ -150,14 +150,14 @@
           <section v-if="vocabulary.example" class="example-section mb-6">
             <h3 class="section-title">
               <v-icon color="primary" class="mr-2">mdi-format-quote-open</v-icon>
-              Example
+              Ví dụ
             </h3>
             <v-card flat color="background" class="example-card pa-4">
               <p class="japanese-text mb-2">{{ vocabulary.example }}</p>
               <p class="text-body-2 text-medium-emphasis">{{ vocabulary.exampleMeaning }}</p>
 
               <div class="d-flex justify-end">
-                <v-btn icon size="small" @click="playExampleAudio" color="primary" variant="text">
+                <v-btn icon size="small" @click="playExampleAudio" color="primary" variant="text" title="Nghe câu ví dụ">
                   <v-icon>mdi-volume-high</v-icon>
                 </v-btn>
               </div>
@@ -176,6 +176,7 @@ import { useToast } from 'vue-toast-notification'
 import { useVocabularyStore } from '@/stores'
 import axios from 'axios'
 import vocabularyService from '@/services/vocabulary.service'
+import authService from '@/services/auth.service'
 
 // Define types
 interface Vocabulary {
@@ -256,23 +257,194 @@ const getJlptColor = (level: string | undefined): string => {
   return colors[level] || 'grey'
 }
 
-const playAudio = () => {
-  if (!vocabulary.value?.audioPath) {
-    toast.error('No audio available for this vocabulary')
-    return
+const getVietnameseFeedback = (score: number): string => {
+  if (score >= 90) {
+    return 'Phát âm xuất sắc! Giọng của bạn rất tự nhiên.'
+  } else if (score >= 80) {
+    return 'Phát âm rất tốt. Chỉ cần điều chỉnh nhỏ để hoàn hảo.'
+  } else if (score >= 70) {
+    return 'Phát âm tốt. Hãy tập trung vào ngữ điệu và nhịp điệu.'
+  } else if (score >= 60) {
+    return 'Phát âm khá dễ hiểu nhưng cần cải thiện về âm điệu và nhấn mạnh.'
+  } else {
+    return 'Tiếp tục luyện tập! Hãy nghe người bản xứ nói và cố gắng bắt chước cách phát âm của họ.'
   }
-
-  const audio = new Audio(vocabulary.value.audioPath)
-  audio.play().catch(err => {
-    console.error('Error playing audio:', err)
-    toast.error('Failed to play audio')
-  })
 }
 
-const playExampleAudio = () => {
-  // This would normally use a different audio file for the example
-  // For now, we'll reuse the vocabulary audio if available
-  playAudio()
+const playAudio = async () => {
+  if (!vocabulary.value) return;
+
+  if (vocabulary.value?.audioPath) {
+    try {
+      const audio = new Audio(vocabulary.value.audioPath)
+      await audio.play()
+    } catch (err) {
+      console.error('Error playing audio:', err)
+      toast.error('Không thể phát âm thanh', {
+        position: 'top',
+        duration: 3000
+      })
+    }
+    return;
+  }
+
+  // TTS implementation if no audio path is available
+  try {
+    // Verify authentication before proceeding
+    const authToken = authService.getToken()
+    if (!authToken) {
+      toast.error('Vui lòng đăng nhập để sử dụng tính năng đọc văn bản', {
+        position: 'top',
+        duration: 4000
+      })
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        router.push({
+          name: 'login',
+          query: { redirect: router.currentRoute.value.fullPath }
+        })
+      }, 1500)
+      return
+    }
+
+    // Text to speak
+    const textToSpeak = vocabulary.value.term;
+
+    // Show loading indicator
+    toast.info('Đang tạo âm thanh...', {
+      position: 'top',
+      duration: 2000
+    })
+
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+    // Set speed for vocabulary
+    const speed = 0.9;
+
+    // Call the TTS API with Authorization header
+    const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
+      headers: {
+        'Content-Type': 'text/plain; charset=UTF-8',
+        'Accept-Language': 'ja-JP',
+        'X-Speech-Speed': speed.toString(),
+        'X-Content-Language': 'ja',
+        'X-Content-Is-Example': 'false',
+        'Authorization': `Bearer ${authToken}`,
+        'Accept': 'audio/mpeg'
+      },
+      responseType: 'arraybuffer'
+    })
+
+    // Convert response to blob and create audio URL
+    const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
+    const audioUrl = URL.createObjectURL(audioBlob)
+
+    // Play the audio
+    const audio = new Audio(audioUrl)
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl)
+    }
+    await audio.play()
+  } catch (error) {
+    console.error('Error generating or playing TTS audio:', error)
+
+    // Special handling for 401 errors
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      toast.error('Dịch vụ TTS yêu cầu xác thực. Vui lòng đăng nhập lại khi có thể.', {
+        position: 'top',
+        duration: 3000
+      })
+    } else {
+      toast.error(error instanceof Error ? error.message : 'Không thể tạo giọng nói', {
+        position: 'top',
+        duration: 3000
+      })
+    }
+  }
+}
+
+const playExampleAudio = async () => {
+  if (!vocabulary.value || !vocabulary.value.example) {
+    toast.error('Không có câu ví dụ cho từ vựng này', {
+      position: 'top',
+      duration: 3000
+    })
+    return;
+  }
+
+  try {
+    // Verify authentication before proceeding
+    const authToken = authService.getToken()
+    if (!authToken) {
+      toast.error('Vui lòng đăng nhập để sử dụng tính năng đọc văn bản', {
+        position: 'top',
+        duration: 4000
+      })
+      setTimeout(() => {
+        router.push({
+          name: 'login',
+          query: { redirect: router.currentRoute.value.fullPath }
+        })
+      }, 1500)
+      return
+    }
+
+    // Text to speak
+    const textToSpeak = vocabulary.value.example;
+
+    // Show loading indicator
+    toast.info('Đang tạo âm thanh...', {
+      position: 'top',
+      duration: 2000
+    })
+
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+    // Set speed for example sentences
+    const speed = 1.0;
+
+    // Call the TTS API with Authorization header
+    const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
+      headers: {
+        'Content-Type': 'text/plain; charset=UTF-8',
+        'Accept-Language': 'ja-JP',
+        'X-Speech-Speed': speed.toString(),
+        'X-Content-Language': 'ja',
+        'X-Content-Is-Example': 'true',
+        'Authorization': `Bearer ${authToken}`,
+        'Accept': 'audio/mpeg'
+      },
+      responseType: 'arraybuffer'
+    })
+
+    // Convert response to blob and create audio URL
+    const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
+    const audioUrl = URL.createObjectURL(audioBlob)
+
+    // Play the audio
+    const audio = new Audio(audioUrl)
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl)
+    }
+    await audio.play()
+  } catch (error) {
+    console.error('Error generating or playing TTS audio:', error)
+
+    // Special handling for 401 errors
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      toast.error('Dịch vụ TTS yêu cầu xác thực. Vui lòng đăng nhập lại khi có thể.', {
+        position: 'top',
+        duration: 3000
+      })
+    } else {
+      toast.error(error instanceof Error ? error.message : 'Không thể tạo giọng nói', {
+        position: 'top',
+        duration: 3000
+      })
+    }
+  }
 }
 
 const playRecordedAudio = () => {
@@ -280,7 +452,10 @@ const playRecordedAudio = () => {
     const audio = new Audio(recordedAudio.value)
     audio.play().catch(err => {
       console.error('Error playing recorded audio:', err)
-      toast.error('Failed to play recorded audio')
+      toast.error('Không thể phát bản ghi âm', {
+        position: 'top',
+        duration: 3000
+      })
     })
   }
 }
@@ -293,7 +468,10 @@ const toggleRecording = async () => {
       await startRecording()
     } catch (err) {
       console.error('Error starting recording:', err)
-      toast.error('Failed to access microphone')
+      toast.error('Không thể truy cập microphone', {
+        position: 'top',
+        duration: 3000
+      })
     }
   }
 }
@@ -323,7 +501,10 @@ const startRecording = async () => {
     }
   } catch (err) {
     console.error('Error starting recording:', err)
-    toast.error('Failed to access microphone')
+    toast.error('Không thể truy cập microphone', {
+      position: 'top',
+      duration: 3000
+    })
   }
 }
 
@@ -378,7 +559,10 @@ const processRecording = async (audioBlob: Blob) => {
     hasScore.value = true
   } catch (err) {
     console.error('Error processing recording:', err)
-    toast.error('Failed to process pronunciation')
+    toast.error('Không thể xử lý bản ghi âm', {
+      position: 'top',
+      duration: 3000
+    })
   } finally {
     isProcessing.value = false
   }
@@ -408,12 +592,12 @@ onMounted(async () => {
       vocabulary.value = response
     } catch (err) {
       console.error('Error loading vocabulary:', err)
-      error.value = 'Failed to load vocabulary information'
+      error.value = 'Không thể tải thông tin từ vựng'
     } finally {
       loading.value = false
     }
   } else {
-    error.value = 'No vocabulary term provided'
+    error.value = 'Không có từ vựng được cung cấp'
     loading.value = false
   }
 })

@@ -314,7 +314,7 @@ const playAudio = async () => {
     }
 
     // Text to speak
-    const textToSpeak = vocabulary.value.term;
+    const textToSpeak = vocabulary.value.pronunciation ? vocabulary.value.pronunciation : vocabulary.value.term;
 
     // Get the backend API URL
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
@@ -855,7 +855,7 @@ onUnmounted(() => {
   .results-container {
     padding: 20px;
     border-radius: 8px;
-    background-color: rgba(var(--v-theme-surface-variant), 0.5);
+    background-color: rgba(var(--v-theme-surface-variant), 0.05);
   }
 
   /* Score Circle Styles */

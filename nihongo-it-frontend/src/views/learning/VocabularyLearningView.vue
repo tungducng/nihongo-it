@@ -967,7 +967,7 @@ async function playAudio(item: VocabularyItem, isExample = false) {
         textToSpeak = item.example
       } else {
         // Use term for vocabulary pronunciation
-        textToSpeak = item.term
+        textToSpeak = item.pronunciation ? item.pronunciation : item.term
       }
 
       // Show loading indicator

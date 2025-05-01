@@ -25,6 +25,7 @@ class TTSController(
         @RequestBody text: String,
         @RequestHeader(value = "X-Speech-Speed", required = false, defaultValue = "1.0") speedStr: String,
         @RequestHeader(value = "X-Content-Is-Example", required = false, defaultValue = "false") isExample: Boolean,
+        @RequestHeader(value = "X-Content-Language", required = false, defaultValue = "ja") language: String,
         @RequestHeader(value = "X-Save-Audio", required = false, defaultValue = "false") saveAudio: Boolean
     ): ResponseEntity<ByteArray> {
         // Parse speed parameter
@@ -54,7 +55,7 @@ class TTSController(
 //            $text
 //            """.trimIndent()
 //        }
-        
+
         val options = OpenAiAudioSpeechOptions.builder()
             .voice(OpenAiAudioApi.SpeechRequest.Voice.NOVA) // NOVA has the best Japanese pronunciation
             .responseFormat(OpenAiAudioApi.SpeechRequest.AudioResponseFormat.MP3)
@@ -81,6 +82,7 @@ class TTSController(
         return ResponseEntity.ok()
             .contentType(MediaType("audio", "mpeg"))
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=speech.mp3")
+            .header("X-Content-Language", language)
             .body(response.result.output)
     }
     

@@ -14,7 +14,7 @@
           <v-avatar color="primary" class="setting-icon">
             <v-icon color="white">mdi-account</v-icon>
           </v-avatar>
-          <span class="text-subtitle-1 ml-4">Cập nhật thông tin</span>
+          <span class="text-subtitle-1 ml-4">Thông tin tài khoản</span>
           <v-spacer></v-spacer>
           <v-icon>mdi-chevron-right</v-icon>
         </div>
@@ -32,17 +32,6 @@
         </div>
       </v-card>
 
-      <!-- Student Support -->
-      <v-card variant="outlined" class="setting-card mb-3" @click="navigateTo('/support')">
-        <div class="d-flex align-center pa-4">
-          <v-avatar color="primary" class="setting-icon">
-            <v-icon color="white">mdi-headset</v-icon>
-          </v-avatar>
-          <span class="text-subtitle-1 ml-4">Hỗ trợ học viên</span>
-          <v-spacer></v-spacer>
-          <v-icon>mdi-chevron-right</v-icon>
-        </div>
-      </v-card>
 
       <!-- Feedback -->
       <v-card variant="outlined" class="setting-card mb-3" @click="navigateTo('/feedback')">
@@ -73,53 +62,6 @@
         </div>
       </v-card>
 
-      <!-- Purchase Recovery -->
-      <v-card variant="outlined" class="setting-card mb-3" @click="navigateTo('/account/purchases')">
-        <div class="d-flex align-center pa-4">
-          <v-avatar color="primary" class="setting-icon">
-            <v-icon color="white">mdi-shield-check</v-icon>
-          </v-avatar>
-          <span class="text-subtitle-1 ml-4">Khôi phục mua hàng</span>
-          <v-spacer></v-spacer>
-          <v-icon>mdi-chevron-right</v-icon>
-        </div>
-      </v-card>
-
-      <!-- Payment Policy -->
-      <v-card variant="outlined" class="setting-card mb-3" @click="navigateTo('/policies/payment')">
-        <div class="d-flex align-center pa-4">
-          <v-avatar color="primary" class="setting-icon">
-            <v-icon color="white">mdi-book</v-icon>
-          </v-avatar>
-          <span class="text-subtitle-1 ml-4">Chính sách thanh toán</span>
-          <v-spacer></v-spacer>
-          <v-icon>mdi-chevron-right</v-icon>
-        </div>
-      </v-card>
-
-      <!-- Privacy Policy -->
-      <v-card variant="outlined" class="setting-card mb-3" @click="navigateTo('/policies/privacy')">
-        <div class="d-flex align-center pa-4">
-          <v-avatar color="primary" class="setting-icon">
-            <v-icon color="white">mdi-shield-lock</v-icon>
-          </v-avatar>
-          <span class="text-subtitle-1 ml-4">Chính sách bảo mật</span>
-          <v-spacer></v-spacer>
-          <v-icon>mdi-chevron-right</v-icon>
-        </div>
-      </v-card>
-
-      <!-- Terms of Use -->
-      <v-card variant="outlined" class="setting-card mb-3" @click="navigateTo('/policies/terms')">
-        <div class="d-flex align-center pa-4">
-          <v-avatar color="primary" class="setting-icon">
-            <v-icon color="white">mdi-shield-alert</v-icon>
-          </v-avatar>
-          <span class="text-subtitle-1 ml-4">Terms of Use (EULA)</span>
-          <v-spacer></v-spacer>
-          <v-icon>mdi-chevron-right</v-icon>
-        </div>
-      </v-card>
     </div>
 
     <!-- App Version -->

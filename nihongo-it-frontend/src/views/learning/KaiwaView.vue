@@ -1,28 +1,5 @@
 <template>
   <div class="coach-container">
-    <!-- Coach Header -->
-    <div class="header px-4 py-3 d-flex justify-space-between align-center">
-      <div class="d-flex align-center">
-        <v-btn icon class="mr-2" @click="goBack">
-          <v-icon>mdi-chevron-left</v-icon>
-        </v-btn>
-        <img src="https://via.placeholder.com/40/1abc9c/ffffff?text=TC" alt="The Coach" class="coach-logo mr-2" />
-        <div class="text-h6 font-weight-bold text-dark">the<span class="primary--text">coach</span></div>
-      </div>
-      <div class="d-flex align-center">
-        <v-btn
-          color="warning"
-          variant="flat"
-          class="upgrade-btn mr-2"
-          rounded="pill"
-        >
-          Nâng cấp Pro <v-icon small class="ml-1">mdi-crown</v-icon>
-        </v-btn>
-        <v-btn icon variant="text">
-          <v-icon>mdi-bell-outline</v-icon>
-        </v-btn>
-      </div>
-    </div>
 
     <!-- Search Field -->
     <div class="search-container px-4 mb-4">
@@ -42,7 +19,7 @@
         <v-card-text class="px-4 py-5 position-relative">
           <div class="intro-text">
             <div class="text-subtitle-1 text-uppercase mb-2">BÀI HỌC MỞ ĐẦU</div>
-            <div class="text-h5 font-weight-bold mb-4">Chia sẻ về việc học tiếng Anh.</div>
+            <div class="text-h5 font-weight-bold mb-4">Chia sẻ về việc học tiếng Nhật.</div>
             <v-btn
               color="#1CD4AE"
               rounded="pill"
@@ -203,11 +180,11 @@ function goBack() {
 }
 
 function navigateToLesson(lessonId: string) {
-  router.push(`/learning/lesson/${lessonId}`)
+  router.push(`/kaiwa/lesson/${lessonId}`)
 }
 
 function navigateToLessonDetail(courseId: string) {
-  router.push(`/learning/course/${courseId}`)
+  router.push(`/kaiwa/course/${courseId}`)
 }
 
 // Lifecycle hooks

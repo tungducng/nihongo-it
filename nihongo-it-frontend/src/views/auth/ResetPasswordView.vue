@@ -8,8 +8,11 @@
               <v-icon class="lock-icon" icon="mdi-lock-reset"></v-icon>
             </div>
             <v-card-title class="text-h4 font-weight-bold mb-2">
-              {{ isVietnamese ? 'Đặt Mật Khẩu Mới' : 'Set New Password' }}
+              Đặt Mật Khẩu Mới
             </v-card-title>
+            <v-card-subtitle>
+              Tạo mật khẩu mạnh cho tài khoản của bạn
+            </v-card-subtitle>
           </v-card-item>
 
           <v-card-text class="px-6">
@@ -20,14 +23,11 @@
               variant="tonal"
               class="mb-6"
             >
-              {{ isVietnamese ?
-                'Mật khẩu của bạn đã được đặt lại thành công. Bây giờ bạn có thể ' :
-                'Your password has been reset successfully. You can now '
-              }}
+              Mật khẩu của bạn đã được đặt lại thành công. Bây giờ bạn có thể
               <router-link to="/login" class="font-weight-bold">
-                {{ isVietnamese ? 'đăng nhập' : 'login' }}
+                đăng nhập
               </router-link>
-              {{ isVietnamese ? ' với mật khẩu mới.' : ' with your new password.' }}
+              với mật khẩu mới.
             </v-alert>
 
             <v-form v-else @submit.prevent="handleSubmit">
@@ -44,11 +44,11 @@
               <v-text-field
                 v-model="password"
                 :error-messages="passwordError"
-                :label="isVietnamese ? 'Mật Khẩu Mới' : 'New Password'"
+                label="Mật Khẩu Mới"
                 type="password"
                 variant="outlined"
                 prepend-inner-icon="mdi-lock"
-                :hint="!passwordError ? (isVietnamese ? 'Mật khẩu phải có ít nhất 8 ký tự' : 'Password must be at least 8 characters') : ''"
+                hint="Mật khẩu phải có ít nhất 8 ký tự"
                 persistent-hint
                 class="mb-4"
                 required
@@ -58,7 +58,7 @@
               <v-text-field
                 v-model="confirmPassword"
                 :error-messages="confirmPasswordError"
-                :label="isVietnamese ? 'Xác Nhận Mật Khẩu' : 'Confirm Password'"
+                label="Xác Nhận Mật Khẩu"
                 type="password"
                 variant="outlined"
                 prepend-inner-icon="mdi-lock-check"
@@ -76,33 +76,17 @@
                 class="auth-submit-btn mb-6"
               >
                 <v-icon start>mdi-check-circle</v-icon>
-                {{ isVietnamese ? 'Đặt Lại Mật Khẩu' : 'Reset Password' }}
+                Đặt Lại Mật Khẩu
               </v-btn>
 
-              <div class="d-flex justify-space-between align-center">
+              <div class="text-center">
                 <v-btn
                   to="/login"
                   color="primary"
                   variant="text"
                   prepend-icon="mdi-arrow-left"
                 >
-                  {{ isVietnamese ? 'Quay Lại Đăng Nhập' : 'Back to Login' }}
-                </v-btn>
-
-                <v-btn
-                  icon
-                  variant="text"
-                  color="primary"
-                  @click="toggleLanguage"
-                  aria-label="Toggle language"
-                >
-                  <v-tooltip location="bottom" :text="isVietnamese ? 'Switch to English' : 'Chuyển sang tiếng Việt'">
-                    <template v-slot:activator="{ props }">
-                      <v-icon v-bind="props">
-                        {{ isVietnamese ? 'mdi-translate' : 'mdi-translate' }}
-                      </v-icon>
-                    </template>
-                  </v-tooltip>
+                  Quay Lại Đăng Nhập
                 </v-btn>
               </div>
             </v-form>
@@ -128,7 +112,6 @@ const confirmPassword = ref('');
 const passwordError = ref('');
 const confirmPasswordError = ref('');
 const isSuccess = ref(false);
-const isVietnamese = ref(false);
 
 onMounted(() => {
   // Get token from URL query parameters
@@ -137,28 +120,16 @@ onMounted(() => {
   if (!token.value) {
     authStore.error = 'Invalid or missing reset token. Please request a new password reset.';
   }
-
-  // Check browser language preference
-  const userLang = navigator.language || navigator.languages[0];
-  if (userLang && userLang.toLowerCase().includes('vi')) {
-    isVietnamese.value = true;
-  }
 });
 
-const toggleLanguage = () => {
-  isVietnamese.value = !isVietnamese.value;
-  if (passwordError.value || confirmPasswordError.value) {
-    validateForm(); // Refresh validation messages in the new language
-  }
-};
-
 const translateError = (error: string): string => {
-  if (!isVietnamese.value) return error;
-
   const errorMap: Record<string, string> = {
     'Invalid or missing reset token. Please request a new password reset.': 'Mã token đặt lại không hợp lệ hoặc thiếu. Vui lòng yêu cầu đặt lại mật khẩu mới.',
     'Failed to reset password. Please try again.': 'Không thể đặt lại mật khẩu. Vui lòng thử lại.',
-    'Reset token has expired. Please request a new password reset.': 'Mã token đặt lại đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu mới.'
+    'Reset token has expired. Please request a new password reset.': 'Mã token đặt lại đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu mới.',
+    'Passwords do not match': 'Mật khẩu không khớp',
+    'Password is required': 'Mật khẩu là bắt buộc',
+    'Password must be at least 8 characters': 'Mật khẩu phải có ít nhất 8 ký tự'
   };
 
   return errorMap[error] || error;
@@ -170,18 +141,18 @@ const validateForm = (): boolean => {
   confirmPasswordError.value = '';
 
   if (!password.value) {
-    passwordError.value = isVietnamese.value ? 'Mật khẩu là bắt buộc' : 'Password is required';
+    passwordError.value = 'Mật khẩu là bắt buộc';
     isValid = false;
   } else if (password.value.length < 8) {
-    passwordError.value = isVietnamese.value ? 'Mật khẩu phải có ít nhất 8 ký tự' : 'Password must be at least 8 characters';
+    passwordError.value = 'Mật khẩu phải có ít nhất 8 ký tự';
     isValid = false;
   }
 
   if (!confirmPassword.value) {
-    confirmPasswordError.value = isVietnamese.value ? 'Vui lòng xác nhận mật khẩu của bạn' : 'Please confirm your password';
+    confirmPasswordError.value = 'Vui lòng xác nhận mật khẩu của bạn';
     isValid = false;
   } else if (password.value !== confirmPassword.value) {
-    confirmPasswordError.value = isVietnamese.value ? 'Mật khẩu không khớp' : 'Passwords do not match';
+    confirmPasswordError.value = 'Mật khẩu không khớp';
     isValid = false;
   }
 

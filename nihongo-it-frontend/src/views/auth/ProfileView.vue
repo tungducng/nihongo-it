@@ -4,7 +4,7 @@
       <v-col cols="12" sm="10" md="8" lg="6">
         <v-card class="profile-card">
           <v-card-title class="text-center">
-            <h1 class="title">My Profile</h1>
+            <h2 class="title">Hồ Sơ Của Tôi</h2>
           </v-card-title>
 
           <v-card-text>
@@ -21,7 +21,7 @@
                   <v-img
                     v-if="user.profilePicture"
                     :src="user.profilePicture"
-                    alt="Profile picture"
+                    alt="Ảnh đại diện"
                   ></v-img>
                   <span v-else class="text-h4 white--text">{{ avatarInitials }}</span>
                 </v-avatar>
@@ -35,17 +35,17 @@
 
               <v-list>
                 <v-list-item>
-                  <v-list-item-title class="detail-label">Current Level:</v-list-item-title>
-                  <v-list-item-subtitle class="detail-value">{{ user.currentLevel || 'Not set' }}</v-list-item-subtitle>
+                  <v-list-item-title class="detail-label">Trình Độ Hiện Tại:</v-list-item-title>
+                  <v-list-item-subtitle class="detail-value">{{ user.currentLevel || 'Chưa thiết lập' }}</v-list-item-subtitle>
                 </v-list-item>
 
                 <v-list-item>
-                  <v-list-item-title class="detail-label">JLPT Goal:</v-list-item-title>
-                  <v-list-item-subtitle class="detail-value">{{ user.jlptGoal || 'Not set' }}</v-list-item-subtitle>
+                  <v-list-item-title class="detail-label">Mục Tiêu JLPT:</v-list-item-title>
+                  <v-list-item-subtitle class="detail-value">{{ user.jlptGoal || 'Chưa thiết lập' }}</v-list-item-subtitle>
                 </v-list-item>
 
                 <v-list-item>
-                  <v-list-item-title class="detail-label">Last Login:</v-list-item-title>
+                  <v-list-item-title class="detail-label">Lần đăng nhập cuối:</v-list-item-title>
                   <v-list-item-subtitle class="detail-value">{{ formatDate(user.lastLogin) }}</v-list-item-subtitle>
                 </v-list-item>
               </v-list>
@@ -56,14 +56,14 @@
               type="error"
               class="my-4"
             >
-              Unable to load profile information. Please try again later.
+              Không thể tải thông tin hồ sơ. Vui lòng thử lại sau.
               <v-btn
                 color="error"
                 text
                 @click="fetchProfile"
                 class="mt-2"
               >
-                Try Again
+                Thử Lại
               </v-btn>
             </v-alert>
           </v-card-text>
@@ -75,14 +75,13 @@
               @click="navigateToSettings"
               class="px-6"
             >
-              Account Settings
+              Cài Đặt
             </v-btn>
             <v-btn
               color="primary"
-              @click="logout"
               class="px-6"
             >
-              Logout
+              Cập Nhật
             </v-btn>
           </v-card-actions>
         </v-card>
@@ -91,100 +90,112 @@
   </v-container>
 </template>
 
-<script lang="ts">
-import { Component, Vue } from 'vue-facing-decorator'
+<script setup lang="ts">
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores'
 import type { UserInfo } from '@/services/auth.service'
 import { useToast } from 'vue-toast-notification'
-import authService from '@/services/auth.service'
 
-@Component({
-  name: 'ProfileView'
+const router = useRouter()
+const authStore = useAuthStore()
+const toast = useToast()
+
+const user = computed<UserInfo | null>(() => {
+  return authStore.user
 })
-export default class ProfileView extends Vue {
-  private authStore = useAuthStore()
-  private $toast = useToast()
 
-  get user(): UserInfo | null {
-    return this.authStore.user
-  }
+const loading = computed<boolean>(() => {
+  return authStore.loading
+})
 
-  get loading(): boolean {
-    return this.authStore.loading
-  }
+const avatarInitials = computed<string>(() => {
+  if (!user.value?.fullName) return ''
 
-  get avatarInitials(): string {
-    if (!this.user?.fullName) return ''
+  return user.value.fullName
+    .split(' ')
+    .map(name => name.charAt(0))
+    .join('')
+    .toUpperCase()
+})
 
-    return this.user.fullName
-      .split(' ')
-      .map(name => name.charAt(0))
-      .join('')
-      .toUpperCase()
-  }
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return 'Chưa bao giờ'
 
-  formatDate(dateString?: string): string {
-    if (!dateString) return 'Never'
+  try {
+    const date = new Date(dateString)
+    const options: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }
 
+    return date.toLocaleDateString('vi-VN', options)
+  } catch (e) {
     return dateString
   }
+}
 
-  async fetchProfile(): Promise<void> {
-    await this.authStore.fetchCurrentUser()
-  }
-
-  navigateToSettings(): void {
-    this.$router.push({ name: 'accountSettings' })
-  }
-
-  logout(): void {
-    this.authStore.logout()
-    this.$toast.success('You have been logged out successfully', {
-      position: 'top',
-      duration: 3000
-    })
-    this.$router.push({ name: 'login' })
-  }
-
-  mounted(): void {
-    if (!this.user) {
-      this.fetchProfile()
-    }
+const fetchProfile = async (): Promise<void> => {
+  try {
+    await authStore.fetchCurrentUser()
+  } catch (error) {
+    toast.error('Không thể tải thông tin hồ sơ')
   }
 }
+
+const navigateToSettings = (): void => {
+  router.push({ name: 'accountSettings' })
+}
+
+onMounted((): void => {
+  if (!user.value) {
+    fetchProfile()
+  }
+})
 </script>
 
-<style lang="sass" scoped>
-.profile-container
-  min-height: 80vh
-  display: flex
-  align-items: center
-  padding: 2rem 0
+<style lang="scss" scoped>
+.profile-container {
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  padding: 2rem 0;
+}
 
-.profile-card
-  width: 100%
-  padding: 1rem
+.profile-card {
+  width: 100%;
+  padding: 1rem;
+}
 
-.title
-  color: #333
-  margin-bottom: 1rem
-  width: 100%
+.title {
+  color: rgba(0, 0, 0, 0.8);
+  margin-bottom: 1rem;
+  text-align: center;
+}
 
-.profile-header
-  display: flex
-  align-items: center
-  margin-bottom: 1rem
+.profile-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+}
 
-.profile-name
-  flex: 1
+.profile-name {
+  flex: 1;
+}
 
-.detail-label
-  font-weight: 600
-  color: rgba(0, 0, 0, 0.7)
+.detail-label {
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+}
 
-.detail-value
-  color: rgba(0, 0, 0, 0.6)
+.detail-value {
+  color: rgba(0, 0, 0, 0.6);
+}
 
-::v-deep .v-avatar
-  background-color: var(--v-primary-base)
+:deep(.v-avatar) {
+  background-color: rgb(var(--v-theme-primary));
+}
 </style>

@@ -21,7 +21,7 @@ const routes = [
     beforeEnter: redirectIfAuthenticated
   },
   {
-    path: '/learning-progress',
+    path: '/learning/progress',
     name: 'learningProgress',
     component: () => import('@/views/learning/LearningProgressView.vue'),
   },
@@ -93,9 +93,9 @@ const routes = [
     // No requiresAuth - publicly accessible for translations
   },
   {
-    path: '/coach',
-    name: 'coachHome',
-    component: () => import('@/views/learning/CoachHomeView.vue'),
+    path: '/kaiwa',
+    name: 'kaiwa',
+    component: () => import('@/views/learning/KaiwaView.vue'),
     // No requiresAuth - publicly accessible for demo
   },
   {

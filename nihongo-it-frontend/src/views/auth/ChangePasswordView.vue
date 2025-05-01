@@ -2,8 +2,7 @@
   <div class="change-password">
     <div class="change-password-container">
       <div class="change-password-header">
-        <h1>Change Password</h1>
-        <p>Enter your current password and new password below.</p>
+        <h2>Thay Đổi Mật Khẩu</h2>
       </div>
 
       <div class="change-password-form">
@@ -30,32 +29,37 @@
 
           <v-text-field
             v-model="currentPassword"
-            label="Current Password"
+            label="Mật khẩu hiện tại"
             type="password"
             :rules="[rules.required]"
             variant="outlined"
             prepend-inner-icon="mdi-lock-outline"
             class="mb-2"
+            autocomplete="current-password"
           ></v-text-field>
 
           <v-text-field
             v-model="newPassword"
-            label="New Password"
+            label="Mật khẩu mới"
             type="password"
             :rules="[rules.required, rules.minLength]"
             variant="outlined"
             prepend-inner-icon="mdi-lock-outline"
             class="mb-2"
+            autocomplete="new-password"
+            hint="Mật khẩu phải có ít nhất 8 ký tự"
+            persistent-hint
           ></v-text-field>
 
           <v-text-field
             v-model="confirmPassword"
-            label="Confirm New Password"
+            label="Xác nhận mật khẩu mới"
             type="password"
             :rules="[rules.required, rules.passwordMatch]"
             variant="outlined"
             prepend-inner-icon="mdi-lock-outline"
             class="mb-2"
+            autocomplete="new-password"
           ></v-text-field>
 
           <v-btn
@@ -66,13 +70,18 @@
             size="large"
             :loading="loading"
           >
-            Change Password
+            Xác nhận
           </v-btn>
 
           <div class="text-center mt-4">
-            <router-link to="/account/profile" class="back-link">
-              Back to Profile
-            </router-link>
+            <v-btn
+              to="/account/settings"
+              color="primary"
+              variant="text"
+              prepend-icon="mdi-arrow-left"
+            >
+              Back
+            </v-btn>
           </div>
         </v-form>
       </div>
@@ -96,51 +105,37 @@ const loading = ref(false)
 const form = ref<any>(null)
 
 const rules = {
-  required: (v: string) => !!v || 'This field is required',
-  minLength: (v: string) => v.length >= 8 || 'Password must be at least 8 characters',
-  passwordMatch: (v: string) => v === newPassword.value || 'Passwords do not match'
+  required: (v: string) => !!v || 'Trường này là bắt buộc',
+  minLength: (v: string) => v.length >= 8 || 'Mật khẩu phải có ít nhất 8 ký tự',
+  passwordMatch: (v: string) => v === newPassword.value || 'Mật khẩu không khớp'
 }
 
 const handleSubmit = async () => {
-  console.log('Submit button clicked')
-
   // Check form validation
   const { valid } = await form.value.validate()
-  console.log('Form validation result:', valid)
 
   if (!valid) {
-    console.log('Form validation failed')
     return
   }
 
   if (newPassword.value === currentPassword.value) {
-    console.log('New password matches current password')
-    error.value = 'New password cannot be the same as current password'
+    error.value = 'Mật khẩu mới không được trùng với mật khẩu hiện tại'
     return
   }
 
-  console.log('Preparing to call API')
   error.value = ''
   success.value = ''
   loading.value = true
 
   try {
-    console.log('Calling authStore.changePassword with:', {
-      currentPassword: '****',
-      newPassword: '****',
-      confirmPassword: '****'
-    })
-
     const result = await authStore.changePassword({
       currentPassword: currentPassword.value,
       newPassword: newPassword.value,
       confirmPassword: confirmPassword.value
     })
 
-    console.log('API call result:', result)
-
     if (result) {
-      success.value = 'Your password has been changed successfully'
+      success.value = 'Mật khẩu của bạn đã được thay đổi thành công'
       // Clear form
       currentPassword.value = ''
       newPassword.value = ''
@@ -151,14 +146,25 @@ const handleSubmit = async () => {
         router.push('/account/profile')
       }, 3000)
     } else if (authStore.error) {
-      error.value = authStore.error
+      error.value = translateError(authStore.error)
     }
   } catch (err: any) {
-    console.error('Error during password change:', err)
-    error.value = err.message || 'Something went wrong. Please try again.'
+    console.error('Lỗi khi thay đổi mật khẩu:', err)
+    error.value = err.message || 'Đã xảy ra lỗi. Vui lòng thử lại.'
   } finally {
     loading.value = false
   }
+}
+
+const translateError = (error: string): string => {
+  const errorMap: Record<string, string> = {
+    'Current password is incorrect': 'Mật khẩu hiện tại không chính xác',
+    'User not found': 'Không tìm thấy người dùng',
+    'Authentication required. Please log in again.': 'Yêu cầu xác thực. Vui lòng đăng nhập lại.',
+    'An unexpected error occurred. Please try again.': 'Đã xảy ra lỗi không mong muốn. Vui lòng thử lại.'
+  }
+
+  return errorMap[error] || error
 }
 </script>
 
@@ -175,9 +181,15 @@ const handleSubmit = async () => {
     max-width: 450px;
     width: 100%;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
     padding: 2rem;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+    }
   }
 
   &-header {
@@ -198,13 +210,9 @@ const handleSubmit = async () => {
   }
 }
 
-.back-link {
-  color: var(--v-primary-base);
-  text-decoration: none;
-  font-size: 0.9rem;
-
-  &:hover {
-    text-decoration: underline;
-  }
+:deep(.v-btn) {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 600;
 }
 </style>

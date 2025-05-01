@@ -25,10 +25,24 @@
       </v-btn>
       <v-btn
         variant="text"
+        to="/kaiwa"
+        class="mx-2"
+      >
+        Hội thoại
+      </v-btn>
+      <v-btn
+        variant="text"
         to="/furigana"
         class="mx-2"
       >
         Furigana
+      </v-btn>
+      <v-btn
+        variant="text"
+        to="/learning/progress"
+        class="mx-2"
+      >
+        Tiến độ học tập
       </v-btn>
     </div>
 
@@ -75,7 +89,7 @@
             </v-avatar>
             <div>
               <div class="text-subtitle-1 font-weight-medium">{{ username }}</div>
-              <div class="text-caption text-medium-emphasis">Trình độ {{ userLevel }}</div>
+              <div class="text-caption text-medium-emphasis">{{ userLevel }}</div>
             </div>
           </div>
         </v-card-text>
@@ -86,10 +100,6 @@
           </v-list-item>
           <v-list-item to="/account/settings" prepend-icon="mdi-cog-outline">
             <v-list-item-title>Cài đặt</v-list-item-title>
-          </v-list-item>
-          <v-divider></v-divider>
-          <v-list-item @click="logout" prepend-icon="mdi-logout">
-            <v-list-item-title>Đăng xuất</v-list-item-title>
           </v-list-item>
         </v-list>
       </v-card>

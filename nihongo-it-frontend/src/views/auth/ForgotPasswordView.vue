@@ -8,10 +8,10 @@
               <v-icon class="mail-icon" icon="mdi-email-outline"></v-icon>
             </div>
             <v-card-title class="text-h4 font-weight-bold mb-2">
-              {{ isVietnamese ? 'Đặt Lại Mật Khẩu' : 'Reset Password' }}
+              Đặt Lại Mật Khẩu
             </v-card-title>
             <v-card-subtitle>
-              {{ isVietnamese ? 'Nhập email của bạn để nhận hướng dẫn đặt lại' : 'Enter your email to receive reset instructions' }}
+              Nhập email của bạn để nhận hướng dẫn đặt lại
             </v-card-subtitle>
           </v-card-item>
 
@@ -23,17 +23,15 @@
               variant="tonal"
               class="mb-6"
             >
-              {{ isVietnamese ?
-                'Nếu tồn tại tài khoản với email đó, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu. Vui lòng kiểm tra email của bạn.' :
-                'If an account with that email exists, we\'ve sent instructions to reset your password. Please check your email.'
-              }}
+              Nếu tồn tại tài khoản với email đó, chúng tôi đã gửi hướng dẫn đặt lại mật khẩu.
+              Vui lòng kiểm tra email của bạn.
             </v-alert>
 
             <v-form v-else @submit.prevent="handleSubmit">
               <v-text-field
                 v-model="email"
                 :error-messages="emailError"
-                :label="isVietnamese ? 'Địa Chỉ Email' : 'Email Address'"
+                label="Địa Chỉ Email"
                 type="email"
                 variant="outlined"
                 prepend-inner-icon="mdi-email"
@@ -51,33 +49,17 @@
                 class="auth-submit-btn mb-6"
               >
                 <v-icon start>mdi-send</v-icon>
-                {{ isVietnamese ? 'Gửi liên kết đặt lại mật khẩu' : 'Send password reset link' }}
+                Gửi Hướng Dẫn Đặt Lại
               </v-btn>
 
-              <div class="d-flex justify-space-between align-center">
+              <div class="text-center">
                 <v-btn
                   to="/login"
                   color="primary"
                   variant="text"
                   prepend-icon="mdi-arrow-left"
                 >
-                  {{ isVietnamese ? 'Quay Lại Đăng Nhập' : 'Back to Login' }}
-                </v-btn>
-
-                <v-btn
-                  icon
-                  variant="text"
-                  color="primary"
-                  @click="toggleLanguage"
-                  aria-label="Toggle language"
-                >
-                  <v-tooltip location="bottom" :text="isVietnamese ? 'Switch to English' : 'Chuyển sang tiếng Việt'">
-                    <template v-slot:activator="{ props }">
-                      <v-icon v-bind="props">
-                        {{ isVietnamese ? 'mdi-translate' : 'mdi-translate' }}
-                      </v-icon>
-                    </template>
-                  </v-tooltip>
+                  Quay Lại Đăng Nhập
                 </v-btn>
               </div>
             </v-form>
@@ -98,26 +80,18 @@ const email = ref('');
 const emailError = ref('');
 const isLoading = ref(false);
 const isSubmitted = ref(false);
-const isVietnamese = ref(true);
-
-const toggleLanguage = () => {
-  isVietnamese.value = !isVietnamese.value;
-  if (emailError.value) {
-    validateEmail(); // Refresh validation messages in the new language
-  }
-};
 
 const validateEmail = (): boolean => {
   emailError.value = '';
 
   if (!email.value) {
-    emailError.value = isVietnamese.value ? 'Email là bắt buộc' : 'Email is required';
+    emailError.value = 'Email là bắt buộc';
     return false;
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email.value)) {
-    emailError.value = isVietnamese.value ? 'Vui lòng nhập địa chỉ email hợp lệ' : 'Please enter a valid email address';
+    emailError.value = 'Vui lòng nhập địa chỉ email hợp lệ';
     return false;
   }
 

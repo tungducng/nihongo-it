@@ -221,7 +221,7 @@
                     :color="item.isSaved ? 'warning' : undefined"
                     @click.stop="toggleSave(item)"
                     class="mr-2"
-                    title="Lưu từ vựng"
+                    :title="item.isSaved ? 'Bỏ lưu' : 'Lưu từ vựng'"
                   ></v-btn>
                   <v-btn
                     :icon="expandedItems.includes(item.vocabId) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
@@ -573,6 +573,35 @@ function saveSearchState() {
   localStorage.setItem('vocabularyLearningSearchState', JSON.stringify(searchState));
 }
 
+async function toggleSave(item: VocabularyItem) {
+    const toast = useToast();
+    try {
+      if (item.isSaved) {
+        await vocabularyService.removeSavedVocabulary(item.vocabId);
+        toast.success('Removed from saved items', {
+          position: 'top',
+          duration: 2000
+        });
+      } else {
+        await vocabularyService.saveVocabulary(item.vocabId);
+        toast.success('Added to saved items', {
+          position: 'top',
+          duration: 2000
+        });
+      }
+
+      // Toggle the state locally
+      item.isSaved = !item.isSaved;
+
+    } catch (error) {
+      console.error('Error toggling save status:', error);
+      toast.error('Failed to update saved status', {
+        position: 'top',
+        duration: 3000
+      });
+    }
+}
+
 // Function to restore search state from localStorage or URL params
 function restoreSearchState() {
   // First check URL query parameters
@@ -669,6 +698,8 @@ async function fetchCategories() {
     loading.value = false
   }
 }
+
+
 
 async function fetchTopics() {
   try {

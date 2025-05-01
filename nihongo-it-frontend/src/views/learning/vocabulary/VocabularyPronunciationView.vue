@@ -42,6 +42,15 @@
           </div>
           <v-spacer></v-spacer>
           <div class="action-buttons">
+            <v-btn
+              :icon="vocabulary.isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+              size="small"
+              variant="text"
+              :color="vocabulary.isSaved ? 'warning' : undefined"
+              @click="toggleSave"
+              class="mr-2 action-btn"
+              :title="vocabulary.isSaved ? 'Bỏ lưu' : 'Lưu từ vựng'"
+            ></v-btn>
             <v-btn icon class="action-btn mr-2" @click="playAudio" color="primary" variant="text" title="Nghe phát âm">
               <v-icon>mdi-volume-high</v-icon>
             </v-btn>
@@ -208,6 +217,7 @@ interface Vocabulary {
   jlptLevel?: string;
   topicName?: string;
   categoryName?: string;
+  isSaved?: boolean;
 }
 
 // Interface for speech analysis response
@@ -296,6 +306,36 @@ const getVietnameseFeedback = (score: number): string => {
     return 'Phát âm khá dễ hiểu nhưng cần cải thiện về âm điệu và nhấn mạnh.'
   } else {
     return 'Tiếp tục luyện tập! Hãy nghe người bản xứ nói và cố gắng bắt chước cách phát âm của họ.'
+  }
+}
+
+const toggleSave = async () => {
+  if (!vocabulary.value) return;
+
+  try {
+    if (vocabulary.value.isSaved) {
+      await vocabularyService.removeSavedVocabulary(vocabulary.value.vocabId);
+      toast.success('Đã bỏ lưu từ vựng', {
+        position: 'top',
+        duration: 2000
+      });
+    } else {
+      await vocabularyService.saveVocabulary(vocabulary.value.vocabId);
+      toast.success('Đã lưu từ vựng', {
+        position: 'top',
+        duration: 2000
+      });
+    }
+
+    // Toggle the state locally
+    vocabulary.value.isSaved = !vocabulary.value.isSaved;
+
+  } catch (error) {
+    console.error('Error toggling save status:', error);
+    toast.error('Không thể cập nhật trạng thái lưu', {
+      position: 'top',
+      duration: 3000
+    });
   }
 }
 

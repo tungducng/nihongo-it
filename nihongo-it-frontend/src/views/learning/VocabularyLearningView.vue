@@ -672,7 +672,6 @@ async function fetchCategories() {
   try {
     loading.value = true
     const response = await vocabularyService.getCategories()
-    console.log('Categories API response:', response)
 
     if (Array.isArray(response)) {
       categories.value = response.map(category => {
@@ -683,7 +682,6 @@ async function fetchCategories() {
           displayOrder: category.displayOrder || 0
         }
       })
-      console.log('Processed categories:', categories.value)
     } else {
       console.error('Categories response is not an array:', response)
       categories.value = []
@@ -705,7 +703,6 @@ async function fetchTopics() {
   try {
     loading.value = true
     const response = await vocabularyService.getTopics()
-    console.log('Topics API response:', response)
 
     if (Array.isArray(response)) {
       topics.value = response.map(topic => {
@@ -719,7 +716,6 @@ async function fetchTopics() {
           vocabularyCount: topic.vocabularyCount || 0
         }
       })
-      console.log('Processed topics:', topics.value)
     } else {
       console.error('Topics response is not an array:', response)
       topics.value = []
@@ -822,7 +818,6 @@ function getTopicsCount(category: Category): number {
     const topicCategoryId = t.categoryId || (t.category && t.category.id)
     return topicCategoryId === category.id
   })
-  console.log(`Topics for category ${category.name}:`, matchingTopics)
   return matchingTopics.length
 }
 
@@ -832,7 +827,6 @@ function getTopicsByCategory(category: Category): Topic[] {
     return topicCategoryId === category.id
   })
 
-  console.log(`Filtered topics for ${category.name}:`, matchingTopics)
   return matchingTopics.sort((a, b) => a.displayOrder - b.displayOrder)
 }
 
@@ -849,7 +843,6 @@ function selectCategory(category: Category) {
   // Fetch topics specifically for this category if needed
   fetchTopicsByCategory(category.id)
     .then(categoryTopics => {
-      console.log(`Fetched topics for category ${category.name}:`, categoryTopics);
       if (categoryTopics && categoryTopics.length > 0) {
         // Update topics if we got results
         const updatedTopics = [...topics.value];

@@ -2,27 +2,10 @@
   <div class="learning-progress-container">
     <!-- Header Section with Profile -->
     <div class="header-section" :style="{ backgroundImage: 'linear-gradient(to bottom, #0a192f, #0a192f)' }">
-      <div class="top-bar d-flex justify-space-between align-center px-4 py-2">
-        <div class="d-flex">
-          <v-btn icon color="white" variant="text">
-            <v-icon>mdi-cog</v-icon>
-          </v-btn>
-          <v-btn icon color="white" variant="text" class="ml-2">
-            <v-icon>mdi-bell</v-icon>
-          </v-btn>
-        </div>
-      </div>
-
       <div class="d-flex justify-space-between align-center px-4 pb-4">
         <div>
           <h1 class="text-h4 font-weight-bold white--text mb-2">Báo cáo học tập<br />hàng ngày</h1>
           <v-chip color="rgba(255,255,255,0.1)" class="white--text">{{ currentDate }}</v-chip>
-        </div>
-        <div class="text-center">
-          <v-avatar size="90" class="avatar-border">
-            <v-img src="https://cdn.vuetifyjs.com/images/john.jpg"></v-img>
-          </v-avatar>
-          <div class="white--text mt-2">Tung</div>
         </div>
       </div>
     </div>

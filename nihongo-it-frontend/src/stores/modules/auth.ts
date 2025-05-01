@@ -65,12 +65,10 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true;
 
     try {
-      console.log('Fetching current user data');
       const response = await authService.getCurrentUser();
 
       if (response.status === 'OK' && response.userInfo) {
         user.value = response.userInfo;
-        console.log('User data retrieved successfully:', user.value);
         return true;
       } else {
         user.value = null;
@@ -95,7 +93,6 @@ export const useAuthStore = defineStore('auth', () => {
   // Initialize user if token exists
   function initializeAuth() {
     if (authService.getToken()) {
-      console.log('Token found, initializing auth');
       fetchCurrentUser();
     } else {
       console.log('No token found, not initializing auth');

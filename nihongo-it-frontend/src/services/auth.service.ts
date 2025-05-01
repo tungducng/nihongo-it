@@ -13,7 +13,6 @@ apiClient.interceptors.request.use(
     const token = localStorage.getItem('auth_token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('Adding token to request:', `Bearer ${token.substring(0, 20)}...`);
     }
     return config;
   },
@@ -97,7 +96,6 @@ class AuthService {
 
       if (result.result === 'OK' && result.token) {
         this.saveToken(result.token);
-        console.log('Token saved after login');
       }
 
       return result;
@@ -119,7 +117,6 @@ class AuthService {
 
   async getCurrentUser(): Promise<GetCurrentUserResponse> {
     try {
-      console.log('Getting current user, token exists:', !!this.getToken());
       const response = await apiClient.get('/api/v1/auth/current');
       return response.data;
     } catch (error) {
@@ -166,13 +163,11 @@ class AuthService {
 
   async loginWithGoogle(tokenId: string): Promise<LoginResponse> {
     try {
-      console.log('Attempting Google login with token')
       const response = await apiClient.post('/api/v1/auth/google-login', { tokenId })
       const result = response.data
 
       if (result.result === 'OK' && result.token) {
         this.saveToken(result.token)
-        console.log('Token saved after Google login')
       }
 
       return result
@@ -183,8 +178,6 @@ class AuthService {
   }
 
   async requestPasswordReset(email: string): Promise<PasswordResetResponse> {
-    console.log(`Requesting password reset for email: ${email}`);
-
     try {
       const response = await apiClient.post('/api/v1/auth/forgot-password', { email } as PasswordResetRequest);
       return response.data;
@@ -196,7 +189,6 @@ class AuthService {
 
   async resetPassword(token: string, password: string): Promise<PasswordResetResponse> {
     try {
-      console.log('Setting new password with token');
       const response = await apiClient.post('/api/v1/auth/set-new-password', {
         token,
         password,
@@ -211,7 +203,6 @@ class AuthService {
 
   async changePassword(request: ChangePasswordRequest): Promise<ChangePasswordResponse> {
     try {
-      console.log('Changing password with current auth');
       const response = await apiClient.post('/api/v1/auth/change-password', request);
       return response.data;
     } catch (error) {

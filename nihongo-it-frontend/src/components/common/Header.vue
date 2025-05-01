@@ -68,42 +68,59 @@
     </div>
 
     <!-- User Avatar & Dropdown (for logged in users) -->
-    <v-menu v-else min-width="200px" rounded>
-      <template v-slot:activator="{ props }">
-        <v-btn
-          variant="text"
-          v-bind="props"
-          class="ml-2"
-        >
-          <v-avatar size="40" color="primary" class="mr-2">
-            <span class="text-h6 text-white">{{ avatarInitials }}</span>
-          </v-avatar>
-          <v-icon>mdi-chevron-down</v-icon>
-        </v-btn>
-      </template>
-      <v-card>
-        <v-card-text>
-          <div class="d-flex align-center mb-3">
-            <v-avatar size="40" color="primary" class="mr-3">
-              <span class="text-h6 text-white">{{ avatarInitials }}</span>
+    <div v-else class="d-flex align-center">
+      <!-- Notification Button -->
+      <v-btn icon color="blue" variant="text" class="mr-2">
+        <v-icon>mdi-bell</v-icon>
+      </v-btn>
+
+      <v-menu min-width="200px" rounded>
+        <template v-slot:activator="{ props }">
+          <v-btn
+            variant="text"
+            v-bind="props"
+          >
+            <v-avatar size="40" color="primary" class="mr-2">
+              <v-img
+                v-if="userProfilePicture"
+                :src="userProfilePicture"
+                alt="Ảnh đại diện"
+              ></v-img>
+              <span v-else class="text-h6 text-white">{{ avatarInitials }}</span>
             </v-avatar>
-            <div>
-              <div class="text-subtitle-1 font-weight-medium">{{ username }}</div>
-              <div class="text-caption text-medium-emphasis">{{ userLevel }}</div>
+            <v-icon>mdi-chevron-down</v-icon>
+          </v-btn>
+        </template>
+
+        <v-card>
+          <v-card-text>
+            <div class="d-flex align-center mb-3">
+              <v-avatar size="40" color="primary" class="mr-3">
+                <v-img
+                  v-if="userProfilePicture"
+                  :src="userProfilePicture"
+                  alt="Ảnh đại diện"
+                ></v-img>
+                <span v-else class="text-h6 text-white">{{ avatarInitials }}</span>
+              </v-avatar>
+              <div>
+                <div class="text-subtitle-1 font-weight-medium">{{ username }}</div>
+                <div class="text-caption text-medium-emphasis">{{ userLevel }}</div>
+              </div>
             </div>
-          </div>
-        </v-card-text>
-        <v-divider></v-divider>
-        <v-list>
-          <v-list-item to="/account/profile" prepend-icon="mdi-account-outline">
-            <v-list-item-title>Hồ sơ cá nhân</v-list-item-title>
-          </v-list-item>
-          <v-list-item to="/account/settings" prepend-icon="mdi-cog-outline">
-            <v-list-item-title>Cài đặt</v-list-item-title>
-          </v-list-item>
-        </v-list>
-      </v-card>
-    </v-menu>
+          </v-card-text>
+          <v-divider></v-divider>
+          <v-list>
+            <v-list-item to="/account/profile" prepend-icon="mdi-account-outline">
+              <v-list-item-title>Hồ sơ cá nhân</v-list-item-title>
+            </v-list-item>
+            <v-list-item to="/account/settings" prepend-icon="mdi-cog-outline">
+              <v-list-item-title>Cài đặt</v-list-item-title>
+            </v-list-item>
+          </v-list>
+        </v-card>
+      </v-menu>
+    </div>
   </v-app-bar>
 </template>
 
@@ -128,6 +145,10 @@ export default class AppHeader extends Vue {
 
   get userLevel(): string {
     return this.authStore.user?.currentLevel || 'N5'
+  }
+
+  get userProfilePicture(): string {
+    return this.authStore.user?.profilePicture || 'N5'
   }
 
   get avatarInitials(): string {

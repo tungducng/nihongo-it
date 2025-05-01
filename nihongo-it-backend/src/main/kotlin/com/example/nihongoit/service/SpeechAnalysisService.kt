@@ -188,6 +188,7 @@ class SpeechAnalysisService {
             logger.error("Error in enhanced analysis: ${e.message}")
             throw RuntimeException("Lỗi khi thực hiện phân tích nâng cao: ${e.message}")
         }
+
     }
 
     fun analyzeSample(sampleId: String, sentence: String): Map<String, Any> {

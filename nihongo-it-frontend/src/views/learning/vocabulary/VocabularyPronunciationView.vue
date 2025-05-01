@@ -316,19 +316,67 @@ const playAudio = async () => {
     // Text to speak
     const textToSpeak = vocabulary.value.term;
 
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+    // First check if audio already exists
+    try {
+      const checkResponse = await axios.get(`${apiUrl}/api/v1/tts/check`, {
+        params: {
+          text: textToSpeak,
+          isExample: false
+        },
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (checkResponse.data.exists) {
+        // Audio exists, use it
+        console.log('Using existing audio file');
+        toast.info('Đang phát âm thanh...', {
+          position: 'top',
+          duration: 2000
+        });
+
+        // Get the audio file
+        const response = await axios.get(`${apiUrl}/api/v1/tts/audio`, {
+          params: {
+            text: textToSpeak,
+            isExample: false
+          },
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          },
+          responseType: 'blob'
+        });
+
+        // Play the audio
+        const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+        };
+        await audio.play();
+        return;
+      }
+    } catch (error) {
+      console.log('Error checking for existing audio:', error);
+      // Continue with generating new audio if check fails
+    }
+
+    // No existing audio found, generate new audio
     // Show loading indicator
     toast.info('Đang tạo âm thanh...', {
       position: 'top',
       duration: 2000
     })
 
-    // Get the backend API URL
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
-
     // Set speed for vocabulary
     const speed = 0.9;
 
-    // Call the TTS API with Authorization header
+    // Call the TTS API with Authorization header and save audio flag
     const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
       headers: {
         'Content-Type': 'text/plain; charset=UTF-8',
@@ -336,6 +384,7 @@ const playAudio = async () => {
         'X-Speech-Speed': speed.toString(),
         'X-Content-Language': 'ja',
         'X-Content-Is-Example': 'false',
+        'X-Save-Audio': 'true', // Tell backend to save this audio
         'Authorization': `Bearer ${authToken}`,
         'Accept': 'audio/mpeg'
       },
@@ -399,14 +448,62 @@ const playExampleAudio = async () => {
     // Text to speak
     const textToSpeak = vocabulary.value.example;
 
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+    // First check if audio already exists
+    try {
+      const checkResponse = await axios.get(`${apiUrl}/api/v1/tts/check`, {
+        params: {
+          text: textToSpeak,
+          isExample: true
+        },
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (checkResponse.data.exists) {
+        // Audio exists, use it
+        console.log('Using existing example audio file');
+        toast.info('Đang phát câu ví dụ...', {
+          position: 'top',
+          duration: 2000
+        });
+
+        // Get the audio file
+        const response = await axios.get(`${apiUrl}/api/v1/tts/audio`, {
+          params: {
+            text: textToSpeak,
+            isExample: true
+          },
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          },
+          responseType: 'blob'
+        });
+
+        // Play the audio
+        const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+        };
+        await audio.play();
+        return;
+      }
+    } catch (error) {
+      console.log('Error checking for existing example audio:', error);
+      // Continue with generating new audio if check fails
+    }
+
+    // No existing audio found, generate new audio
     // Show loading indicator
-    toast.info('Đang tạo âm thanh...', {
+    toast.info('Đang tạo âm thanh...',{
       position: 'top',
       duration: 2000
     })
-
-    // Get the backend API URL
-    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
     // Set speed for example sentences
     const speed = 1.0;
@@ -419,6 +516,7 @@ const playExampleAudio = async () => {
         'X-Speech-Speed': speed.toString(),
         'X-Content-Language': 'ja',
         'X-Content-Is-Example': 'true',
+        'X-Save-Audio': 'true', // Tell backend to save this audio
         'Authorization': `Bearer ${authToken}`,
         'Accept': 'audio/mpeg'
       },
@@ -566,7 +664,9 @@ const processRecording = async (audioBlob: Blob) => {
     formData.append('file', audioBlob, 'recording.wav')
 
     if (vocabulary.value?.term) {
-      formData.append('reference_text', vocabulary.value.term)
+      const term = vocabulary.value.term;
+      formData.append('reference_text', term);
+      formData.append('sample_id', term); // Use the term as the sample ID
     }
 
     // Get the backend API URL

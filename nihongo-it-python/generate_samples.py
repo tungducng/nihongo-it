@@ -86,7 +86,7 @@ def generate_all_samples(output_dir, voice=DEFAULT_VOICE, rate=1.0):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate Japanese TTS samples using OpenAI")
     parser.add_argument("--output", "-o", 
-                        default="../speech-java/src/main/resources/samples",
+                        default="../nihongo-it-backend/src/main/resources/samples",
                         help="Output directory for sample files")
     parser.add_argument("--id", 
                         help="Generate sample for a specific sentence ID")

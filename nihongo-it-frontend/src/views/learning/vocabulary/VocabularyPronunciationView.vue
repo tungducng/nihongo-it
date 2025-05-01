@@ -118,8 +118,22 @@
             <div v-if="hasScore" class="results-container">
               <!-- Circular Score Display -->
               <div class="score-circle-container">
-                <div class="score-circle" :class="scoreColorClass">
-                  <div class="score-number">{{ pronounciationScore }}</div>
+                <div class="score-circle-wrapper">
+                  <div class="score-circle" :class="scoreColorClass">
+                    <svg class="circle-progress" width="150" height="150" viewBox="0 0 150 150">
+                      <circle class="circle-bg" cx="75" cy="75" r="60" stroke-width="10" />
+                      <circle
+                        class="circle-progress-bar"
+                        cx="75"
+                        cy="75"
+                        r="60"
+                        stroke-width="10"
+                        :stroke-dasharray="circumference"
+                        :stroke-dashoffset="dashOffset"
+                      />
+                    </svg>
+                    <div class="score-number">{{ pronounciationScore }}</div>
+                  </div>
                 </div>
                 <div class="text-body-1 text-center mt-2">Điểm tổng</div>
               </div>
@@ -233,7 +247,15 @@ const recordedAudioBlob = ref<Blob | null>(null)
 let audioContext: AudioContext | null = null
 let audioStream: MediaStream | null = null
 
+// Constants
+const CIRCUMFERENCE = 2 * Math.PI * 60; // 2πr where r=60
+
 // Computed
+const circumference = computed(() => CIRCUMFERENCE)
+const dashOffset = computed(() => {
+  return CIRCUMFERENCE - (pronounciationScore.value / 100) * CIRCUMFERENCE
+})
+
 const scoreColorClass = computed(() => {
   const score = pronounciationScore.value
   if (score >= 90) return 'score-excellent'
@@ -866,56 +888,102 @@ onUnmounted(() => {
     margin-bottom: 20px;
   }
 
+  .score-circle-wrapper {
+    position: relative;
+    width: 150px;
+    height: 150px;
+    perspective: 1000px;
+  }
+
   .score-circle {
-    width: 120px;
-    height: 120px;
+    width: 150px;
+    height: 150px;
+    position: relative;
     border-radius: 50%;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-weight: bold;
-    color: white;
-    font-size: 2.5rem;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    position: relative;
-    transition: all 0.5s ease;
-
-    &::before {
-      content: '';
-      position: absolute;
-      top: -5px;
-      left: -5px;
-      right: -5px;
-      bottom: -5px;
-      border-radius: 50%;
-      border: 5px solid rgba(255, 255, 255, 0.3);
-      z-index: 0;
-    }
+    transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 
     .score-number {
-      position: relative;
+      position: absolute;
+      font-size: 2.8rem;
+      font-weight: bold;
+      z-index: 2;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      color: white;
+      animation: fadeIn 0.8s ease-out forwards;
+    }
+
+    .circle-progress {
+      position: absolute;
+      top: 0;
+      left: 0;
       z-index: 1;
+      transform: rotate(-90deg);
+      transition: all 1s ease;
+    }
+
+    .circle-bg {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.2);
+    }
+
+    .circle-progress-bar {
+      fill: none;
+      transition: stroke-dashoffset 1s ease;
+      stroke-linecap: round;
     }
   }
 
   .score-excellent {
-    background: linear-gradient(135deg, #4CAF50, #2E7D32);
+    background: radial-gradient(circle at center, #4CAF50 0%, #2E7D32 80%);
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.5);
+
+    .circle-progress-bar {
+      stroke: #A5D6A7;
+    }
   }
 
   .score-verygood {
-    background: linear-gradient(135deg, #8BC34A, #558B2F);
+    background: radial-gradient(circle at center, #8BC34A 0%, #558B2F 80%);
+    box-shadow: 0 0 20px rgba(139, 195, 74, 0.5);
+
+    .circle-progress-bar {
+      stroke: #C5E1A5;
+    }
   }
 
   .score-good {
-    background: linear-gradient(135deg, #FFEB3B, #F9A825);
+    background: radial-gradient(circle at center, #FDD835 0%, #F9A825 80%);
+    box-shadow: 0 0 20px rgba(255, 235, 59, 0.5);
+
+    .circle-progress-bar {
+      stroke: #FFF59D;
+    }
   }
 
   .score-average {
-    background: linear-gradient(135deg, #FF9800, #E65100);
+    background: radial-gradient(circle at center, #FF9800 0%, #E65100 80%);
+    box-shadow: 0 0 20px rgba(255, 152, 0, 0.5);
+
+    .circle-progress-bar {
+      stroke: #FFCC80;
+    }
   }
 
   .score-poor {
-    background: linear-gradient(135deg, #F44336, #B71C1C);
+    background: radial-gradient(circle at center, #F44336 0%, #B71C1C 80%);
+    box-shadow: 0 0 20px rgba(244, 67, 54, 0.5);
+
+    .circle-progress-bar {
+      stroke: #EF9A9A;
+    }
+  }
+
+  @keyframes fadeIn {
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
   }
 
   .recognized-text-section {

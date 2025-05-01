@@ -75,17 +75,17 @@
             v-for="item in group"
             :key="item.vocabId"
             class="vocabulary-item d-flex"
-            @click="playAudio(item)"
           >
             <v-icon
               size="24"
               class="mr-4 mt-1"
               :color="playingAudioId === item.vocabId ? 'primary' : 'grey'"
               :loading="playingAudioId === item.vocabId"
+              @click.stop="playAudio(item)"
             >
               mdi-volume-high
             </v-icon>
-            <div class="vocabulary-content">
+            <div class="vocabulary-content" @click="openFlashcard(item)">
               <div class="text-h6 font-weight-bold">{{ item.term }}</div>
               <div class="vocabulary-meaning text-subtitle-1 text-grey">{{ item.meaning }}</div>
             </div>
@@ -107,6 +107,108 @@
 
     <!-- Bottom Navigation Placeholder -->
     <div class="bottom-navigation-placeholder" style="height: 56px"></div>
+
+    <!-- Flashcard Dialog -->
+    <v-dialog v-model="showFlashcard" max-width="500" persistent>
+      <v-card class="flashcard-container" @click="flipCard" :class="{ 'flipped': isFlipped }">
+        <div class="flashcard-inner">
+          <!-- Front Side (Term) -->
+          <div class="flashcard-front">
+            <v-card-title class="text-center d-block pt-6 pb-2">
+              <div class="text-h5 font-weight-bold japanese-text">{{ currentVocab?.term || '' }}</div>
+              <v-chip
+                v-if="currentVocab?.jlptLevel"
+                size="small"
+                color="primary"
+                class="my-2"
+              >
+                {{ currentVocab.jlptLevel }}
+              </v-chip>
+            </v-card-title>
+
+            <v-card-text class="text-center pb-6">
+              <div class="text-body-1 text-medium-emphasis">Click to view meaning</div>
+              <div class="text-caption text-medium-emphasis mt-4">Or press the audio button below to hear pronunciation</div>
+            </v-card-text>
+          </div>
+
+          <!-- Back Side (Meaning) -->
+          <div class="flashcard-back">
+            <v-card-title class="text-center d-block pt-6 pb-2">
+              <div class="text-h6 font-weight-bold">{{ currentVocab?.meaning || '' }}</div>
+            </v-card-title>
+
+            <v-card-text class="text-center">
+              <div v-if="currentVocab?.example" class="example-section pa-3 rounded-lg mb-3">
+                <div class="japanese-text mb-1">{{ currentVocab.example }}</div>
+                <div class="text-caption text-medium-emphasis">{{ currentVocab.exampleMeaning }}</div>
+              </div>
+              <div class="text-body-1 text-medium-emphasis">Click to return to term</div>
+            </v-card-text>
+          </div>
+        </div>
+
+        <v-divider></v-divider>
+
+        <!-- Flashcard Controls -->
+        <v-card-actions class="d-flex flex-column pa-4">
+          <div class="d-flex justify-center align-center mb-3 w-100">
+            <v-btn
+              icon="mdi-volume-high"
+              variant="text"
+              color="primary"
+              class="mx-2"
+              @click.stop="currentVocab && playAudio(currentVocab)"
+              :loading="playingAudioId === currentVocab?.vocabId"
+              :disabled="!currentVocab"
+            ></v-btn>
+            <v-spacer></v-spacer>
+            <v-btn
+              icon="mdi-close"
+              variant="text"
+              color="grey"
+              class="mx-2"
+              @click.stop="closeFlashcard"
+            ></v-btn>
+          </div>
+
+          <div class="d-flex justify-space-between w-100">
+            <v-btn
+              color="error"
+              variant="outlined"
+              class="rating-btn"
+              @click.stop="rateCard('again')"
+            >
+              Again
+            </v-btn>
+            <v-btn
+              color="warning"
+              variant="outlined"
+              class="rating-btn"
+              @click.stop="rateCard('hard')"
+            >
+              Hard
+            </v-btn>
+            <v-btn
+              color="success"
+              variant="outlined"
+              class="rating-btn"
+              @click.stop="rateCard('good')"
+            >
+              Good
+            </v-btn>
+            <v-btn
+              color="primary"
+              variant="outlined"
+              class="rating-btn"
+              @click.stop="rateCard('easy')"
+            >
+              Easy
+            </v-btn>
+          </div>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
@@ -133,6 +235,9 @@ const pageSize = ref(20)
 const totalPages = ref(0)
 const totalItems = ref(0)
 const playingAudioId = ref<string | null>(null)
+const showFlashcard = ref(false)
+const isFlipped = ref(false)
+const currentVocab = ref<VocabularyItem | null>(null)
 
 // Tab configuration
 const tabs = [
@@ -277,6 +382,43 @@ async function playAudio(item: VocabularyItem) {
     }, 3000);
   }
 }
+
+function openFlashcard(item: VocabularyItem) {
+  currentVocab.value = item
+  isFlipped.value = false
+  showFlashcard.value = true
+}
+
+function closeFlashcard() {
+  showFlashcard.value = false
+  setTimeout(() => {
+    currentVocab.value = null
+    isFlipped.value = false
+  }, 300)
+}
+
+function flipCard() {
+  isFlipped.value = !isFlipped.value
+}
+
+function rateCard(rating: 'again' | 'hard' | 'good' | 'easy') {
+  // In a real implementation, you would store the rating and update the learning algorithm
+  // For now, we'll just show a toast message
+  const ratingMessages = {
+    again: 'Bạn sẽ gặp lại từ này sớm',
+    hard: 'Từ này khó, sẽ lặp lại sau',
+    good: 'Tốt! Bạn đã nhớ được từ này',
+    easy: 'Rất tốt! Bạn đã nắm vững từ này'
+  }
+
+  toast.success(ratingMessages[rating], {
+    position: 'top',
+    duration: 2000
+  })
+
+  // Close the flashcard after rating
+  closeFlashcard()
+}
 </script>
 
 <style scoped lang="scss">
@@ -341,5 +483,57 @@ async function playAudio(item: VocabularyItem) {
 
 .empty-message {
   color: #757575;
+}
+
+.vocabulary-content {
+  cursor: pointer;
+  flex-grow: 1;
+}
+
+.flashcard-container {
+  perspective: 1000px;
+  height: 350px;
+  cursor: pointer;
+}
+
+.flashcard-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flashcard-container.flipped .flashcard-inner {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front, .flashcard-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.flashcard-back {
+  transform: rotateY(180deg);
+}
+
+.example-section {
+  background-color: #f5f5f5;
+  border-left: 3px solid rgba(0, 0, 0, 0.1);
+}
+
+.japanese-text {
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.rating-btn {
+  flex: 1;
+  margin: 0 4px;
+  text-transform: none;
 }
 </style>

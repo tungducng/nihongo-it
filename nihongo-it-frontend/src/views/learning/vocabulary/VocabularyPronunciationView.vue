@@ -66,18 +66,42 @@
 
             <v-card class="pronunciation-controls-card pa-4 mb-4" color="background">
               <div class="d-flex flex-column align-center">
-                <div class="recording-indicator mb-4">
-                  <v-btn
-                    :loading="isRecording"
-                    :color="isRecording ? 'error' : 'primary'"
-                    size="x-large"
-                    icon
-                    @click="toggleRecording"
-                  >
-                    <v-icon size="32">{{ isRecording ? 'mdi-stop' : 'mdi-microphone' }}</v-icon>
-                  </v-btn>
-                  <div class="mt-2 text-center text-body-2">
-                    {{ isRecording ? 'Đang ghi âm... Nhấn để dừng' : 'Nhấn để bắt đầu ghi âm' }}
+                <div class="recording-controls mb-4">
+                  <div class="d-flex gap-3">
+                    <v-btn
+                      color="error"
+                      :disabled="isRecording"
+                      @click="startRecording"
+                      prepend-icon="mdi-microphone"
+                      :loading="isProcessing"
+                    >
+                      <span v-if="!isRecording">Bắt đầu ghi âm</span>
+                      <span v-else>Đang ghi âm...</span>
+                    </v-btn>
+
+                    <v-btn
+                      color="primary"
+                      :disabled="!isRecording"
+                      @click="stopRecording"
+                      prepend-icon="mdi-stop"
+                    >
+                      Dừng ghi âm
+                    </v-btn>
+
+                    <v-btn
+                      v-if="recordedAudioBlob"
+                      color="secondary"
+                      :disabled="isPlayingRecording || isRecording"
+                      @click="playRecordedAudio"
+                      prepend-icon="mdi-play"
+                    >
+                      <span v-if="!isPlayingRecording">Nghe bản ghi</span>
+                      <span v-else>Đang phát...</span>
+                    </v-btn>
+                  </div>
+
+                  <div v-if="isRecording" class="mt-2 text-center text-body-2">
+                    <v-chip color="error" size="small">Đang ghi âm...</v-chip>
                   </div>
                 </div>
 
@@ -87,46 +111,27 @@
                   color="primary"
                   class="mb-4"
                 ></v-progress-linear>
-
-                <v-btn
-                  v-if="recordedAudio"
-                  color="secondary"
-                  class="mb-4"
-                  prepend-icon="mdi-play"
-                  @click="playRecordedAudio"
-                >
-                  Nghe bản ghi âm của bạn
-                </v-btn>
               </div>
             </v-card>
 
             <!-- Results Section -->
             <div v-if="hasScore" class="results-container">
-              <h4 class="text-h6 mb-3">Điểm phát âm của bạn</h4>
+              <!-- Circular Score Display -->
+              <div class="score-circle-container">
+                <div class="score-circle" :class="scoreColorClass">
+                  <div class="score-number">{{ pronounciationScore }}</div>
+                </div>
+                <div class="text-body-1 text-center mt-2">Điểm tổng</div>
+              </div>
 
-              <v-card class="score-card mb-4" variant="outlined">
-                <v-card-text>
-                  <div class="d-flex align-center justify-space-between">
-                    <div>
-                      <div class="text-h4 font-weight-bold" :class="scoreColorClass">
-                        {{ pronounciationScore }}%
-                      </div>
-                      <div class="text-body-2 text-medium-emphasis">Độ chính xác</div>
-                    </div>
+              <!-- Recognized Text Section -->
+              <div v-if="recognizedText" class="recognized-text-section mb-4">
+                <h4 class="text-h6 mb-2">Văn bản được nhận dạng:</h4>
+                <p class="pa-2 bg-surface rounded">{{ recognizedText }}</p>
+              </div>
 
-                    <v-rating
-                      :model-value="scoreStars"
-                      readonly
-                      color="amber"
-                      half-increments
-                      density="compact"
-                    ></v-rating>
-                  </div>
-                </v-card-text>
-              </v-card>
-
+              <!-- Feedback Section -->
               <v-alert
-                v-if="pronunciationFeedback"
                 :type="scoreToAlertType"
                 variant="tonal"
                 class="mb-4"
@@ -135,7 +140,6 @@
               </v-alert>
 
               <v-btn
-                v-if="hasScore"
                 color="primary"
                 block
                 @click="resetRecording"
@@ -192,6 +196,17 @@ interface Vocabulary {
   categoryName?: string;
 }
 
+// Interface for speech analysis response
+interface SpeechAnalysis {
+  score: number;
+  feedback: string;
+  personalizedFeedback?: string;
+  transcription: string;
+  intonationScore?: number;
+  clarityScore?: number;
+  textScore?: number;
+}
+
 // Router and stores
 const route = useRoute()
 const router = useRouter()
@@ -210,6 +225,9 @@ const audioChunks = ref<Blob[]>([])
 const pronounciationScore = ref(0)
 const pronunciationFeedback = ref('')
 const hasScore = ref(false)
+const recognizedText = ref('')
+const isPlayingRecording = ref(false)
+const recordedAudioBlob = ref<Blob | null>(null)
 
 // Audio context for recording
 let audioContext: AudioContext | null = null
@@ -218,23 +236,11 @@ let audioStream: MediaStream | null = null
 // Computed
 const scoreColorClass = computed(() => {
   const score = pronounciationScore.value
-  if (score >= 80) return 'text-success'
-  if (score >= 60) return 'text-warning'
-  return 'text-error'
-})
-
-const scoreStars = computed(() => {
-  const score = pronounciationScore.value
-  if (score >= 90) return 5
-  if (score >= 80) return 4.5
-  if (score >= 70) return 4
-  if (score >= 60) return 3.5
-  if (score >= 50) return 3
-  if (score >= 40) return 2.5
-  if (score >= 30) return 2
-  if (score >= 20) return 1.5
-  if (score >= 10) return 1
-  return 0.5
+  if (score >= 90) return 'score-excellent'
+  if (score >= 80) return 'score-verygood'
+  if (score >= 70) return 'score-good'
+  if (score >= 60) return 'score-average'
+  return 'score-poor'
 })
 
 const scoreToAlertType = computed(() => {
@@ -447,39 +453,16 @@ const playExampleAudio = async () => {
   }
 }
 
-const playRecordedAudio = () => {
-  if (recordedAudio.value) {
-    const audio = new Audio(recordedAudio.value)
-    audio.play().catch(err => {
-      console.error('Error playing recorded audio:', err)
-      toast.error('Không thể phát bản ghi âm', {
-        position: 'top',
-        duration: 3000
-      })
-    })
-  }
-}
-
-const toggleRecording = async () => {
-  if (isRecording.value) {
-    stopRecording()
-  } else {
-    try {
-      await startRecording()
-    } catch (err) {
-      console.error('Error starting recording:', err)
-      toast.error('Không thể truy cập microphone', {
-        position: 'top',
-        duration: 3000
-      })
-    }
-  }
-}
-
 const startRecording = async () => {
   try {
     audioChunks.value = []
-    audioStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    audioStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      }
+    })
 
     if (audioStream) {
       mediaRecorder.value = new MediaRecorder(audioStream)
@@ -492,12 +475,17 @@ const startRecording = async () => {
 
       mediaRecorder.value.onstop = () => {
         const audioBlob = new Blob(audioChunks.value, { type: 'audio/wav' })
+        recordedAudioBlob.value = audioBlob
         recordedAudio.value = URL.createObjectURL(audioBlob)
         processRecording(audioBlob)
       }
 
       mediaRecorder.value.start()
       isRecording.value = true
+      toast.info('Bắt đầu ghi âm - Hãy phát âm từ vựng', {
+        position: 'top',
+        duration: 2000
+      })
     }
   } catch (err) {
     console.error('Error starting recording:', err)
@@ -520,46 +508,106 @@ const stopRecording = () => {
   }
 }
 
+const playRecordedAudio = () => {
+  if (!recordedAudio.value) return
+
+  try {
+    isPlayingRecording.value = true
+    const audio = new Audio(recordedAudio.value)
+
+    audio.onended = () => {
+      isPlayingRecording.value = false
+    }
+
+    audio.onerror = () => {
+      console.error('Error playing recorded audio')
+      isPlayingRecording.value = false
+      toast.error('Không thể phát bản ghi âm', {
+        position: 'top',
+        duration: 3000
+      })
+    }
+
+    audio.play().catch(err => {
+      console.error('Error playing recorded audio:', err)
+      isPlayingRecording.value = false
+      toast.error('Không thể phát bản ghi âm', {
+        position: 'top',
+        duration: 3000
+      })
+    })
+  } catch (err) {
+    console.error('Error playing recorded audio:', err)
+    isPlayingRecording.value = false
+    toast.error('Không thể phát bản ghi âm', {
+      position: 'top',
+      duration: 3000
+    })
+  }
+}
+
 const processRecording = async (audioBlob: Blob) => {
   isProcessing.value = true
 
   try {
+    // Verify authentication before proceeding
+    const authToken = authService.getToken()
+    if (!authToken) {
+      toast.error('Vui lòng đăng nhập để sử dụng tính năng phân tích phát âm', {
+        position: 'top',
+        duration: 4000
+      })
+      isProcessing.value = false
+      return
+    }
+
     // Create FormData and append the audio blob
     const formData = new FormData()
-    formData.append('audio', audioBlob, 'recording.wav')
+    formData.append('file', audioBlob, 'recording.wav')
 
     if (vocabulary.value?.term) {
-      formData.append('text', vocabulary.value.term)
+      formData.append('reference_text', vocabulary.value.term)
     }
 
-    formData.append('language', 'ja-JP')
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
-    // In a real implementation, you would send this to your backend
-    // const response = await axios.post('/api/pronunciation/evaluate', formData)
+    // Send to speech analysis API
+    const response = await axios.post(`${apiUrl}/api/v1/speech/analyze-audio-enhanced`, formData, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    })
 
-    // Simulate API response with mock data
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    // Process response
+    if (response.data) {
+      const analysis: SpeechAnalysis = response.data
+      pronounciationScore.value = Math.round(analysis.score)
+      recognizedText.value = analysis.transcription
 
-    // Mock response data
-    const mockScore = Math.floor(Math.random() * 40) + 60 // Random score between 60-99
-    pronounciationScore.value = mockScore
+      if (analysis.personalizedFeedback) {
+        pronunciationFeedback.value = analysis.personalizedFeedback
+      } else {
+        pronunciationFeedback.value = analysis.feedback || getVietnameseFeedback(pronounciationScore.value)
+      }
 
-    if (mockScore >= 90) {
-      pronunciationFeedback.value = 'Excellent pronunciation! Your accent is very natural.'
-    } else if (mockScore >= 80) {
-      pronunciationFeedback.value = 'Very good pronunciation. Minor accent adjustments would make it perfect.'
-    } else if (mockScore >= 70) {
-      pronunciationFeedback.value = 'Good pronunciation. Try focusing on the pitch accent and rhythm.'
-    } else if (mockScore >= 60) {
-      pronunciationFeedback.value = 'Your pronunciation is understandable but needs improvement on tone and stress.'
-    } else {
-      pronunciationFeedback.value = 'Keep practicing! Focus on listening to native speakers and try to match their pronunciation.'
+      hasScore.value = true
     }
-
-    hasScore.value = true
   } catch (err) {
     console.error('Error processing recording:', err)
-    toast.error('Không thể xử lý bản ghi âm', {
+
+    // Fallback to mock data for testing if API fails
+    console.log('Using mock data due to API error')
+    await new Promise(resolve => setTimeout(resolve, 1500))
+
+    // Mock analysis with random score
+    const mockScore = Math.floor(Math.random() * 40) + 60
+    pronounciationScore.value = mockScore
+    recognizedText.value = vocabulary.value?.term || ''
+    pronunciationFeedback.value = getVietnameseFeedback(mockScore)
+    hasScore.value = true
+
+    toast.warning('Đang sử dụng dữ liệu mẫu do lỗi kết nối API', {
       position: 'top',
       duration: 3000
     })
@@ -569,15 +617,27 @@ const processRecording = async (audioBlob: Blob) => {
 }
 
 const resetRecording = () => {
+  if (recordedAudio.value) {
+    URL.revokeObjectURL(recordedAudio.value)
+  }
+
   recordedAudio.value = null
+  recordedAudioBlob.value = null
   pronounciationScore.value = 0
   pronunciationFeedback.value = ''
+  recognizedText.value = ''
   hasScore.value = false
+  isPlayingRecording.value = false
 
   // Clear any existing media resources
   if (audioStream) {
     audioStream.getTracks().forEach(track => track.stop())
   }
+
+  toast.info('Đã đặt lại bản ghi. Bạn có thể thử lại.', {
+    position: 'top',
+    duration: 2000
+  })
 }
 
 // Add navigateBack method
@@ -646,6 +706,10 @@ onUnmounted(() => {
     stopRecording()
   }
 
+  if (isPlayingRecording.value) {
+    isPlayingRecording.value = false
+  }
+
   if (recordedAudio.value) {
     URL.revokeObjectURL(recordedAudio.value)
   }
@@ -677,21 +741,92 @@ onUnmounted(() => {
     color: var(--v-primary-base);
   }
 
-  .recording-indicator {
+  .recording-controls {
     display: flex;
     flex-direction: column;
     align-items: center;
-  }
+    width: 100%;
 
-  .score-card {
-    transition: all 0.3s ease;
-
-    &:hover {
-      transform: translateY(-2px);
+    .gap-3 {
+      gap: 12px;
     }
   }
 
-  .pronunciation-controls-card {
+  .results-container {
+    padding: 20px;
+    border-radius: 8px;
+    background-color: rgba(var(--v-theme-surface-variant), 0.5);
+  }
+
+  /* Score Circle Styles */
+  .score-circle-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .score-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    color: white;
+    font-size: 2.5rem;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+    transition: all 0.5s ease;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      border-radius: 50%;
+      border: 5px solid rgba(255, 255, 255, 0.3);
+      z-index: 0;
+    }
+
+    .score-number {
+      position: relative;
+      z-index: 1;
+    }
+  }
+
+  .score-excellent {
+    background: linear-gradient(135deg, #4CAF50, #2E7D32);
+  }
+
+  .score-verygood {
+    background: linear-gradient(135deg, #8BC34A, #558B2F);
+  }
+
+  .score-good {
+    background: linear-gradient(135deg, #FFEB3B, #F9A825);
+  }
+
+  .score-average {
+    background: linear-gradient(135deg, #FF9800, #E65100);
+  }
+
+  .score-poor {
+    background: linear-gradient(135deg, #F44336, #B71C1C);
+  }
+
+  .recognized-text-section {
+    margin-top: 16px;
+    padding: 8px;
+    border-radius: 8px;
+    background-color: rgba(var(--v-theme-surface), 0.7);
+  }
+
+  .example-card {
+    border-radius: 8px;
     transition: all 0.2s ease;
 
     &:hover {
@@ -699,20 +834,7 @@ onUnmounted(() => {
     }
   }
 
-  .text-success {
-    color: rgb(var(--v-theme-success));
-  }
-
-  .text-warning {
-    color: rgb(var(--v-theme-warning));
-  }
-
-  .text-error {
-    color: rgb(var(--v-theme-error));
-  }
-
-  .example-card {
-    border-radius: 8px;
+  .pronunciation-controls-card {
     transition: all 0.2s ease;
 
     &:hover {

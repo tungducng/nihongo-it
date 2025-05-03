@@ -62,8 +62,10 @@
     <div v-if="topic" class="px-4 mb-3">
       <div class="d-flex align-center mb-4">
         <div>
-          <div class="text-h6 font-weight-bold japanese-text">{{ topic.name }}</div>
-          <div class="text-subtitle-1">{{ topic.meaning }}</div>
+          <div class="text-h6 font-weight-bold japanese-text">{{ topic.name }}
+            <span class="text-subtitle-1">({{ topic.meaning }})</span>
+          </div>
+
         </div>
       </div>
     </div>
@@ -104,8 +106,8 @@
           :class="{ 'expanded': expandedItems.includes(item.vocabId) }"
           variant="outlined"
           rounded="lg"
-          @click="toggleExpand(item.vocabId)"
         >
+          <!-- Main vocabulary item content -->
           <div class="pa-4">
             <div class="d-flex align-center mb-2">
               <div>
@@ -124,13 +126,13 @@
                 </div>
               </div>
               <v-spacer></v-spacer>
-              <div class="d-flex">
+              <div class="d-flex align-center justify-center action-buttons-container">
                 <v-btn
                   icon="mdi-volume-high"
                   size="small"
                   variant="text"
                   @click.stop="playAudio(item)"
-                  class="mr-2"
+                  class="mx-1"
                   color="blue"
                   title="Phát âm"
                   :loading="playingAudioId === item.vocabId"
@@ -142,27 +144,38 @@
                   variant="text"
                   :color="item.isSaved ? 'warning' : undefined"
                   @click.stop="toggleSave(item)"
-                  class="mr-2"
+                  class="mx-1"
                   :title="item.isSaved ? 'Bỏ lưu' : 'Lưu từ vựng'"
+                ></v-btn>
+                <v-btn
+                  variant="text"
+                  color="primary"
+                  size="small"
+                  @click.stop="navigateToDetail(item.term)"
+                  class="mx-1"
+                  title="Xem chi tiết"
+                  icon="mdi-open-in-new"
                 ></v-btn>
                 <v-btn
                   :icon="expandedItems.includes(item.vocabId) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
                   size="small"
                   variant="text"
-                  class="mr-2"
+                  class="mx-1"
                   title="Xem thêm"
+                  @click.stop="toggleExpand(item.vocabId)"
                 ></v-btn>
                 <v-btn
                   size="small"
-                  variant="outlined"
+                  variant="text"
                   color="success"
                   @click.stop.prevent="toggleChatGPT(item.vocabId)"
                   :disabled="loadingChatGPT === item.vocabId"
                   :loading="loadingChatGPT === item.vocabId"
-                  class="chat-gpt-btn"
+                  class="chat-gpt-btn mx-1"
+                  title="Hỏi ChatGPT"
+                  prepend-icon="mdi-chat-processing"
                 >
-                  <v-icon left size="small" class="mr-1">mdi-chat-processing</v-icon>
-                  Hỏi ChatGPT
+                  <span class="d-none d-sm-inline">Hỏi ChatGPT</span>
                 </v-btn>
               </div>
             </div>
@@ -193,23 +206,14 @@
                   {{ item.exampleMeaning }}
                 </div>
               </div>
-
-              <!-- View Details Button -->
-              <div class="text-center">
-                <v-btn
-                  variant="outlined"
-                  color="primary"
-                  size="small"
-                  @click.stop="navigateToDetail(item.term)"
-                >
-                  Xem chi tiết
-                </v-btn>
-              </div>
             </div>
+          </div>
 
-            <!-- ChatGPT Content (not dependent on expandedItems) -->
-            <div v-if="chatGPTItems.includes(item.vocabId)" class="chatgpt-content mt-3 py-2 px-3 rounded" @click.stop>
-              <v-divider v-if="!expandedItems.includes(item.vocabId)" class="mb-3"></v-divider>
+          <!-- ChatGPT Content (completely independent section) -->
+          <div v-if="chatGPTItems.includes(item.vocabId)" class="pa-4 pt-0">
+            <div class="chatgpt-content py-2 px-3 rounded" @click.stop>
+              <v-divider class="mb-3"></v-divider>
+
               <!-- Initial AI Explanation -->
               <v-card flat class="chatgpt-card pa-3 mb-3" v-if="item.aiExplanation" @click.stop>
                 <div class="d-flex align-items-start mb-2">
@@ -809,10 +813,10 @@ function getJlptColor(level: string): string {
 async function toggleChatGPT(vocabId: string) {
   const index = chatGPTItems.value.indexOf(vocabId)
 
-  // Make sure the item is expanded when toggling ChatGPT
-  if (!expandedItems.value.includes(vocabId)) {
-    expandedItems.value.push(vocabId)
-  }
+  // Remove the automatic expansion of row content
+  // if (!expandedItems.value.includes(vocabId)) {
+  //   expandedItems.value.push(vocabId)
+  // }
 
   if (index >= 0) {
     // If already open, close it
@@ -1171,7 +1175,18 @@ function hasVietnameseStarted(example: any): boolean {
 }
 
 .chat-gpt-btn {
-  margin-left: auto;
+  font-size: 0.75rem;
+  height: 28px;
+  opacity: 0.9;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.05);
+  }
 }
 
 /* ChatGPT styles */
@@ -1184,7 +1199,6 @@ function hasVietnameseStarted(example: any): boolean {
   z-index: 10;
   position: relative;
   pointer-events: auto;
-  margin-top: 1rem;
   padding-top: 1rem;
   border-radius: 8px;
 }
@@ -1219,19 +1233,6 @@ function hasVietnameseStarted(example: any): boolean {
   border-radius: 8px;
 }
 
-.chat-gpt-btn {
-  font-size: 0.75rem;
-  height: 28px;
-  opacity: 0.9;
-  transition: all 0.2s ease;
-  margin-left: 4px;
-
-  &:hover {
-    opacity: 1;
-    transform: scale(1.05);
-  }
-}
-
 .typing-cursor {
   display: inline-block;
   width: 2px;
@@ -1247,6 +1248,40 @@ function hasVietnameseStarted(example: any): boolean {
   }
   50% {
     opacity: 0;
+  }
+}
+
+/* Responsive styles for action buttons */
+@media (max-width: 600px) {
+  .action-buttons-container {
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 8px;
+  }
+
+  .chat-gpt-btn {
+    margin-top: 8px;
+  }
+}
+
+.action-buttons-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-buttons-container .v-btn {
+  margin: 0 4px;
+  min-width: 36px;
+  height: 36px;
+}
+
+.chat-gpt-btn {
+  transition: all 0.2s ease;
+
+  &:hover {
+    opacity: 1;
+    transform: scale(1.05);
   }
 }
 </style>

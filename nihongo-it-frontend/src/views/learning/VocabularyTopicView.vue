@@ -19,7 +19,7 @@
     </div>
 
     <!-- Search Field -->
-    <div class="search-container px-4 mb-4">
+    <div class="search-container px-4 mb-2">
       <div class="search-field d-flex align-center pa-2 rounded-pill">
         <v-text-field
           v-model="search"
@@ -35,11 +35,11 @@
     </div>
 
     <!-- Active Filters (if any) -->
-    <div class="active-filters px-4 mb-3" v-if="hasActiveFilters">
+    <div class="active-filters px-4 mb-2" v-if="hasActiveFilters">
       <div class="d-flex flex-wrap">
         <v-chip
           v-if="selectedJlptLevel"
-          size="small"
+          size="x-small"
           color="primary"
           class="mr-2 mb-1"
           closable
@@ -49,7 +49,7 @@
         </v-chip>
         <v-chip
           v-if="topic"
-          size="small"
+          size="x-small"
           color="success"
           class="mr-2 mb-1"
         >
@@ -59,13 +59,12 @@
     </div>
 
     <!-- Topic Header -->
-    <div v-if="topic" class="px-4 mb-3">
-      <div class="d-flex align-center mb-4">
+    <div v-if="topic" class="px-4 mb-2">
+      <div class="d-flex align-center mb-2">
         <div>
-          <div class="text-h6 font-weight-bold japanese-text">{{ topic.name }}
-            <span class="text-subtitle-1">({{ topic.meaning }})</span>
+          <div class="text-subtitle-1 font-weight-bold japanese-text">{{ topic.name }}
+            <span class="text-caption">({{ topic.meaning }})</span>
           </div>
-
         </div>
       </div>
     </div>
@@ -88,12 +87,13 @@
 
       <div v-else>
         <!-- Pagination at the top -->
-        <div class="d-flex justify-center mb-4" v-if="totalPages > 1">
+        <div class="d-flex justify-center mb-2" v-if="totalPages > 1">
           <v-pagination
             v-model="currentPage"
             :length="totalPages"
             :total-visible="5"
             rounded="circle"
+            density="compact"
             size="small"
             @update:modelValue="handlePageChange"
           ></v-pagination>
@@ -102,27 +102,27 @@
         <v-card
           v-for="item in vocabularyItems"
           :key="item.vocabId"
-          class="vocabulary-item mb-4"
+          class="vocabulary-item mb-3"
           :class="{ 'expanded': expandedItems.includes(item.vocabId) }"
           variant="outlined"
           rounded="lg"
         >
           <!-- Main vocabulary item content -->
-          <div class="pa-4">
-            <div class="d-flex align-center mb-2">
-              <div>
+          <div class="pa-3">
+            <div class="d-flex align-center mb-1">
+              <div class="item-text">
                 <div class="d-flex align-center">
-                  <div class="text-h6 japanese-text font-weight-bold">{{ item.term }}</div>
+                  <div class="text-subtitle-1 japanese-text font-weight-bold">{{ item.term }}</div>
+                  <div v-if="item.pronunciation" class="text-body-2 japanese-text text-medium-emphasis ml-2">
+                    ({{ item.pronunciation }})
+                  </div>
                   <v-chip
                     :color="getJlptColor(item.jlptLevel)"
-                    size="small"
-                    class="ml-3"
+                    size="x-small"
+                    class="ml-2"
                   >
                     {{ item.jlptLevel }}
                   </v-chip>
-                </div>
-                <div v-if="item.pronunciation" class="text-subtitle-1 japanese-text text-medium-emphasis">
-                  {{ item.pronunciation }}
                 </div>
               </div>
               <v-spacer></v-spacer>
@@ -180,17 +180,17 @@
               </div>
             </div>
 
-            <div class="text-body-1 meaning-text">{{ item.meaning }}</div>
+            <div class="text-body-2 meaning-text">{{ item.meaning }}</div>
 
             <!-- Expanded Content -->
-            <div v-if="expandedItems.includes(item.vocabId)" class="mt-4">
-              <v-divider class="mb-3"></v-divider>
+            <div v-if="expandedItems.includes(item.vocabId)" class="mt-2">
+              <v-divider class="mb-2"></v-divider>
 
               <!-- Example Section -->
-              <div v-if="item.example" class="example-section mb-3 pa-3 rounded">
+              <div v-if="item.example" class="example-section mb-2 pa-2 rounded">
                 <div class="d-flex align-items-center">
-                  <v-icon class="mr-2" size="x-small" color="grey">mdi-format-quote-open</v-icon>
-                  <div class="flex-grow-1 japanese-text">{{ item.example }}</div>
+                  <v-icon class="mr-1" size="x-small" color="grey">mdi-format-quote-open</v-icon>
+                  <div class="flex-grow-1 japanese-text text-body-2">{{ item.example }}</div>
                   <v-btn
                     icon="mdi-volume-high"
                     size="x-small"
@@ -202,7 +202,7 @@
                     :disabled="playingExampleAudioId === item.vocabId"
                   ></v-btn>
                 </div>
-                <div v-if="item.exampleMeaning" class="example-translation ml-6 mt-1 text-caption text-medium-emphasis">
+                <div v-if="item.exampleMeaning" class="example-translation ml-4 mt-1 text-caption text-medium-emphasis">
                   {{ item.exampleMeaning }}
                 </div>
               </div>
@@ -210,33 +210,33 @@
           </div>
 
           <!-- ChatGPT Content (completely independent section) -->
-          <div v-if="chatGPTItems.includes(item.vocabId)" class="pa-4 pt-0">
-            <div class="chatgpt-content py-2 px-3 rounded" @click.stop>
-              <v-divider class="mb-3"></v-divider>
+          <div v-if="chatGPTItems.includes(item.vocabId)" class="pa-3 pt-0">
+            <div class="chatgpt-content py-2 px-2 rounded" @click.stop>
+              <v-divider class="mb-2"></v-divider>
 
               <!-- Initial AI Explanation -->
-              <v-card flat class="chatgpt-card pa-3 mb-3" v-if="item.aiExplanation" @click.stop>
-                <div class="d-flex align-items-start mb-2">
-                  <v-avatar size="32" color="green" class="mr-2">
+              <v-card flat class="chatgpt-card pa-2 mb-2" v-if="item.aiExplanation" @click.stop>
+                <div class="d-flex align-items-start mb-1">
+                  <v-avatar size="24" color="green" class="mr-2 mt-1">
                     <span class="text-caption text-white">AI</span>
                   </v-avatar>
                   <div>
-                    <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
+                    <div class="text-caption font-weight-medium">Trợ lý ChatGPT</div>
                     <div class="chatgpt-message text-body-2 mt-1">
                       <p v-html="displayedText[item.vocabId] || ''"></p>
                       <span v-if="typingInProgress === item.vocabId && typingExamples[item.vocabId] === undefined" class="typing-cursor">|</span>
 
-                      <div v-if="item.aiExamples && item.aiExamples.length > 0 && typingExamples[item.vocabId] !== undefined" class="mt-3">
-                        <p class="font-weight-medium">Câu ví dụ:</p>
-                        <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-2">
+                      <div v-if="item.aiExamples && item.aiExamples.length > 0 && typingExamples[item.vocabId] !== undefined" class="mt-2">
+                        <p class="font-weight-medium text-caption">Câu ví dụ:</p>
+                        <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-1">
                           <template v-if="typingExamples[item.vocabId] > exIndex || typingExamples[item.vocabId] === -1">
                             <!-- Fully displayed examples -->
-                            <p class="example-text">{{ example.japanese }}</p>
+                            <p class="example-text text-caption">{{ example.japanese }}</p>
                             <p class="text-caption ml-3">{{ example.vietnamese }}</p>
                           </template>
                           <template v-else-if="typingExamples[item.vocabId] === exIndex">
                             <!-- Currently typing example -->
-                            <p class="example-text">
+                            <p class="example-text text-caption">
                               {{ getExampleProperty(example, 'japaneseDisplayed') || '' }}
                               <span v-if="isJapaneseComplete(example) && !hasVietnameseStarted(example)" class="typing-cursor">|</span>
                             </p>
@@ -257,16 +257,16 @@
                 <div
                   v-for="(message, msgIndex) in item.chatHistory"
                   :key="msgIndex"
-                  class="mb-3"
+                  class="mb-2"
                   @click.stop
                 >
                   <!-- User Message -->
                   <div v-if="message.role === 'user'" class="d-flex align-items-start">
-                    <v-avatar size="32" color="blue" class="mr-2">
+                    <v-avatar size="24" color="blue" class="mr-2 mt-1">
                       <span class="text-caption text-white">Bạn</span>
                     </v-avatar>
                     <div>
-                      <div class="text-subtitle-2 font-weight-medium">Bạn</div>
+                      <div class="text-caption font-weight-medium">Bạn</div>
                       <div class="chatgpt-message text-body-2 mt-1">
                         {{ message.content }}
                       </div>
@@ -274,13 +274,13 @@
                   </div>
 
                   <!-- AI Response -->
-                  <v-card v-else flat class="chatgpt-card pa-3" @click.stop>
+                  <v-card v-else flat class="chatgpt-card pa-2" @click.stop>
                     <div class="d-flex align-items-start">
-                      <v-avatar size="32" color="green" class="mr-2">
+                      <v-avatar size="24" color="green" class="mr-2 mt-1">
                         <span class="text-caption text-white">AI</span>
                       </v-avatar>
                       <div>
-                        <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
+                        <div class="text-caption font-weight-medium">Trợ lý ChatGPT</div>
                         <div class="chatgpt-message text-body-2 mt-1">
                           <span v-html="message.content"></span>
                           <span v-if="typingInProgress === item.vocabId &&
@@ -294,23 +294,24 @@
               </template>
 
               <!-- User Input -->
-              <div class="chat-input-container d-flex mt-3">
+              <div class="chat-input-container d-flex mt-2">
                 <v-text-field
                   v-model="chatInputs[item.vocabId]"
                   placeholder="Nhập tin nhắn của bạn..."
                   variant="outlined"
-                  density="comfortable"
+                  density="compact"
                   hide-details
                   @keyup.enter="sendChatMessage(item.vocabId)"
                   @click.stop.prevent
-                  class="mr-2"
+                  class="mr-1"
                 ></v-text-field>
                 <v-btn
                   color="primary"
+                  size="small"
                   :disabled="!chatInputs[item.vocabId]"
                   @click.stop.prevent="sendChatMessage(item.vocabId)"
                 >
-                  <v-icon>mdi-send</v-icon>
+                  <v-icon size="small">mdi-send</v-icon>
                 </v-btn>
               </div>
             </div>
@@ -318,12 +319,13 @@
         </v-card>
 
         <!-- Pagination at the bottom -->
-        <div class="d-flex justify-center mt-4" v-if="totalPages > 1">
+        <div class="d-flex justify-center mt-2 mb-2" v-if="totalPages > 1">
           <v-pagination
             v-model="currentPage"
             :length="totalPages"
             :total-visible="5"
             rounded="circle"
+            density="compact"
             size="small"
             @update:modelValue="handlePageChange"
           ></v-pagination>
@@ -1143,8 +1145,13 @@ function hasVietnameseStarted(example: any): boolean {
 
 .search-field {
   background-color: #f0f0f0;
-  height: 48px;
-  border-radius: 24px;
+  height: 40px;
+  border-radius: 20px;
+}
+
+.vocabulary-section {
+  max-width: 1000px;
+  margin: 0 auto;
 }
 
 .vocabulary-item {
@@ -1152,7 +1159,7 @@ function hasVietnameseStarted(example: any): boolean {
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
   }
 
   & .chatgpt-content {
@@ -1160,28 +1167,35 @@ function hasVietnameseStarted(example: any): boolean {
   }
 }
 
+.item-text {
+  max-width: calc(100% - 180px);
+}
+
 .meaning-text {
   color: rgba(0, 0, 0, 0.6);
+  margin-top: 2px;
+  margin-bottom: 2px;
+  line-height: 1.3;
 }
 
 .example-section {
   background-color: #f5f5f5;
-  border-left: 3px solid rgba(0, 0, 0, 0.1);
+  border-left: 2px solid rgba(0, 0, 0, 0.1);
 }
 
 .example-translation {
   color: rgba(0, 0, 0, 0.6);
   font-style: italic;
+  line-height: 1.2;
 }
 
 .chat-gpt-btn {
-  font-size: 0.75rem;
-  height: 28px;
-  opacity: 0.9;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.75rem;
+  height: 28px;
+  transition: all 0.2s ease;
 
   &:hover {
     opacity: 1;
@@ -1199,38 +1213,53 @@ function hasVietnameseStarted(example: any): boolean {
   z-index: 10;
   position: relative;
   pointer-events: auto;
-  padding-top: 1rem;
-  border-radius: 8px;
+  padding-top: 0.5rem;
+  border-radius: 6px;
 }
 
 /* When ChatGPT is visible but the item is not expanded,
    add a divider to separate from the meaning text */
 .vocabulary-item:not(.expanded) .chatgpt-content {
   border-top: 1px solid rgba(0, 0, 0, 0.1);
-  padding-top: 1rem;
+  padding-top: 0.5rem;
 }
 
 .chatgpt-card {
   background-color: rgba(255, 255, 255, 0.7);
-  border-radius: 12px;
+  border-radius: 8px;
 }
 
 .chatgpt-message {
-  line-height: 1.5;
+  line-height: 1.3;
   color: rgba(0, 0, 0, 0.7);
 }
 
 .example-text {
   color: rgba(0, 0, 0, 0.6);
   font-style: italic;
-  padding-left: 12px;
+  padding-left: 8px;
   border-left: 2px solid rgba(0, 150, 0, 0.3);
+  line-height: 1.2;
+  margin-bottom: 2px;
 }
 
 .chat-input-container {
   background-color: rgba(255, 255, 255, 0.8);
-  padding: 8px;
-  border-radius: 8px;
+  padding: 4px;
+  border-radius: 6px;
+}
+
+.action-buttons-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+}
+
+.action-buttons-container .v-btn {
+  margin: 0 2px;
+  min-width: 28px;
+  height: 28px;
 }
 
 .typing-cursor {
@@ -1264,24 +1293,8 @@ function hasVietnameseStarted(example: any): boolean {
   }
 }
 
-.action-buttons-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.action-buttons-container .v-btn {
-  margin: 0 4px;
-  min-width: 36px;
-  height: 36px;
-}
-
-.chat-gpt-btn {
-  transition: all 0.2s ease;
-
-  &:hover {
-    opacity: 1;
-    transform: scale(1.05);
-  }
+.header {
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
 }
 </style>

@@ -40,7 +40,7 @@
 
       <!-- Main Content Column -->
       <div class="main-content-column">
-        <!-- Main Content -->
+    <!-- Main Content -->
         <div v-if="!loading">
           <!-- Category View -->
           <div class="category-section">
@@ -48,56 +48,56 @@
               <div class="text-center mb-2">
                 <div class="text-h6 font-weight-bold text-center japanese-text">{{ category.name }}</div>
                 <div class="text-caption text-center">{{ category.meaning }}</div>
-              </div>
+          </div>
 
               <div class="category-card">
-                <v-card
+            <v-card
                   class="category-lesson-card"
                   variant="flat"
-                  rounded="lg"
-                  @click="selectCategory(category)"
-                >
-                  <v-img
-                    :src="getImagePath(category.name)"
+              rounded="lg"
+              @click="selectCategory(category)"
+            >
+              <v-img
+                :src="getImagePath(category.name)"
                     height="180px"
                     width="100%"
                     aspect-ratio="1"
-                    cover
-                    class="position-relative"
-                  >
-                    <div class="category-overlay d-flex flex-column justify-center align-center">
+                cover
+                class="position-relative"
+              >
+                <div class="category-overlay d-flex flex-column justify-center align-center">
                       <div class="text-subtitle-1 font-weight-bold text-white text-center">
-                        {{ category.meaning }}
-                      </div>
+                    {{ category.meaning }}
+                  </div>
                       <div class="text-caption text-white mt-1">
-                        {{ getTopicsCount(category) }} topics
-                      </div>
-                    </div>
-                  </v-img>
-                </v-card>
-              </div>
-            </div>
+                    {{ getTopicsCount(category) }} topics
+                  </div>
+                </div>
+              </v-img>
+            </v-card>
+        </div>
+      </div>
 
             <!-- Empty State when no categories match search -->
             <div v-if="filteredCategories.length === 0" class="text-center py-8">
-              <v-icon size="large" icon="mdi-book-search-outline" class="mb-4"></v-icon>
+          <v-icon size="large" icon="mdi-book-search-outline" class="mb-4"></v-icon>
               <h3 class="text-h6">カテゴリーが見つかりません</h3>
-              <p class="text-body-1 text-medium-emphasis">
+          <p class="text-body-1 text-medium-emphasis">
                 No categories match your search criteria.
               </p>
               <v-btn color="primary" class="mt-4" @click="clearAllFilters">
                 Clear Search
-              </v-btn>
-            </div>
-          </div>
-        </div>
+                  </v-btn>
+                </div>
+                  </div>
+                </div>
 
         <!-- Loading Indicator -->
         <div v-if="loading" class="text-center py-8">
           <v-progress-circular indeterminate color="primary"></v-progress-circular>
           <p class="text-body-1 text-medium-emphasis mt-3">Loading...</p>
-        </div>
-      </div>
+                </div>
+              </div>
 
       <!-- Right Column: Banners/Guidelines -->
       <div class="banner-column">
@@ -112,9 +112,9 @@
             <div class="d-flex align-center mt-2">
               <v-icon size="small" color="success" class="mr-2">mdi-check-circle</v-icon>
               <span class="text-body-2">基本から応用まで体系的に学べます</span>
-            </div>
+                          </div>
           </v-card-text>
-        </v-card>
+                </v-card>
 
         <!-- Study Tips Banner -->
         <v-card class="mb-4 study-tips-card" variant="outlined" rounded="lg">
@@ -130,7 +130,7 @@
               <li class="text-body-2">不明点はChatGPTに質問しましょう</li>
             </ul>
           </v-card-text>
-        </v-card>
+                    </v-card>
 
         <!-- Resources Banner -->
         <v-card class="resources-card" variant="outlined" rounded="lg">
@@ -148,17 +148,17 @@
             <p class="text-body-2">
               IT分野の専門用語を効率よく習得するための追加リソースをご利用ください。
             </p>
-            <v-btn
-              color="primary"
+                  <v-btn
+                    color="primary"
               variant="text"
               class="px-0 mt-2"
               prepend-icon="mdi-open-in-new"
               density="comfortable"
             >
               リソースを見る
-            </v-btn>
+                  </v-btn>
           </v-card-text>
-        </v-card>
+          </v-card>
       </div>
     </div>
 

@@ -18,112 +18,178 @@
       </div>
     </div>
 
-    <!-- Search Field -->
-    <div class="search-container px-4 mb-4">
-      <div class="search-field d-flex align-center pa-2 rounded-pill">
-        <v-text-field
-          v-model="search"
-          placeholder="検索 / Tìm kiếm từ vựng"
-          prepend-inner-icon="mdi-magnify"
-          variant="plain"
-          hide-details
-          single-line
-          density="compact"
-          @update:model-value="debouncedFilterVocabulary"
-        ></v-text-field>
-      </div>
-    </div>
-
-    <!-- Active Filters (if any) -->
-    <div class="active-filters px-4 mb-3" v-if="hasActiveFilters">
-      <div class="d-flex flex-wrap">
-        <v-chip
-          v-if="selectedJlptLevel"
-          size="small"
-          color="primary"
-          class="mr-2 mb-1"
-          closable
-          @click:close="clearFilter('jlptLevel')"
-        >
-          {{ selectedJlptLevel }}
-        </v-chip>
-        <v-chip
-          v-if="selectedTopic"
-          size="small"
-          color="success"
-          class="mr-2 mb-1"
-          closable
-          @click:close="clearFilter('topic')"
-        >
-          {{ selectedTopic.meaning }}
-        </v-chip>
-        <v-chip
-          v-if="selectedCategory"
-          size="small"
-          color="info"
-          class="mr-2 mb-1"
-          closable
-          @click:close="clearFilter('category')"
-        >
-          {{ selectedCategory.meaning }}
-        </v-chip>
-      </div>
-    </div>
-
-    <!-- Loading Indicator -->
-    <div v-if="loading" class="text-center py-8">
-      <v-progress-circular indeterminate color="primary"></v-progress-circular>
-      <p class="text-body-1 text-medium-emphasis mt-3">Loading...</p>
-    </div>
-
-    <!-- Main Content -->
-    <div v-else class="main-content">
-      <!-- Category View -->
-      <div class="category-section">
-        <div v-for="category in filteredCategories" :key="category.id" class="mb-6">
-          <div class="px-4 mb-3">
-            <div class="text-subtitle-1 text-grey text-center">カテゴリー</div>
-            <div class="text-h4 font-weight-bold text-center japanese-text">{{ category.name }}</div>
-            <div class="text-subtitle-1 text-center">{{ category.meaning }}</div>
+    <div class="content-grid px-4">
+      <!-- Left Column: Main Content -->
+      <div class="main-content-column">
+        <!-- Search Field -->
+        <div class="search-container mb-4">
+          <div class="search-field d-flex align-center pa-2 rounded-pill">
+            <v-text-field
+              v-model="search"
+              placeholder="検索 / Tìm kiếm từ vựng"
+              prepend-inner-icon="mdi-magnify"
+              variant="plain"
+              hide-details
+              single-line
+              density="compact"
+              @update:model-value="debouncedFilterVocabulary"
+            ></v-text-field>
           </div>
+        </div>
 
-          <div class="category-card px-4 mb-4">
-            <v-card
-              class="category-lesson-card mb-4"
-              variant="outlined"
-              rounded="lg"
-              @click="selectCategory(category)"
+        <!-- Active Filters (if any) -->
+        <div class="active-filters mb-3" v-if="hasActiveFilters">
+          <div class="d-flex flex-wrap">
+            <v-chip
+              v-if="selectedJlptLevel"
+              size="small"
+              color="primary"
+              class="mr-2 mb-1"
+              closable
+              @click:close="clearFilter('jlptLevel')"
             >
-              <v-img
-                :src="getImagePath(category.name)"
-                height="180"
-                cover
-                class="position-relative"
-              >
-                <div class="category-overlay d-flex flex-column justify-center align-center">
-                  <div class="text-h5 font-weight-bold text-white text-center pb-2">
-                    {{ category.meaning }}
-                  </div>
-                  <div class="text-body-1 text-white">
-                    {{ getTopicsCount(category) }} topics
-                  </div>
-                </div>
-              </v-img>
-            </v-card>
+              {{ selectedJlptLevel }}
+            </v-chip>
+            <v-chip
+              v-if="selectedTopic"
+              size="small"
+              color="success"
+              class="mr-2 mb-1"
+              closable
+              @click:close="clearFilter('topic')"
+            >
+              {{ selectedTopic.meaning }}
+            </v-chip>
+            <v-chip
+              v-if="selectedCategory"
+              size="small"
+              color="info"
+              class="mr-2 mb-1"
+              closable
+              @click:close="clearFilter('category')"
+            >
+              {{ selectedCategory.meaning }}
+            </v-chip>
           </div>
         </div>
 
-        <!-- Empty State when no categories match search -->
-        <div v-if="filteredCategories.length === 0" class="text-center py-8">
-          <v-icon size="large" icon="mdi-book-search-outline" class="mb-4"></v-icon>
-          <h3 class="text-h6">カテゴリーが見つかりません</h3>
-          <p class="text-body-1 text-medium-emphasis">
-            No categories match your search criteria.
-          </p>
-          <v-btn color="primary" class="mt-4" @click="clearAllFilters">
-            Clear Search
-          </v-btn>
+        <!-- Loading Indicator -->
+        <div v-if="loading" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary"></v-progress-circular>
+          <p class="text-body-1 text-medium-emphasis mt-3">Loading...</p>
         </div>
+
+        <!-- Main Content -->
+        <div v-else>
+          <!-- Category View -->
+          <div class="category-section">
+            <div v-for="category in filteredCategories" :key="category.id" class="mb-3">
+              <div class="mb-2">
+                <div class="text-h5 font-weight-bold text-center japanese-text">{{ category.name }}</div>
+                <div class="text-subtitle-2 text-center">{{ category.meaning }}</div>
+              </div>
+
+              <div class="category-card">
+                <v-card
+                  class="category-lesson-card"
+                  variant="outlined"
+                  rounded="lg"
+                  @click="selectCategory(category)"
+                >
+                  <v-img
+                    :src="getImagePath(category.name)"
+                    height="150"
+                    cover
+                    class="position-relative"
+                  >
+                    <div class="category-overlay d-flex flex-column justify-center align-center">
+                      <div class="text-h6 font-weight-bold text-white text-center pb-2">
+                        {{ category.meaning }}
+                      </div>
+                      <div class="text-body-2 text-white">
+                        {{ getTopicsCount(category) }} topics
+                      </div>
+                    </div>
+                  </v-img>
+                </v-card>
+              </div>
+            </div>
+
+            <!-- Empty State when no categories match search -->
+            <div v-if="filteredCategories.length === 0" class="text-center py-8">
+              <v-icon size="large" icon="mdi-book-search-outline" class="mb-4"></v-icon>
+              <h3 class="text-h6">カテゴリーが見つかりません</h3>
+              <p class="text-body-1 text-medium-emphasis">
+                No categories match your search criteria.
+              </p>
+              <v-btn color="primary" class="mt-4" @click="clearAllFilters">
+                Clear Search
+              </v-btn>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: Banners/Guidelines -->
+      <div class="banner-column">
+        <!-- Learning Path Banner -->
+        <v-card class="mb-4 learning-path-card" variant="outlined" rounded="lg">
+          <v-card-title class="text-h6 font-weight-bold">
+            <v-icon start class="mr-2">mdi-map-marker-path</v-icon>
+            学習経路
+          </v-card-title>
+          <v-card-text>
+            <p class="text-body-2">カテゴリーとトピックを選んで、IT用語の学習を始めましょう。</p>
+            <div class="d-flex align-center mt-2">
+              <v-icon size="small" color="success" class="mr-2">mdi-check-circle</v-icon>
+              <span class="text-body-2">基本から応用まで体系的に学べます</span>
+            </div>
+          </v-card-text>
+        </v-card>
+
+        <!-- Study Tips Banner -->
+        <v-card class="mb-4 study-tips-card" variant="outlined" rounded="lg">
+          <v-card-title class="text-h6 font-weight-bold">
+            <v-icon start class="mr-2">mdi-lightbulb-on</v-icon>
+            学習のコツ
+          </v-card-title>
+          <v-card-text>
+            <ul class="pl-4">
+              <li class="text-body-2 mb-1">毎日少しずつ学習しましょう</li>
+              <li class="text-body-2 mb-1">音声を聞いて発音を練習しましょう</li>
+              <li class="text-body-2 mb-1">例文を使って実践的に学びましょう</li>
+              <li class="text-body-2">不明点はChatGPTに質問しましょう</li>
+            </ul>
+          </v-card-text>
+        </v-card>
+
+        <!-- Resources Banner -->
+        <v-card class="resources-card" variant="outlined" rounded="lg">
+          <v-card-title class="text-h6 font-weight-bold">
+            <v-icon start class="mr-2">mdi-bookshelf</v-icon>
+            学習リソース
+          </v-card-title>
+          <v-card-text>
+            <v-img
+              src="/images/study-resources.png"
+              height="120"
+              cover
+              class="mb-2 rounded"
+            ></v-img>
+            <p class="text-body-2">
+              IT分野の専門用語を効率よく習得するための追加リソースをご利用ください。
+            </p>
+            <v-btn
+              color="primary"
+              variant="text"
+              class="px-0 mt-2"
+              prepend-icon="mdi-open-in-new"
+              density="comfortable"
+            >
+              リソースを見る
+            </v-btn>
+          </v-card-text>
+        </v-card>
       </div>
     </div>
 
@@ -1117,6 +1183,33 @@ function navigateToDetail(term: string) {
   padding-bottom: 64px;
 }
 
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.main-content-column {
+  width: 100%;
+}
+
+.banner-column {
+  width: 100%;
+}
+
+/* Responsive layout - stack columns on smaller screens */
+@media (max-width: 960px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .banner-column {
+    display: none;
+  }
+}
+
 .japanese-text {
   font-family: 'Noto Sans JP', sans-serif;
 }
@@ -1130,11 +1223,18 @@ function navigateToDetail(term: string) {
 .category-lesson-card {
   overflow: hidden;
   transition: transform 0.2s ease;
+  max-width: 100%;
 
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-3px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1) !important;
   }
+}
+
+.category-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
 }
 
 .category-overlay {
@@ -1144,7 +1244,20 @@ function navigateToDetail(term: string) {
   left: 0;
   width: 100%;
   height: 100%;
-  padding: 20px;
+  padding: 16px;
+}
+
+/* Banner card styles */
+.learning-path-card {
+  border-left: 4px solid #42A5F5 !important;
+}
+
+.study-tips-card {
+  border-left: 4px solid #66BB6A !important;
+}
+
+.resources-card {
+  border-left: 4px solid #FFA726 !important;
 }
 
 .topic-card {

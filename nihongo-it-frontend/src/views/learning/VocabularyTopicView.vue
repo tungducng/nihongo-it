@@ -206,7 +206,7 @@
               </div>
 
               <!-- ChatGPT Content -->
-              <div v-if="chatGPTItems.includes(item.vocabId)" class="chatgpt-content mt-3 py-2 px-3 rounded" @click.stop>
+              <div v-if="chatGPTItems.includes(item.vocabId)" class="chatgpt-content mt-3 py-2 px-3 rounded" @click.stop.prevent>
                 <!-- Initial AI Explanation -->
                 <v-card flat class="chatgpt-card pa-3 mb-3" v-if="item.aiExplanation">
                   <div class="d-flex align-items-start mb-2">
@@ -294,12 +294,13 @@
                     density="comfortable"
                     hide-details
                     @keyup.enter="sendChatMessage(item.vocabId)"
+                    @click.stop.prevent
                     class="mr-2"
                   ></v-text-field>
                   <v-btn
                     color="primary"
                     :disabled="!chatInputs[item.vocabId]"
-                    @click.stop="sendChatMessage(item.vocabId)"
+                    @click.stop.prevent="sendChatMessage(item.vocabId)"
                   >
                     <v-icon>mdi-send</v-icon>
                   </v-btn>
@@ -1166,6 +1167,10 @@ function hasVietnameseStarted(example: any): boolean {
   background-color: #f0f7ff;
   border-top: 1px dashed rgba(0, 150, 0, 0.15);
   border-bottom: 1px dashed rgba(0, 150, 0, 0.15);
+  transform: none !important;
+  transition: none !important;
+  z-index: 10;
+  position: relative;
 }
 
 .chatgpt-card {

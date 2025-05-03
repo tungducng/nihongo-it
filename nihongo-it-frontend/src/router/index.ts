@@ -51,27 +51,27 @@ const routes = [
 
   },
   {
-    path: '/vocabulary/saved',
-    name: 'savedVocabulary',
-    component: () => import('@/views/learning/vocabulary/SavedVocabularyView.vue'),
-    meta: { requiresAuth: true }, // Saved content requires auth
-  },
-  {
-    path: '/vocabulary/term/:term',
-    name: 'vocabularyDetail',
-    component: () => import('@/views/learning/vocabulary/VocabularyDetailView.vue'),
-    meta: { requiresAuth: true }, // Personalized content requires auth
-  },
-  {
     path: '/vocabulary/category',
     name: 'vocabularyLearning',
     component: () => import('@/views/learning/VocabularyLearningView.vue'),
     meta: { requiresAuth: true }, // Personalized content requires auth
   },
   {
-    path: '/vocabulary/pronunciation/:term',
-    name: 'vocabularyPronunciation',
-    component: () => import('@/views/learning/vocabulary/VocabularyPronunciationView.vue'),
+    path: '/vocabulary/category/:slug',
+    name: 'categoryDetail',
+    component: () => import('@/views/learning/CategoryDetailView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/vocabulary/topic/:name',
+    name: 'topicDetail',
+    component: () => import('@/views/learning/VocabularyTopicView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/vocabulary/topic/:id/:term',
+    name: 'vocabularyDetail',
+    component: () => import('@/views/learning/vocabulary/VocabularyDetailView.vue'),
     meta: { requiresAuth: true }, // Pronunciation scoring requires auth
   },
   {

@@ -78,9 +78,9 @@
 
     <!-- Main Content -->
     <div v-else class="main-content">
-      <!-- Category View (when no category is selected) -->
-      <div v-if="!selectedCategory" class="category-section">
-        <div v-for="category in categories" :key="category.id" class="mb-6">
+      <!-- Category View -->
+      <div class="category-section">
+        <div v-for="category in filteredCategories" :key="category.id" class="mb-6">
           <div class="px-4 mb-3">
             <div class="text-subtitle-1 text-grey text-center">カテゴリー</div>
             <div class="text-h4 font-weight-bold text-center japanese-text">{{ category.name }}</div>
@@ -112,293 +112,17 @@
             </v-card>
           </div>
         </div>
-      </div>
 
-      <!-- Topic View (when a category is selected) -->
-      <div v-else-if="selectedCategory && !selectedTopic" class="topic-section">
-        <div class="px-4 mb-3">
-          <div class="text-subtitle-1 text-grey text-center">カテゴリー</div>
-          <div class="text-h4 font-weight-bold text-center japanese-text">{{ selectedCategory.name }}</div>
-          <div class="text-subtitle-1 text-center">{{ selectedCategory.meaning }}</div>
-        </div>
-
-        <div class="topics-list px-4">
-          <div v-for="topic in getTopicsByCategory(selectedCategory)" :key="topic.id" class="mb-4">
-            <v-card
-              class="topic-card"
-              variant="outlined"
-              rounded="lg"
-              @click="handleTopicSelect(topic)"
-            >
-              <v-card-title class="d-flex align-center">
-                <span class="japanese-text">{{ topic.name }}</span>
-                <v-spacer></v-spacer>
-                <v-chip size="small" color="success">{{ getVocabularyCount(topic) }} words</v-chip>
-              </v-card-title>
-              <v-card-text>
-                <div class="text-body-1">{{ topic.meaning }}</div>
-              </v-card-text>
-            </v-card>
-          </div>
-        </div>
-      </div>
-
-      <!-- Vocabulary List (when a topic is selected) -->
-      <div v-else-if="selectedTopic" class="vocabulary-section px-4">
-        <div class="d-flex align-center mb-4">
-          <v-btn icon class="mr-2" @click="backToTopics" variant="text">
-            <v-icon>mdi-arrow-left</v-icon>
-          </v-btn>
-          <div>
-            <div class="text-h6 font-weight-bold japanese-text">{{ selectedTopic.name }}</div>
-            <div class="text-subtitle-1">{{ selectedTopic.meaning }}</div>
-          </div>
-        </div>
-
-        <div v-if="vocabularyItems.length === 0" class="text-center py-8">
+        <!-- Empty State when no categories match search -->
+        <div v-if="filteredCategories.length === 0" class="text-center py-8">
           <v-icon size="large" icon="mdi-book-search-outline" class="mb-4"></v-icon>
-          <h3 class="text-h6">Không tìm thấy từ vựng</h3>
+          <h3 class="text-h6">カテゴリーが見つかりません</h3>
           <p class="text-body-1 text-medium-emphasis">
-            Hãy điều chỉnh bộ lọc tìm kiếm hoặc chọn chủ đề khác.
+            No categories match your search criteria.
           </p>
-        </div>
-
-        <div v-else>
-          <!-- Pagination at the top -->
-          <div class="d-flex justify-center mb-4" v-if="totalPages > 1">
-            <v-pagination
-              v-model="currentPage"
-              :length="totalPages"
-              :total-visible="5"
-              rounded="circle"
-              size="small"
-              @update:modelValue="handlePageChange"
-            ></v-pagination>
-          </div>
-
-          <v-card
-            v-for="item in vocabularyItems"
-            :key="item.vocabId"
-            class="vocabulary-item mb-4"
-            variant="outlined"
-            rounded="lg"
-            @click="toggleExpand(item.vocabId)"
-          >
-            <div class="pa-4">
-              <div class="d-flex align-center mb-2">
-                <div>
-                  <div class="d-flex align-center">
-                    <div class="text-h6 japanese-text font-weight-bold">{{ item.term }}</div>
-                    <v-chip
-                      :color="getJlptColor(item.jlptLevel)"
-                      size="small"
-                      class="ml-3"
-                    >
-                      {{ item.jlptLevel }}
-                    </v-chip>
-                  </div>
-                  <div v-if="item.pronunciation" class="text-subtitle-1 japanese-text text-medium-emphasis">
-                    {{ item.pronunciation }}
-                  </div>
-                </div>
-                <v-spacer></v-spacer>
-                <div class="d-flex">
-                  <v-btn
-                    icon="mdi-volume-high"
-                    size="small"
-                    variant="text"
-                    @click.stop="playAudio(item)"
-                    class="mr-2"
-                    color="blue"
-                    title="Phát âm"
-                    :loading="playingAudioId === item.vocabId"
-                    :disabled="playingAudioId !== null && playingAudioId !== item.vocabId || playingExampleAudioId !== null"
-                  ></v-btn>
-                  <v-btn
-                    :icon="item.isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
-                    size="small"
-                    variant="text"
-                    :color="item.isSaved ? 'warning' : undefined"
-                    @click.stop="toggleSave(item)"
-                    class="mr-2"
-                    :title="item.isSaved ? 'Bỏ lưu' : 'Lưu từ vựng'"
-                  ></v-btn>
-                  <v-btn
-                    :icon="expandedItems.includes(item.vocabId) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                    size="small"
-                    variant="text"
-                    class="mr-2"
-                    title="Xem thêm"
-                  ></v-btn>
-                  <v-btn
-                    size="small"
-                    variant="outlined"
-                    color="success"
-                    @click.stop="toggleChatGPT(item.vocabId)"
-                    :disabled="loadingChatGPT === item.vocabId"
-                    :loading="loadingChatGPT === item.vocabId"
-                    class="chat-gpt-btn"
-                  >
-                    <v-icon left size="small" class="mr-1">mdi-chat-processing</v-icon>
-                    Hỏi ChatGPT
-                  </v-btn>
-                </div>
-              </div>
-
-              <div class="text-body-1 meaning-text">{{ item.meaning }}</div>
-
-              <!-- Expanded Content -->
-              <div v-if="expandedItems.includes(item.vocabId)" class="mt-4">
-                <v-divider class="mb-3"></v-divider>
-
-                <!-- Example Section -->
-                <div v-if="item.example" class="example-section mb-3 pa-3 rounded">
-                  <div class="d-flex align-items-center">
-                    <v-icon class="mr-2" size="x-small" color="grey">mdi-format-quote-open</v-icon>
-                    <div class="flex-grow-1 japanese-text">{{ item.example }}</div>
-                    <v-btn
-                      icon="mdi-volume-high"
-                      size="x-small"
-                      variant="text"
-                      @click.stop="playAudio(item, true)"
-                      color="blue"
-                      title="Phát âm câu ví dụ"
-                      :loading="playingExampleAudioId === item.vocabId"
-                      :disabled="playingExampleAudioId !== null && playingExampleAudioId !== item.vocabId || playingAudioId !== null"
-                    ></v-btn>
-                  </div>
-                  <div v-if="item.exampleMeaning" class="example-translation ml-6 mt-1 text-caption text-medium-emphasis">
-                    {{ item.exampleMeaning }}
-                  </div>
-                </div>
-
-                <!-- View Details Button -->
-                <div class="text-center">
-                  <v-btn
-                    variant="outlined"
-                    color="primary"
-                    size="small"
-                    @click.stop="navigateToDetail(item.term)"
-                  >
-                    Xem chi tiết
-                  </v-btn>
-                </div>
-              </div>
-
-              <!-- ChatGPT Content -->
-              <div v-if="chatGPTItems.includes(item.vocabId)" class="chatgpt-content mt-3 py-2 px-3 rounded" @click.stop>
-                <!-- Initial AI Explanation -->
-                <v-card flat class="chatgpt-card pa-3 mb-3" v-if="item.aiExplanation">
-                  <div class="d-flex align-items-start mb-2">
-                    <v-avatar size="32" color="green" class="mr-2">
-                      <span class="text-caption text-white">AI</span>
-                    </v-avatar>
-                    <div>
-                      <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
-                      <div class="chatgpt-message text-body-2 mt-1">
-                        <p v-html="displayedText[item.vocabId] || ''"></p>
-                        <span v-if="typingInProgress === item.vocabId && typingExamples[item.vocabId] === undefined" class="typing-cursor">|</span>
-
-                        <div v-if="item.aiExamples && item.aiExamples.length > 0 && typingExamples[item.vocabId] !== undefined" class="mt-3">
-                          <p class="font-weight-medium">Câu ví dụ:</p>
-                          <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-2">
-                            <template v-if="typingExamples[item.vocabId] > exIndex || typingExamples[item.vocabId] === -1">
-                              <!-- Fully displayed examples -->
-                              <p class="example-text">{{ example.japanese }}</p>
-                              <p class="text-caption ml-3">{{ example.vietnamese }}</p>
-                            </template>
-                            <template v-else-if="typingExamples[item.vocabId] === exIndex">
-                              <!-- Currently typing example -->
-                              <p class="example-text">
-                                {{ getExampleProperty(example, 'japaneseDisplayed') || '' }}
-                                <span v-if="isJapaneseComplete(example) && !hasVietnameseStarted(example)" class="typing-cursor">|</span>
-                              </p>
-                              <p v-if="hasVietnameseStarted(example)" class="text-caption ml-3">
-                                {{ getExampleProperty(example, 'vietnameseDisplayed') || '' }}
-                                <span class="typing-cursor">|</span>
-                              </p>
-                            </template>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </v-card>
-
-                <!-- Chat History -->
-                <template v-if="item.chatHistory && item.chatHistory.length > 0">
-                  <div
-                    v-for="(message, msgIndex) in item.chatHistory"
-                    :key="msgIndex"
-                    class="mb-3"
-                  >
-                    <!-- User Message -->
-                    <div v-if="message.role === 'user'" class="d-flex align-items-start">
-                      <v-avatar size="32" color="blue" class="mr-2">
-                        <span class="text-caption text-white">Bạn</span>
-                      </v-avatar>
-                      <div>
-                        <div class="text-subtitle-2 font-weight-medium">Bạn</div>
-                        <div class="chatgpt-message text-body-2 mt-1">
-                          {{ message.content }}
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- AI Response -->
-                    <v-card v-else flat class="chatgpt-card pa-3">
-                      <div class="d-flex align-items-start">
-                        <v-avatar size="32" color="green" class="mr-2">
-                          <span class="text-caption text-white">AI</span>
-                        </v-avatar>
-                        <div>
-                          <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
-                          <div class="chatgpt-message text-body-2 mt-1">
-                            <span v-html="message.content"></span>
-                            <span v-if="typingInProgress === item.vocabId &&
-                                        msgIndex === (item.chatHistory?.length - 1)"
-                                  class="typing-cursor">|</span>
-                          </div>
-                        </div>
-                      </div>
-                    </v-card>
-                  </div>
-                </template>
-
-                <!-- User Input -->
-                <div class="chat-input-container d-flex mt-3">
-                  <v-text-field
-                    v-model="chatInputs[item.vocabId]"
-                    placeholder="Nhập tin nhắn của bạn..."
-                    variant="outlined"
-                    density="comfortable"
-                    hide-details
-                    @keyup.enter="sendChatMessage(item.vocabId)"
-                    class="mr-2"
-                  ></v-text-field>
-                  <v-btn
-                    color="primary"
-                    :disabled="!chatInputs[item.vocabId]"
-                    @click.stop="sendChatMessage(item.vocabId)"
-                  >
-                    <v-icon>mdi-send</v-icon>
-                  </v-btn>
-                </div>
-              </div>
-            </div>
-          </v-card>
-
-          <!-- Pagination at the bottom -->
-          <div class="d-flex justify-center mt-4" v-if="totalPages > 1">
-            <v-pagination
-              v-model="currentPage"
-              :length="totalPages"
-              :total-visible="5"
-              rounded="circle"
-              size="small"
-              @update:modelValue="handlePageChange"
-            ></v-pagination>
-          </div>
+          <v-btn color="primary" class="mt-4" @click="clearAllFilters">
+            Clear Search
+          </v-btn>
         </div>
       </div>
     </div>
@@ -407,45 +131,23 @@
     <v-dialog v-model="showFilterDialog" max-width="400">
       <v-card>
         <v-card-title class="text-h6 font-weight-bold">
-          Lọc từ vựng
+          カテゴリーフィルター
         </v-card-title>
         <v-card-text>
-          <v-select
-            v-model="selectedJlptLevel"
-            label="Trình độ JLPT"
-            :items="jlptLevels"
-            clearable
+          <v-text-field
+            v-model="search"
+            label="カテゴリー検索"
             variant="outlined"
+            clearable
             class="mb-4"
-          ></v-select>
-
-          <v-select
-            v-model="tempSelectedCategory"
-            label="Danh mục"
-            :items="categories"
-            item-title="meaning"
-            item-value="id"
-            clearable
-            variant="outlined"
-            class="mb-4"
-            @update:model-value="updateTopicsForCategory"
-          ></v-select>
-
-          <v-select
-            v-model="tempSelectedTopic"
-            label="Chủ đề"
-            :items="availableTopics"
-            item-title="meaning"
-            item-value="id"
-            clearable
-            variant="outlined"
-            :disabled="!tempSelectedCategory"
-          ></v-select>
+            prepend-inner-icon="mdi-magnify"
+            @update:model-value="debouncedFilterCategories"
+          ></v-text-field>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn text @click="clearAllFilters">Xóa tất cả</v-btn>
-          <v-btn color="primary" @click="applyFilters">Áp dụng</v-btn>
+          <v-btn text @click="clearAllFilters">キャンセル</v-btn>
+          <v-btn color="primary" @click="showFilterDialog = false">確認</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -535,6 +237,15 @@ const availableTopics = computed(() => {
   })
 })
 
+const filteredCategories = computed(() => {
+  if (!search.value) return categories.value
+
+  return categories.value.filter(category => {
+    return category.name.toLowerCase().includes(search.value.toLowerCase()) ||
+           category.meaning.toLowerCase().includes(search.value.toLowerCase())
+  })
+})
+
 const hasActiveFilters = computed(() => {
   return selectedJlptLevel.value || selectedCategory.value || selectedTopic.value || search.value
 })
@@ -546,6 +257,16 @@ function debouncedFilterVocabulary() {
   searchTimeout = setTimeout(() => {
     fetchVocabulary()
   }, 500)
+}
+
+// Debounce function for category search
+let categorySearchTimeout: any = null
+function debouncedFilterCategories() {
+  clearTimeout(categorySearchTimeout)
+  categorySearchTimeout = setTimeout(() => {
+    // We don't need to fetch categories as they're already loaded
+    // Just let the v-for directive filter them based on search.value
+  }, 300)
 }
 
 // Watchers
@@ -697,8 +418,6 @@ async function fetchCategories() {
   }
 }
 
-
-
 async function fetchTopics() {
   try {
     loading.value = true
@@ -836,36 +555,11 @@ function getVocabularyCount(topic: Topic): number | string {
 }
 
 function selectCategory(category: Category) {
-  tempSelectedCategory.value = category.id
-  selectedCategory.value = category
-  selectedTopic.value = null
-
-  // Fetch topics specifically for this category if needed
-  fetchTopicsByCategory(category.id)
-    .then(categoryTopics => {
-      if (categoryTopics && categoryTopics.length > 0) {
-        // Update topics if we got results
-        const updatedTopics = [...topics.value];
-
-        // Add or update topics for this category
-        categoryTopics.forEach((newTopic: Topic) => {
-          const existingIndex = updatedTopics.findIndex(t => t.id === newTopic.id);
-          if (existingIndex >= 0) {
-            updatedTopics[existingIndex] = {
-              ...newTopic,
-              categoryId: category.id
-            };
-          } else {
-            updatedTopics.push({
-              ...newTopic,
-              categoryId: category.id
-            });
-          }
-        });
-
-        topics.value = updatedTopics;
-      }
-    });
+  // Navigate to the category detail page
+  router.push({
+    name: 'categoryDetail',
+    params: { slug: encodeURIComponent(category.name) }
+  });
 }
 
 function backToTopics() {
@@ -942,8 +636,8 @@ function clearAllFilters() {
   tempSelectedTopic.value = null
   search.value = ''
 
-  // Reset to initial state
-  vocabularyItems.value = []
+  // Hide the filter dialog
+  showFilterDialog.value = false
 }
 
 function handlePageChange(page: number) {

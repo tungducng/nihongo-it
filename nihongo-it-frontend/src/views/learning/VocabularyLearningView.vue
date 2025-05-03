@@ -1,7 +1,7 @@
 <template>
   <div class="vocabulary-learning-container">
     <!-- Header Section -->
-    <div class="header px-4 py-3 d-flex justify-space-between align-center">
+    <div class="header py-3 d-flex justify-space-between align-center">
       <div class="d-flex align-center">
         <v-btn icon class="mr-2" @click="goBack">
           <v-icon>mdi-chevron-left</v-icon>
@@ -34,8 +34,11 @@
       </div>
     </div>
 
-    <div class="content-grid px-4">
-      <!-- Left Column: Main Content -->
+    <div class="content-grid">
+      <!-- Empty Left Column -->
+      <div class="empty-column"></div>
+
+      <!-- Main Content Column -->
       <div class="main-content-column">
         <!-- Main Content -->
         <div v-if="!loading">
@@ -1151,17 +1154,22 @@ function navigateToDetail(term: string) {
 
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 320px;
+  grid-template-columns: 180px 1fr 320px 100px;
   gap: 24px;
   max-width: 1440px;
   margin: 0 auto;
 }
 
+.empty-column {
+  width: 100%;
+}
+
 .main-content-column {
   width: 100%;
-  background-color: #f1f5f9;
+  background-color: #fff;
   border-radius: 8px;
-  padding: 16px;
+  padding-left: 8px;
+  padding-right: 8px;
 }
 
 .banner-column {
@@ -1174,7 +1182,7 @@ function navigateToDetail(term: string) {
     grid-template-columns: 1fr;
   }
 
-  .banner-column {
+  .banner-column, .empty-column {
     display: none;
   }
 }
@@ -1211,7 +1219,7 @@ function navigateToDetail(term: string) {
   width: 100%;
   position: relative;
   aspect-ratio: 1;
-  max-width: 280px;
+  max-width: 277px;
 }
 
 .category-lesson-card {

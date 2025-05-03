@@ -43,8 +43,8 @@
           <div class="category-section">
             <div v-for="category in filteredCategories" :key="category.id" class="category-item">
               <div class="text-center mb-1">
-                <div class="text-h5 font-weight-bold text-center japanese-text">{{ category.name }}</div>
-                <div class="text-subtitle-2 text-center">{{ category.meaning }}</div>
+                <div class="text-h6 font-weight-bold text-center japanese-text">{{ category.name }}</div>
+                <div class="text-caption text-center mb-1">{{ category.meaning }}</div>
               </div>
 
               <div class="category-card">
@@ -56,15 +56,17 @@
                 >
                   <v-img
                     :src="getImagePath(category.name)"
-                    height="150"
+                    height="160px"
+                    width="100%"
+                    aspect-ratio="1"
                     cover
                     class="position-relative"
                   >
                     <div class="category-overlay d-flex flex-column justify-center align-center">
-                      <div class="text-h6 font-weight-bold text-white text-center">
+                      <div class="text-subtitle-2 font-weight-bold text-white text-center">
                         {{ category.meaning }}
                       </div>
-                      <div class="text-body-2 text-white mt-1">
+                      <div class="text-caption text-white mt-1">
                         {{ getTopicsCount(category) }} topics
                       </div>
                     </div>
@@ -1177,10 +1179,14 @@ function navigateToDetail(term: string) {
   }
 }
 
-/* Make categories single column on mobile */
+/* Make categories 2 column on mobile */
 @media (max-width: 768px) {
   .category-section {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .category-card {
+    max-width: 130px;
   }
 }
 
@@ -1195,26 +1201,32 @@ function navigateToDetail(term: string) {
 }
 
 .category-item {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.category-card {
+  width: 100%;
+  position: relative;
+  aspect-ratio: 1;
+  max-width: 280px;
 }
 
 .category-lesson-card {
   overflow: hidden;
   transition: transform 0.2s ease;
   max-width: 100%;
+  height: 100%;
   background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
 
   &:hover {
     transform: translateY(-3px);
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1) !important;
   }
-}
-
-.category-section {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-  margin-top: 16px;
 }
 
 .category-overlay {
@@ -1229,6 +1241,7 @@ function navigateToDetail(term: string) {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  text-align: center;
 }
 
 /* Banner card styles */
@@ -1335,5 +1348,12 @@ function navigateToDetail(term: string) {
   50% {
     opacity: 0;
   }
+}
+
+.category-section {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 16px;
 }
 </style>

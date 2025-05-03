@@ -113,6 +113,18 @@
 
               <div v-if="hasExample(currentCard.backText)" class="example-section pa-4 rounded-lg mb-4">
                 <div v-html="getExampleHtml(currentCard.backText)" class="text-body-1"></div>
+                <div class="d-flex justify-end mt-2">
+                  <v-btn
+                    icon
+                    size="small"
+                    color="primary"
+                    variant="text"
+                    @click.stop="playExampleAudio(currentCard)"
+                    :loading="isPlayingExampleAudio"
+                  >
+                    <v-icon>mdi-volume-high</v-icon>
+                  </v-btn>
+                </div>
               </div>
 
               <div class="term-reminder text-body-2 text-medium-emphasis mt-2">
@@ -235,6 +247,7 @@ const dueCards = ref<FlashcardDTO[]>([])
 const currentCardIndex = ref(0)
 const isFlipped = ref(false)
 const isPlayingAudio = ref(false)
+const isPlayingExampleAudio = ref(false)
 const showStats = ref(false)
 const stats = ref<any>(null)
 
@@ -472,6 +485,90 @@ async function playAudio(card: FlashcardDTO) {
     setTimeout(() => {
       if (isPlayingAudio.value) {
         isPlayingAudio.value = false;
+      }
+    }, 3000);
+  }
+}
+
+// Get the example sentence from the back text
+function getExampleSentence(text: string): string {
+  if (!text) return ''
+
+  const lines = text.split('\n')
+  const exampleIndex = lines.findIndex(line => line.includes('Example:'))
+
+  if (exampleIndex === -1) return ''
+
+  // Return the example sentence without the "Example: " prefix
+  if (exampleIndex >= 0 && exampleIndex < lines.length) {
+    return lines[exampleIndex].replace('Example: ', '')
+  }
+
+  return ''
+}
+
+async function playExampleAudio(card: FlashcardDTO) {
+  if (!card.vocabularyId || isPlayingExampleAudio.value) return
+
+  // Extract the example sentence from the card
+  const exampleSentence = getExampleSentence(card.backText)
+  if (!exampleSentence) {
+    toast.error('Không tìm thấy câu ví dụ', {
+      position: 'top',
+      duration: 2000
+    })
+    return
+  }
+
+  isPlayingExampleAudio.value = true
+
+  try {
+    // Show loading indicator
+    toast.info('Đang tạo âm thanh...', {
+      position: 'top',
+      duration: 2000
+    });
+
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+    // Call the TTS API with Authorization header for the example sentence
+    const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, exampleSentence, {
+      headers: {
+        'Content-Type': 'text/plain; charset=UTF-8',
+        'Accept-Language': 'ja-JP',
+        'X-Speech-Speed': '0.9',
+        'X-Content-Language': 'ja',
+        'X-Content-Is-Example': 'true', // Indicate this is an example sentence
+        'Authorization': `Bearer ${authService.getToken()}`,
+        'Accept': 'audio/mpeg'
+      },
+      responseType: 'arraybuffer'
+    });
+
+    // Convert response to blob and create audio URL
+    const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    // Play the audio
+    const audio = new Audio(audioUrl);
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+      isPlayingExampleAudio.value = false;
+    };
+    await audio.play();
+  } catch (error) {
+    console.error('Error generating or playing example audio:', error);
+    toast.error('Không thể phát âm thanh ví dụ. Vui lòng thử lại sau.', {
+      position: 'top',
+      duration: 3000
+    });
+    isPlayingExampleAudio.value = false;
+  } finally {
+    // Reset loading state if no audio was played
+    setTimeout(() => {
+      if (isPlayingExampleAudio.value) {
+        isPlayingExampleAudio.value = false;
       }
     }, 3000);
   }

@@ -88,7 +88,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 const toast = useToast()
 const notificationsEnabled = ref(true)
-const appVersion = ref('2.3.7')
+const appVersion = ref('1.0.0')
 
 function navigateTo(path: string) {
   router.push(path)

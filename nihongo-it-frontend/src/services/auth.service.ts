@@ -88,6 +88,17 @@ export interface ChangePasswordResponse {
   message?: string;
 }
 
+export interface UpdateProfileRequest {
+  fullName: string;
+  currentLevel: string;
+  jlptGoal: string;
+}
+
+export interface UpdateProfileResponse {
+  status: 'OK' | 'NG';
+  message?: string;
+}
+
 class AuthService {
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
@@ -207,6 +218,16 @@ class AuthService {
       return response.data;
     } catch (error) {
       console.error('Password change error:', error);
+      throw error;
+    }
+  }
+
+  async updateProfile(request: UpdateProfileRequest): Promise<UpdateProfileResponse> {
+    try {
+      const response = await apiClient.post('/api/v1/auth/update-profile', request);
+      return response.data;
+    } catch (error) {
+      console.error('Profile update error:', error);
       throw error;
     }
   }

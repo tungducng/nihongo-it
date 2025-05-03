@@ -323,9 +323,9 @@ function getImagePath(categoryName: string): string {
     'プログラミング': 'programming.png',
     'ウェブ開発': 'web-dev.png',
     'データベース': 'database.png',
-    'AI・データ': 'ai-data.png',
+    '人工知能・データ': 'ai-data.png',
     'コミュニケーション': 'communication.png',
-    'キャリア実務': 'career.png',
+    '実務とキャリア': 'career.png'
   }
 
   return `/images/categories/${categoryImages[categoryName] || 'default.png'}`

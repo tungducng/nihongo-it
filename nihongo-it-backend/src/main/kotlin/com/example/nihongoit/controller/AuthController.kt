@@ -13,6 +13,7 @@ import com.example.nihongoit.dto.auth.PasswordResetRequestDto
 import com.example.nihongoit.dto.auth.PasswordResetResponseDto
 import com.example.nihongoit.dto.auth.ResetPasswordDto
 import com.example.nihongoit.dto.auth.ChangePasswordRequestDto
+import com.example.nihongoit.dto.auth.UpdateProfileRequestDto
 import com.example.nihongoit.entity.UserEntity
 import com.example.nihongoit.exception.BusinessException
 import com.example.nihongoit.repository.RoleRepository
@@ -478,6 +479,66 @@ class AuthController(
                 status = ResponseType.NG,
                 message = "An unexpected error occurred. Please try again."
             )
+        }
+    }
+
+    @PostMapping("/update-profile", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @PreAuthFilter(hasAnyRole = ["USER", "ADMIN"])
+    @Operation(
+        summary = "Update user profile",
+        description = "Updates the user's profile information (fullName, currentLevel, jlptGoal)"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Profile updated successfully",
+                content = [Content(mediaType = "application/json")]
+            ),
+            ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+            ApiResponse(responseCode = "404", description = "User not found")
+        ]
+    )
+    fun updateProfile(
+        @Parameter(description = "Profile update data", required = true)
+        @Valid @RequestBody request: UpdateProfileRequestDto
+    ): ResponseDto {
+        try {
+            // Get current user ID
+            val userId = userAuthUtil.getCurrentUserId()
+                ?: throw BusinessException("Cannot extract userId: Invalid token")
+
+            // Fetch full user details from database
+            val user = userRepository.findById(userId)
+                .orElseThrow { BusinessException("User not found") }
+
+
+            // Validate JLPT levels (Current level should be equal to or lower than goal level)
+            // For JLPT, N5 is lowest, N1 is highest (typically ordinals: N5=4, N4=3, N3=2, N2=1, N1=0)
+            // Current level ordinal should be >= goal level ordinal to ensure current level ≤ goal level
+            if (request.currentLevel.ordinal > request.jlptGoal.ordinal) {
+                throw BusinessException("Current level cannot be higher than goal level")
+            }
+
+            // Update user fields
+            val updatedUser = user.copy(
+                fullName = request.fullName,
+                currentLevel = request.currentLevel,
+                jlptGoal = request.jlptGoal,
+                updatedAt = LocalDateTime.now()
+            )
+            
+            userRepository.save(updatedUser)
+
+            logger.debug("Successfully updated profile for user ID: {}", userId)
+
+            return ResponseDto(
+                status = ResponseType.OK,
+                message = "Profile updated successfully"
+            )
+        } catch (e: Exception) {
+            logger.error("Error updating user profile: ${e.message}", e)
+            throw e
         }
     }
 }

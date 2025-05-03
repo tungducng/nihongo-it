@@ -45,28 +45,28 @@
           <!-- Category View -->
           <div class="category-section">
             <div v-for="category in filteredCategories" :key="category.id" class="category-item">
-              <div class="text-center mb-1">
+              <div class="text-center mb-2">
                 <div class="text-h6 font-weight-bold text-center japanese-text">{{ category.name }}</div>
-                <div class="text-caption text-center mb-1">{{ category.meaning }}</div>
+                <div class="text-caption text-center">{{ category.meaning }}</div>
               </div>
 
               <div class="category-card">
                 <v-card
                   class="category-lesson-card"
-                  variant="outlined"
+                  variant="flat"
                   rounded="lg"
                   @click="selectCategory(category)"
                 >
                   <v-img
                     :src="getImagePath(category.name)"
-                    height="160px"
+                    height="180px"
                     width="100%"
                     aspect-ratio="1"
                     cover
                     class="position-relative"
                   >
                     <div class="category-overlay d-flex flex-column justify-center align-center">
-                      <div class="text-subtitle-2 font-weight-bold text-white text-center">
+                      <div class="text-subtitle-1 font-weight-bold text-white text-center">
                         {{ category.meaning }}
                       </div>
                       <div class="text-caption text-white mt-1">
@@ -1154,7 +1154,7 @@ function navigateToDetail(term: string) {
 
 .content-grid {
   display: grid;
-  grid-template-columns: 180px 1fr 320px 100px;
+  grid-template-columns: 180px 1fr 320px 120px;
   gap: 24px;
   max-width: 1440px;
   margin: 0 auto;
@@ -1166,7 +1166,7 @@ function navigateToDetail(term: string) {
 
 .main-content-column {
   width: 100%;
-  background-color: #fff;
+  background-color: #f0f1f1;
   border-radius: 8px;
   padding-left: 8px;
   padding-right: 8px;
@@ -1176,7 +1176,13 @@ function navigateToDetail(term: string) {
   width: 100%;
 }
 
-/* Responsive layout - stack columns on smaller screens */
+/* Responsive layout for different screen sizes */
+@media (max-width: 1200px) {
+  .content-grid {
+    grid-template-columns: 40px 1fr 320px 40px;
+  }
+}
+
 @media (max-width: 960px) {
   .content-grid {
     grid-template-columns: 1fr;
@@ -1185,16 +1191,36 @@ function navigateToDetail(term: string) {
   .banner-column, .empty-column {
     display: none;
   }
+
+  .main-content-column {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .category-section {
+    max-width: 100%;
+  }
 }
 
 /* Make categories 2 column on mobile */
 @media (max-width: 768px) {
   .category-section {
     grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
   }
 
   .category-card {
-    max-width: 130px;
+    max-width: 200px;
+  }
+
+  .category-item {
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .category-card {
+    max-width: 150px;
   }
 }
 
@@ -1209,7 +1235,7 @@ function navigateToDetail(term: string) {
 }
 
 .category-item {
-  margin-bottom: 16px;
+  margin-bottom: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1219,7 +1245,7 @@ function navigateToDetail(term: string) {
   width: 100%;
   position: relative;
   aspect-ratio: 1;
-  max-width: 277px;
+  max-width: 300px;
 }
 
 .category-lesson-card {
@@ -1227,9 +1253,10 @@ function navigateToDetail(term: string) {
   transition: transform 0.2s ease;
   max-width: 100%;
   height: 100%;
-  background-color: rgba(255, 255, 255, 0.8);
+  background-color: transparent;
   display: flex;
   flex-direction: column;
+  border: none;
 
   &:hover {
     transform: translateY(-3px);
@@ -1238,13 +1265,14 @@ function navigateToDetail(term: string) {
 }
 
 .category-overlay {
-  background: linear-gradient(0deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%);
+  background: linear-gradient(0deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 100%);
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  padding: 16px;
+  padding-left: 8px;
+  padding-right: 8px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1361,7 +1389,12 @@ function navigateToDetail(term: string) {
 .category-section {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-top: 16px;
+  gap: 8px;
+  margin-top: 2px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 </style>
+
+

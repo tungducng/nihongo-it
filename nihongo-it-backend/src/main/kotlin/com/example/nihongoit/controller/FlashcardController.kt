@@ -229,4 +229,32 @@ class FlashcardController(
     fun getStudyStatistics(): GetStatisticsResponseDto {
         return flashcardService.getStudyStatistics()
     }
+
+    @PostMapping(
+        "/vocabulary/{vocabId}",
+        produces = [MediaType.APPLICATION_JSON_VALUE]
+    )
+    @ResponseStatus(HttpStatus.CREATED)
+    @Operation(
+        summary = "Create flashcard from vocabulary",
+        description = "Creates a new flashcard based on an existing vocabulary item"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "201",
+                description = "Flashcard created successfully from vocabulary",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = CreateFlashcardResponseDto::class))]
+            ),
+            ApiResponse(responseCode = "400", description = "Vocabulary already has a flashcard or invalid data"),
+            ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+            ApiResponse(responseCode = "404", description = "Vocabulary item not found")
+        ]
+    )
+    fun createFlashcardFromVocabulary(
+        @Parameter(description = "Unique identifier of the vocabulary item", required = true)
+        @PathVariable vocabId: UUID
+    ): CreateFlashcardResponseDto {
+        return flashcardService.createFlashcardFromVocabulary(vocabId)
+    }
 }

@@ -8,7 +8,7 @@
         </v-btn>
         <div class="text-h6 font-weight-bold text-dark">
           <span class="text-primary">IT</span>
-          <span class="japanese-text">単語学習 - カテゴリー</span>
+          <span class="japanese-text">単語学習</span>
         </div>
       </div>
       <div class="d-flex align-center">
@@ -20,7 +20,6 @@
 
     <!-- Category Title -->
     <div v-if="category" class="px-4 mb-3">
-      <div class="text-subtitle-1 text-grey text-center">カテゴリー</div>
       <div class="text-h4 font-weight-bold text-center japanese-text">{{ category.name }}</div>
       <div class="text-subtitle-1 text-center">{{ category.meaning }}</div>
     </div>

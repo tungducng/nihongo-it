@@ -400,30 +400,80 @@ async function playAudio(card: FlashcardDTO) {
   isPlayingAudio.value = true
 
   try {
-    // Get the audio URL for this vocabulary term
-    const response = await axios.get(`/api/v1/speech/vocabulary/${card.vocabularyId}/audio`, {
-      headers: {
-        Authorization: `Bearer ${authService.getToken()}`
-      },
-      responseType: 'blob'
-    })
+    // First try to get the audio URL for this vocabulary term from the API
+    try {
+      const response = await axios.get(`/api/v1/speech/vocabulary/${card.vocabularyId}/audio`, {
+        headers: {
+          Authorization: `Bearer ${authService.getToken()}`
+        },
+        responseType: 'blob'
+      });
 
-    const audioBlob = response.data
-    const audioUrl = URL.createObjectURL(audioBlob)
-    const audio = new Audio(audioUrl)
+      const audioBlob = response.data;
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
 
-    audio.onended = () => {
-      isPlayingAudio.value = false
-      URL.revokeObjectURL(audioUrl)
+      audio.onended = () => {
+        isPlayingAudio.value = false;
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      await audio.play();
+      return; // Successfully played the audio, no need to generate TTS
+    } catch (error) {
+      console.log('No pre-existing audio found, generating TTS...', error);
+      // Continue to TTS generation if the audio file doesn't exist
     }
 
-    audio.play()
+    // If we get here, try to generate TTS for the term
+    // Show loading indicator
+    toast.info('Đang tạo âm thanh...', {
+      position: 'top',
+      duration: 2000
+    });
+
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+    // Call the TTS API with Authorization header
+    const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, card.frontText, {
+      headers: {
+        'Content-Type': 'text/plain; charset=UTF-8',
+        'Accept-Language': 'ja-JP',
+        'X-Speech-Speed': '0.9',
+        'X-Content-Language': 'ja',
+        'X-Content-Is-Example': 'false',
+        'Authorization': `Bearer ${authService.getToken()}`,
+        'Accept': 'audio/mpeg'
+      },
+      responseType: 'arraybuffer'
+    });
+
+    // Convert response to blob and create audio URL
+    const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+    const audioUrl = URL.createObjectURL(audioBlob);
+
+    // Play the audio
+    const audio = new Audio(audioUrl);
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+      isPlayingAudio.value = false;
+    };
+    await audio.play();
   } catch (error) {
-    console.error('Error playing audio:', error)
-    isPlayingAudio.value = false
-    toast.error('Không thể phát âm thanh', {
-      position: 'top'
-    })
+    console.error('Error generating or playing audio:', error);
+    toast.error('Không thể phát âm thanh. Vui lòng thử lại sau.', {
+      position: 'top',
+      duration: 3000
+    });
+    isPlayingAudio.value = false;
+  } finally {
+    // Reset loading state if no audio was played
+    setTimeout(() => {
+      if (isPlayingAudio.value) {
+        isPlayingAudio.value = false;
+      }
+    }, 3000);
   }
 }
 

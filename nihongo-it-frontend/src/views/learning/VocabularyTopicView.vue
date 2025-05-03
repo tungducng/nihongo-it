@@ -103,6 +103,7 @@
           :class="{ 'expanded': expandedItems.includes(item.vocabId) }"
           variant="outlined"
           rounded="lg"
+          @click="toggleExpand(item.vocabId)"
         >
           <!-- Main vocabulary item content -->
           <div class="pa-3">
@@ -123,7 +124,7 @@
                 </div>
               </div>
               <v-spacer></v-spacer>
-              <div class="d-flex align-center justify-center action-buttons-container">
+              <div class="action-buttons-container" @click.stop>
                 <v-btn
                   icon="mdi-volume-high"
                   size="small"
@@ -154,14 +155,6 @@
                   icon="mdi-open-in-new"
                 ></v-btn>
                 <v-btn
-                  :icon="expandedItems.includes(item.vocabId) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                  size="small"
-                  variant="text"
-                  class="mx-1"
-                  title="Xem thêm"
-                  @click.stop="toggleExpand(item.vocabId)"
-                ></v-btn>
-                <v-btn
                   size="small"
                   variant="text"
                   color="success"
@@ -180,7 +173,7 @@
             <div class="text-body-2 meaning-text">{{ item.meaning }}</div>
 
             <!-- Expanded Content -->
-            <div v-if="expandedItems.includes(item.vocabId)" class="mt-2">
+            <div v-if="expandedItems.includes(item.vocabId)" class="mt-2" @click.stop>
               <v-divider class="mb-2"></v-divider>
 
               <!-- Example Section -->
@@ -207,7 +200,7 @@
           </div>
 
           <!-- ChatGPT Content (completely independent section) -->
-          <div v-if="chatGPTItems.includes(item.vocabId)" class="pa-3 pt-0">
+          <div v-if="chatGPTItems.includes(item.vocabId)" class="pa-3 pt-0" @click.stop>
             <div class="chatgpt-content py-2 px-2 rounded" @click.stop>
               <v-divider class="mb-2"></v-divider>
 
@@ -1153,14 +1146,11 @@ function hasVietnameseStarted(example: any): boolean {
 
 .vocabulary-item {
   transition: transform 0.2s ease;
+  cursor: pointer;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1) !important;
-  }
-
-  & .chatgpt-content {
-    transform: none !important;
   }
 }
 
@@ -1212,6 +1202,7 @@ function hasVietnameseStarted(example: any): boolean {
   pointer-events: auto;
   padding-top: 0.5rem;
   border-radius: 6px;
+  cursor: default;
 }
 
 /* When ChatGPT is visible but the item is not expanded,

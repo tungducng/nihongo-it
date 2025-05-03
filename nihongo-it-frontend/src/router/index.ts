@@ -121,6 +121,12 @@ const routes = [
     name: 'flashcardStudy',
     component: () => import('@/views/learning/FlashcardStudyView.vue'),
     meta: { requiresAuth: true } // Flashcard study requires authentication
+  },
+  {
+    path: '/flashcards/statistics',
+    name: 'flashcardStatistics',
+    component: () => import('@/views/study/FlashcardStatsView.vue'),
+    meta: { requiresAuth: true } // Statistics require authentication
   }
 ]
 

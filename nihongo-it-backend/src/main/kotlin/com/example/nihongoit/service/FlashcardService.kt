@@ -325,30 +325,101 @@ class FlashcardService(
         val userId = userAuthUtil.getCurrentUserId()
         logger.info("Getting study statistics for user: $userId")
         
-        val totalCards = flashcardRepository.countByUser_UserId(userId!!)
-        val dueCards = flashcardRepository.findDueCards(userId, LocalDateTime.now()).size
+        val allUserCards = flashcardRepository.findByUser_UserId(userId!!)
+        val totalCards = allUserCards.size
+        val dueCardsNow = flashcardRepository.findDueCards(userId, LocalDateTime.now()).size
         
-        // Statistics for the last 7 days
-        val sevenDaysAgo = LocalDateTime.now().minusDays(7)
-        val recentReviews = reviewLogRepository.findByUserIdAndReviewTimestampAfter(userId, sevenDaysAgo)
+        // Calculate cards due by day for the next 7 days
+        val today = LocalDateTime.now()
+        val cardsDueByDay = mutableMapOf<String, Int>()
         
-        val dailyReviews = recentReviews.groupBy { it.reviewTimestamp.toLocalDate() }
+        for (i in 0..6) {
+            val date = today.plusDays(i.toLong())
+            val dateString = date.toLocalDate().toString()
+            val dueCount = flashcardRepository.findDueCards(userId, date).size - 
+                           if (i > 0) flashcardRepository.findDueCards(userId, date.minusDays(1)).size else 0
+            cardsDueByDay[dateString] = dueCount
+        }
+        
+        // Get review history 
+        val thirtyDaysAgo = LocalDateTime.now().minusDays(30)
+        val recentReviews = reviewLogRepository.findByUserIdAndReviewTimestampAfter(userId, thirtyDaysAgo)
+        
+        // Daily review counts
+        val dailyReviews = recentReviews
+            .groupBy { it.reviewTimestamp.toLocalDate().toString() }
             .mapValues { it.value.size }
-            
-        // Calculate retention rate
+        
+        // Retention rate by day
+        val retentionRateByDay = recentReviews
+            .groupBy { it.reviewTimestamp.toLocalDate().toString() }
+            .mapValues { entry ->
+                val dayReviews = entry.value
+                val correctCount = dayReviews.count { it.rating >= 3 }
+                if (dayReviews.isNotEmpty()) {
+                    (correctCount.toDouble() / dayReviews.size) * 100.0
+                } else {
+                    0.0
+                }
+            }
+        
+        // Overall retention rate
         val correctReviews = recentReviews.count { it.rating >= 3 }
-        val retentionRate = if (recentReviews.isNotEmpty()) {
+        val overallRetentionRate = if (recentReviews.isNotEmpty()) {
             (correctReviews.toDouble() / recentReviews.size) * 100.0
         } else {
             0.0
         }
         
+        // Memory strength distribution
+        val memoryStrengthDistribution = allUserCards
+            .groupBy { 
+                when {
+                    it.stability <= 1.0 -> "weak"
+                    it.stability <= 10.0 -> "medium"
+                    else -> "strong"
+                }
+            }
+            .mapValues { it.value.size }
+        
+        // Get cards by state
+        val cardsByState = allUserCards
+            .groupBy { FSRSService.State.entries.find { state -> state.value == it.state }?.name?.lowercase() ?: "unknown" }
+            .mapValues { it.value.size }
+        
+        // JLPT level statistics (if vocabulary is available)
+        val cardsByJlptLevel = allUserCards
+            .filter { it.vocabulary != null }
+            .groupBy { it.vocabulary?.jlptLevel ?: "unknown" }
+            .mapValues { it.value.size }
+        
+        // Streak calculation
+        val reviewsByDate = recentReviews
+            .groupBy { it.reviewTimestamp.toLocalDate() }
+        
+        var currentStreak = 0
+        var yesterday = LocalDateTime.now().toLocalDate().minusDays(1)
+        
+        while (reviewsByDate.containsKey(yesterday)) {
+            currentStreak++
+            yesterday = yesterday.minusDays(1)
+        }
+        
         val statistics = mapOf(
-            "totalCards" to totalCards,
-            "dueCards" to dueCards,
-            "reviewsLast7Days" to recentReviews.size,
+            "summary" to mapOf(
+                "totalCards" to totalCards,
+                "dueCardsNow" to dueCardsNow,
+                "reviewsLast30Days" to recentReviews.size,
+                "currentStreak" to currentStreak,
+                "overallRetentionRate" to overallRetentionRate
+            ),
+            "cardsDueByDay" to cardsDueByDay,
             "dailyReviews" to dailyReviews,
-            "retentionRate" to retentionRate,
+            "retentionRateByDay" to retentionRateByDay,
+            "memoryStrengthDistribution" to memoryStrengthDistribution,
+            "cardsByState" to cardsByState,
+            "cardsByJlptLevel" to cardsByJlptLevel,
+            "reviewTrend" to calculateReviewTrend(recentReviews),
             "averageRating" to if (recentReviews.isNotEmpty()) recentReviews.map { it.rating }.average() else 0.0
         )
         
@@ -360,6 +431,47 @@ class FlashcardService(
         return GetStatisticsResponseDto(
             result = result,
             data = statistics
+        )
+    }
+    
+    // Helper method to calculate review trend
+    private fun calculateReviewTrend(reviews: List<ReviewLogEntity>): Map<String, Any> {
+        if (reviews.isEmpty()) {
+            return mapOf("trend" to "neutral", "percentage" to 0.0)
+        }
+        
+        val twoWeeksAgo = LocalDateTime.now().minusDays(14)
+        val oneWeekAgo = LocalDateTime.now().minusDays(7)
+        
+        val previousWeekReviews = reviews.filter { 
+            it.reviewTimestamp.isAfter(twoWeeksAgo) && it.reviewTimestamp.isBefore(oneWeekAgo) 
+        }
+        
+        val currentWeekReviews = reviews.filter { 
+            it.reviewTimestamp.isAfter(oneWeekAgo) 
+        }
+        
+        val previousWeekCount = previousWeekReviews.size
+        val currentWeekCount = currentWeekReviews.size
+        
+        val trend = when {
+            previousWeekCount == 0 -> "up"
+            currentWeekCount > previousWeekCount -> "up"
+            currentWeekCount < previousWeekCount -> "down"
+            else -> "neutral"
+        }
+        
+        val percentage = if (previousWeekCount > 0) {
+            ((currentWeekCount - previousWeekCount).toDouble() / previousWeekCount) * 100.0
+        } else if (currentWeekCount > 0) {
+            100.0
+        } else {
+            0.0
+        }
+        
+        return mapOf(
+            "trend" to trend,
+            "percentage" to percentage
         )
     }
     

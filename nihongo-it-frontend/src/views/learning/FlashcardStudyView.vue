@@ -7,8 +7,16 @@
       </v-app-bar-nav-icon>
       <v-app-bar-title>Học Thẻ Ghi Nhớ</v-app-bar-title>
       <v-spacer></v-spacer>
-      <v-btn icon @click="showStats = true">
+      <v-btn icon @click="showStats = true" class="mr-2">
         <v-icon>mdi-chart-box</v-icon>
+      </v-btn>
+      <v-btn
+        icon
+        color="primary"
+        @click="goToStatisticsDashboard"
+        title="Xem thống kê chi tiết"
+      >
+        <v-icon>mdi-chart-areaspline</v-icon>
       </v-btn>
     </v-app-bar>
 
@@ -204,25 +212,33 @@
         <v-card-text v-if="stats">
           <div class="d-flex justify-space-between align-center mb-2">
             <span>Tổng số thẻ:</span>
-            <span class="text-subtitle-1 font-weight-bold">{{ stats.totalCards || 0 }}</span>
+            <span class="text-subtitle-1 font-weight-bold">{{ stats.summary.totalCards || 0 }}</span>
           </div>
           <div class="d-flex justify-space-between align-center mb-2">
             <span>Thẻ cần ôn hôm nay:</span>
-            <span class="text-subtitle-1 font-weight-bold">{{ stats.dueCards || 0 }}</span>
+            <span class="text-subtitle-1 font-weight-bold">{{ stats.summary.dueCardsNow || 0 }}</span>
           </div>
           <div class="d-flex justify-space-between align-center mb-2">
-            <span>Ôn tập trong 7 ngày qua:</span>
-            <span class="text-subtitle-1 font-weight-bold">{{ stats.reviewsLast7Days || 0 }}</span>
+            <span>Ôn tập trong 30 ngày qua:</span>
+            <span class="text-subtitle-1 font-weight-bold">{{ stats.summary.reviewsLast30Days || 0 }}</span>
           </div>
           <div class="d-flex justify-space-between align-center mb-4">
             <span>Tỉ lệ ghi nhớ:</span>
-            <span class="text-subtitle-1 font-weight-bold">{{ formatPercent(stats.retentionRate) }}</span>
+            <span class="text-subtitle-1 font-weight-bold">{{ formatPercent(stats.summary.overallRetentionRate) }}</span>
           </div>
         </v-card-text>
 
         <v-card-actions>
+          <v-btn
+            color="primary"
+            variant="text"
+            @click="goToStatisticsDashboard(); showStats = false"
+            prepend-icon="mdi-chart-areaspline"
+          >
+            Xem thống kê chi tiết
+          </v-btn>
           <v-spacer></v-spacer>
-          <v-btn color="primary" variant="text" @click="showStats = false">
+          <v-btn color="grey" variant="text" @click="showStats = false">
             Đóng
           </v-btn>
         </v-card-actions>
@@ -593,6 +609,10 @@ function goToVocabulary() {
 
 function goBack() {
   router.back()
+}
+
+function goToStatisticsDashboard() {
+  router.push({ name: 'flashcardStatistics' })
 }
 </script>
 

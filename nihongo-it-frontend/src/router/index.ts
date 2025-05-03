@@ -21,9 +21,9 @@ const routes = [
     beforeEnter: redirectIfAuthenticated
   },
   {
-    path: '/learning/progress',
-    name: 'learningProgress',
-    component: () => import('@/views/learning/LearningProgressView.vue'),
+    path: '/statistics',
+    name: 'statistics',
+    component: () => import('@/views/learning/StatisticsView.vue'),
   },
   {
     path: '/learning/vocabulary-storage',

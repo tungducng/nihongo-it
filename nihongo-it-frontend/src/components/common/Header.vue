@@ -39,7 +39,7 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/learning/progress"
+        to="/statistics"
         class="mx-2"
       >
         Tiến độ học tập

@@ -1,18 +1,10 @@
 <template>
-  <div class="flashcard-stats-container">
+  <div class="statistics-container">
+    <!-- Flashcard Stats Section -->
     <v-container>
-      <v-row>
-        <v-col cols="12" class="d-flex align-center">
-          <v-btn
-            color="primary"
-            variant="text"
-            prepend-icon="mdi-arrow-left"
-            class="mr-4"
-            @click="goToFlashcardStudy"
-          >
-            Quay lại học tập
-          </v-btn>
-          <h1 class="text-h4">Thống kê học tập</h1>
+      <v-row class="mt-4">
+        <v-col cols="12">
+          <h2 class="text-h5 mb-4">Thống kê thẻ ghi nhớ</h2>
         </v-col>
       </v-row>
 
@@ -203,8 +195,60 @@
             </v-card>
           </v-col>
         </v-row>
+
+
       </template>
+
+      <v-card class="mt-4">
+        <v-card-text>
+          <div class="d-flex justify-space-between align-center">
+            <div class="d-flex align-center">
+              <v-avatar color="#ffcc00" class="mr-3">
+                <v-icon color="white">mdi-book</v-icon>
+              </v-avatar>
+              <span class="text-h6 font-weight-bold">Thu nạp</span>
+            </div>
+            <span class="text-info cursor-pointer" @click="navigateToVocabularyStorage">Xem chi tiết</span>
+          </div>
+
+          <div class="text-center mt-6">
+            <v-avatar size="140" color="white" class="vocab-progress-circle">
+              <v-avatar size="110" color="#fff3e0">
+                <div>
+                  <div class="text-h4 text-grey-darken-1">1</div>
+                  <div class="text-caption text-grey-darken-1">từ</div>
+                </div>
+              </v-avatar>
+            </v-avatar>
+            <div class="text-center mt-2">
+              <div class="text-body-2">thu nạp</div>
+              <div class="text-h5 font-weight-bold">100%</div>
+            </div>
+          </div>
+
+          <div class="vocab-stats d-flex justify-space-around mt-4">
+            <div class="text-caption">
+              <span class="vocab-indicator new"></span> mới học (1 từ)
+            </div>
+            <div class="text-caption">
+              <span class="vocab-indicator reviewing"></span> mới ôn (0 từ)
+            </div>
+          </div>
+
+          <div class="vocab-stats d-flex justify-space-around mt-2">
+            <div class="text-caption">
+              <span class="vocab-indicator familiar"></span> gần nhớ (0 từ)
+            </div>
+            <div class="text-caption">
+              <span class="vocab-indicator mastered"></span> đã nhớ (0 từ)
+            </div>
+          </div>
+        </v-card-text>
+      </v-card>
     </v-container>
+
+    <!-- Vocabulary Learning Card -->
+
 
     <!-- Floating action button for mobile -->
     <v-btn
@@ -220,15 +264,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import flashcardService from '@/services/flashcard.service';
 import Chart from 'chart.js/auto';
 
-// Router
 const router = useRouter();
 
-// State
+// State for statistics
 const loading = ref(true);
 const error = ref(false);
 const stats = ref<any>(null);
@@ -240,6 +283,10 @@ const retentionRateChart = ref<HTMLCanvasElement | null>(null);
 const cardsDueChart = ref<HTMLCanvasElement | null>(null);
 const memoryStrengthChart = ref<HTMLCanvasElement | null>(null);
 
+// Date and time
+const currentTime = ref('21:18');
+const currentDate = ref('20/04/2025');
+
 // Computed properties
 const hasJlptCards = computed(() => {
   if (!stats.value?.cardsByJlptLevel) return false;
@@ -250,26 +297,31 @@ const hasJlptCards = computed(() => {
   return jlptLevels.some(level => stats.value.cardsByJlptLevel[level] > 0);
 });
 
-// Fetch statistics
-const fetchStatistics = async () => {
-  loading.value = true;
-  error.value = false;
+// Method to format date
+function formatDate() {
+  const date = new Date();
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  currentDate.value = `${day}/${month}/${year}`;
+}
 
-  try {
-    stats.value = await flashcardService.getStudyStatistics();
-    console.log('Statistics:', stats.value);
-  } catch (err) {
-    console.error('Error fetching statistics:', err);
-    error.value = true;
-  } finally {
-    loading.value = false;
-  }
-};
+// Method to update time
+function updateTime() {
+  const date = new Date();
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  currentTime.value = `${hours}:${minutes}`;
+}
 
-// Navigation
-const goToFlashcardStudy = () => {
-  router.push({ name: 'flashcardStudy' })
-};
+// Navigation methods
+function goToFlashcardStudy() {
+  router.push({ name: 'flashcardStudy' });
+}
+
+function navigateToVocabularyStorage() {
+  router.push('/learning/vocabulary-storage');
+}
 
 // Format helpers
 const formatPercent = (value: number | undefined) => {
@@ -297,6 +349,22 @@ const calculateStatePercent = (state: string, count: number) => {
   return Math.round((count / stats.value.summary.totalCards) * 100);
 };
 
+// Fetch statistics
+const fetchStatistics = async () => {
+  loading.value = true;
+  error.value = false;
+
+  try {
+    stats.value = await flashcardService.getStudyStatistics();
+    console.log('Statistics:', stats.value);
+  } catch (err) {
+    console.error('Error fetching statistics:', err);
+    error.value = true;
+  } finally {
+    loading.value = false;
+  }
+};
+
 // Generate chart data objects
 const getReviewActivityChartData = () => {
   if (!stats.value?.dailyReviews) return null;
@@ -306,7 +374,7 @@ const getReviewActivityChartData = () => {
   const reviewCounts = dates.map(date => stats.value.dailyReviews[date] || 0);
 
   return {
-    labels: dates.map(date => formatDate(date)),
+    labels: dates.map(date => formatChartDate(date)),
     datasets: [{
       label: 'Số lượt ôn tập',
       data: reviewCounts,
@@ -326,7 +394,7 @@ const getRetentionRateChartData = () => {
   const retentionRates = dates.map(date => stats.value.retentionRateByDay[date] || 0);
 
   return {
-    labels: dates.map(date => formatDate(date)),
+    labels: dates.map(date => formatChartDate(date)),
     datasets: [{
       label: 'Tỷ lệ ghi nhớ (%)',
       data: retentionRates,
@@ -346,7 +414,7 @@ const getCardsDueChartData = () => {
   const dueCounts = dates.map(date => stats.value.cardsDueByDay[date] || 0);
 
   return {
-    labels: dates.map(date => formatDate(date)),
+    labels: dates.map(date => formatChartDate(date)),
     datasets: [{
       label: 'Thẻ đến hạn',
       data: dueCounts,
@@ -387,7 +455,7 @@ const getMemoryStrengthChartData = () => {
 };
 
 // Format date helper
-const formatDate = (dateString: string) => {
+const formatChartDate = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' });
 };
@@ -499,14 +567,22 @@ watch(stats, () => {
 
 // Lifecycle hooks
 onMounted(() => {
+  updateTime();
+  formatDate();
   fetchStatistics();
+
+  // Update time every minute
+  setInterval(updateTime, 60000);
 });
 </script>
 
 <style scoped lang="scss">
-.flashcard-stats-container {
-  padding: 20px 0;
-  position: relative;
+
+.header-section {
+  padding-top: 8px;
+  padding-bottom: 80px;
+  border-bottom-left-radius: 24px;
+  border-bottom-right-radius: 24px;
 }
 
 .floating-back-btn {
@@ -521,6 +597,7 @@ onMounted(() => {
   }
 }
 
+// Stats cards
 .summary-card {
   transition: transform 0.2s ease;
 
@@ -596,5 +673,42 @@ onMounted(() => {
     border: 1px solid rgba(244, 67, 54, 0.4);
     color: rgb(244, 67, 54);
   }
+}
+
+// Original vocabulary card styling
+.vocab-progress-circle {
+  box-shadow: 0 0 0 10px rgba(255, 204, 0, 0.1);
+}
+
+.vocab-stats {
+  color: #757575;
+}
+
+.vocab-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.vocab-indicator.new {
+  background-color: #ffe0b2;
+}
+
+.vocab-indicator.reviewing {
+  background-color: #ffcc80;
+}
+
+.vocab-indicator.familiar {
+  background-color: #ffa726;
+}
+
+.vocab-indicator.mastered {
+  background-color: #f57c00;
+}
+
+.cursor-pointer {
+  cursor: pointer;
 }
 </style>

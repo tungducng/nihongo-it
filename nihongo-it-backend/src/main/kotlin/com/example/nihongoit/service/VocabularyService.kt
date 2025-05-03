@@ -17,6 +17,7 @@ import com.example.nihongoit.repository.UserRepository
 import com.example.nihongoit.repository.VocabularyRepository
 import com.example.nihongoit.repository.TopicRepository
 import com.example.nihongoit.repository.CategoryRepository
+import com.example.nihongoit.repository.FlashcardRepository
 import com.example.nihongoit.util.UserAuthUtil
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
@@ -34,6 +35,7 @@ class VocabularyService(
     private val categoryRepository: CategoryRepository,
     private val userAuthUtil: UserAuthUtil,
     private val flashcardService: FlashcardService,
+    private val flashcardRepository: FlashcardRepository,
 ) {
     private val logger = LoggerFactory.getLogger(VocabularyService::class.java)
 
@@ -298,6 +300,21 @@ class VocabularyService(
 
         vocabulary.savedByUsers.removeIf { it.userId == currentUserId }
         vocabularyRepository.save(vocabulary)
+
+        // Delete associated flashcard for this vocabulary
+        try {
+            // Find the flashcards for this vocabulary and user
+            val flashcards = flashcardRepository.findByUser_UserIdAndVocabulary_VocabId(currentUserId, vocabId)
+            
+            // Delete each flashcard
+            flashcards.forEach { flashcard ->
+                flashcardService.deleteFlashcard(flashcard.flashcardId!!)
+                logger.info("Deleted flashcard ${flashcard.flashcardId} when vocabulary $vocabId was removed from notebook")
+            }
+        } catch (e: Exception) {
+            // Log the error but don't fail the remove operation
+            logger.warn("Failed to delete flashcard for vocabulary $vocabId: ${e.message}")
+        }
 
         return mapToResponse(vocabulary, false)
     }

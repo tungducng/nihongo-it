@@ -60,34 +60,69 @@
         </v-chip>
       </div>
 
-      <!-- Flashcard Component -->
+      <!-- Flashcard Component - Enhanced Version -->
       <v-card
-        class="flashcard mx-auto"
-        :class="{ flipped: isFlipped }"
-        elevation="4"
+        class="flashcard-container mx-auto"
+        :class="{ 'flipped': isFlipped }"
+        elevation="8"
         @click="flipCard"
-        height="350px"
+        height="400px"
       >
         <div class="flashcard-inner">
           <!-- Front of Card -->
-          <div class="flashcard-front px-6 py-8 d-flex flex-column justify-center align-center">
-            <div class="text-h4 text-center mb-4">{{ currentCard.frontText }}</div>
-            <v-btn
-              icon
-              size="small"
-              color="primary"
-              variant="text"
-              @click.stop="playAudio(currentCard)"
-              :loading="isPlayingAudio"
-            >
-              <v-icon>mdi-volume-high</v-icon>
-            </v-btn>
+          <div class="flashcard-front">
+            <div class="flashcard-content">
+              <v-chip
+                v-if="currentCard.state"
+                size="small"
+                :color="getStateColor(currentCard.state)"
+                class="mb-4 absolute-top-left"
+              >
+                {{ getStateText(currentCard.state) }}
+              </v-chip>
+
+              <div class="text-h3 font-weight-bold japanese-text mb-6">{{ currentCard.frontText }}</div>
+
+              <v-btn
+                icon
+                size="medium"
+                color="primary"
+                variant="text"
+                @click.stop="playAudio(currentCard)"
+                :loading="isPlayingAudio"
+                class="mb-6"
+              >
+                <v-icon>mdi-volume-high</v-icon>
+              </v-btn>
+
+              <div class="flip-hint">
+                <v-icon icon="mdi-rotate-3d-variant" class="mr-2"></v-icon>
+                <span>Nhấn để lật thẻ</span>
+              </div>
+            </div>
           </div>
 
           <!-- Back of Card -->
-          <div class="flashcard-back px-6 py-6">
-            <div class="back-content">
-              <div v-html="formatBackText(currentCard.backText)" class="text-body-1"></div>
+          <div class="flashcard-back">
+            <div class="flashcard-content">
+              <div class="text-h5 font-weight-bold mb-4">
+                {{ getBackTitleText(currentCard.backText) }}
+              </div>
+
+              <v-divider class="my-4"></v-divider>
+
+              <div v-if="hasExample(currentCard.backText)" class="example-section pa-4 rounded-lg mb-4">
+                <div v-html="getExampleHtml(currentCard.backText)" class="text-body-1"></div>
+              </div>
+
+              <div class="term-reminder text-body-2 text-medium-emphasis mt-2">
+                <span class="font-weight-medium">Từ vựng:</span> {{ currentCard.frontText }}
+              </div>
+
+              <div class="flip-hint">
+                <v-icon icon="mdi-rotate-3d-variant" class="mr-2"></v-icon>
+                <span>Nhấn để lật thẻ</span>
+              </div>
             </div>
           </div>
         </div>
@@ -95,60 +130,52 @@
 
       <!-- Rating Buttons -->
       <div class="rating-buttons mt-8">
-        <v-row>
-          <v-col cols="3">
-            <v-btn
-              color="error"
-              variant="elevated"
-              block
-              class="rating-btn"
-              @click="rateCard(1)"
-              :disabled="!isFlipped"
-            >
-              <v-icon icon="mdi-reload" size="small" class="mr-1"></v-icon>
-              Again
-            </v-btn>
-          </v-col>
-          <v-col cols="3">
-            <v-btn
-              color="warning"
-              variant="elevated"
-              block
-              class="rating-btn"
-              @click="rateCard(2)"
-              :disabled="!isFlipped"
-            >
-              <v-icon icon="mdi-brain" size="small" class="mr-1"></v-icon>
-              Hard
-            </v-btn>
-          </v-col>
-          <v-col cols="3">
-            <v-btn
-              color="success"
-              variant="elevated"
-              block
-              class="rating-btn"
-              @click="rateCard(3)"
-              :disabled="!isFlipped"
-            >
-              <v-icon icon="mdi-check" size="small" class="mr-1"></v-icon>
-              Good
-            </v-btn>
-          </v-col>
-          <v-col cols="3">
-            <v-btn
-              color="primary"
-              variant="elevated"
-              block
-              class="rating-btn"
-              @click="rateCard(4)"
-              :disabled="!isFlipped"
-            >
-              <v-icon icon="mdi-star" size="small" class="mr-1"></v-icon>
-              Easy
-            </v-btn>
-          </v-col>
-        </v-row>
+        <div class="d-flex justify-space-between w-100">
+          <v-btn
+            color="error"
+            variant="elevated"
+            class="rating-btn"
+            @click="rateCard(1)"
+            :disabled="!isFlipped"
+            elevation="2"
+          >
+            <v-icon icon="mdi-reload" size="small" class="mr-1"></v-icon>
+            Again
+          </v-btn>
+          <v-btn
+            color="warning"
+            variant="elevated"
+            class="rating-btn"
+            @click="rateCard(2)"
+            :disabled="!isFlipped"
+            elevation="2"
+          >
+            <v-icon icon="mdi-brain" size="small" class="mr-1"></v-icon>
+            Hard
+          </v-btn>
+          <v-btn
+            color="success"
+            variant="elevated"
+            class="rating-btn"
+            @click="rateCard(3)"
+            :disabled="!isFlipped"
+            elevation="2"
+          >
+            <v-icon icon="mdi-check" size="small" class="mr-1"></v-icon>
+            Good
+          </v-btn>
+          <v-btn
+            color="primary"
+            variant="elevated"
+            class="rating-btn"
+            @click="rateCard(4)"
+            :disabled="!isFlipped"
+            elevation="2"
+          >
+            <v-icon icon="mdi-star" size="small" class="mr-1"></v-icon>
+            Easy
+          </v-btn>
+        </div>
       </div>
     </v-container>
 
@@ -256,9 +283,43 @@ async function fetchStats() {
 
 function formatBackText(text: string) {
   if (!text) return ''
-
   // Replace newlines with HTML line breaks
   return text.replace(/\n/g, '<br />')
+}
+
+// Get the title (first line) from back text
+function getBackTitleText(text: string) {
+  if (!text) return ''
+  return text.split('\n')[0]
+}
+
+// Check if the back text contains an example
+function hasExample(text: string) {
+  if (!text) return false
+  return text.includes('Example:')
+}
+
+// Format the example part of the back text
+function getExampleHtml(text: string) {
+  if (!text) return ''
+
+  const lines = text.split('\n')
+  const exampleIndex = lines.findIndex(line => line.includes('Example:'))
+
+  if (exampleIndex === -1) return ''
+
+  let result = ''
+
+  // Add the example line and the next line (which should be the translation)
+  if (exampleIndex >= 0 && exampleIndex < lines.length) {
+    result += `<div class="japanese-text text-h6 mb-2">${lines[exampleIndex].replace('Example: ', '')}</div>`
+
+    if (exampleIndex + 1 < lines.length) {
+      result += `<div class="text-body-1 text-medium-emphasis">${lines[exampleIndex + 1]}</div>`
+    }
+  }
+
+  return result
 }
 
 function flipCard() {
@@ -271,16 +332,36 @@ async function rateCard(rating: number) {
   try {
     const response = await flashcardService.reviewFlashcard(currentCard.value.id, rating)
 
+    // Show success message based on rating with next review date
+    const ratingMessages: Record<number, string> = {
+      1: 'Bạn sẽ gặp lại từ này sớm',
+      2: 'Từ này khó, sẽ lặp lại sau',
+      3: 'Tốt! Bạn đã nhớ được từ này',
+      4: 'Rất tốt! Bạn đã nắm vững từ này'
+    }
+
+    // Format next review date
+    const nextReview = response?.data?.due
+      ? new Date(response.data.due).toLocaleDateString('vi-VN')
+      : 'soon'
+
+    toast.success(`${ratingMessages[rating]} - Lần ôn tiếp theo: ${nextReview}`, {
+      position: 'top',
+      duration: 3000
+    })
+
     // Determine next card
     currentCardIndex.value++
     isFlipped.value = false
 
     // Check if we've reached the end
     if (currentCardIndex.value >= dueCards.value.length) {
-      toast.success('Chúc mừng! Bạn đã hoàn thành tất cả các thẻ cần ôn tập.', {
-        position: 'top',
-        duration: 3000
-      })
+      setTimeout(() => {
+        toast.success('Chúc mừng! Bạn đã hoàn thành tất cả các thẻ cần ôn tập.', {
+          position: 'top',
+          duration: 3000
+        })
+      }, 1000)
 
       // Refresh stats
       await fetchStats()
@@ -364,29 +445,32 @@ function goBack() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .flashcard-study-container {
   min-height: 100vh;
   background-color: #f5f5f5;
 }
 
-.flashcard {
+.flashcard-container {
   perspective: 1000px;
   width: 100%;
-  max-width: 500px;
-  transition: transform 0.3s;
+  max-width: 666px;
   cursor: pointer;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  margin: 0 auto;
 }
 
 .flashcard-inner {
   position: relative;
   width: 100%;
   height: 100%;
-  transition: transform 0.6s;
+  transition: transform 0.8s;
   transform-style: preserve-3d;
 }
 
-.flashcard.flipped .flashcard-inner {
+.flashcard-container.flipped .flashcard-inner {
   transform: rotateY(180deg);
 }
 
@@ -395,34 +479,88 @@ function goBack() {
   width: 100%;
   height: 100%;
   backface-visibility: hidden;
-  border-radius: 8px;
-  overflow: auto;
+  background: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
 }
 
-.flashcard-front {
-  background-color: white;
+.flashcard-content {
+  padding: 2.5rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  position: relative;
 }
 
 .flashcard-back {
-  background-color: white;
   transform: rotateY(180deg);
 }
 
-.back-content {
-  white-space: pre-line;
+.example-section {
+  background-color: rgba(0, 0, 0, 0.03);
+  border-left: 4px solid #3f51b5;
+  border-radius: 10px;
+  width: 100%;
+  text-align: left;
+  transition: all 0.3s ease;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.example-section:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.japanese-text {
+  font-family: 'Noto Sans JP', sans-serif;
 }
 
 .rating-btn {
-  opacity: 0.95;
-  transition: all 0.2s;
+  flex: 1;
+  margin: 0 6px;
+  text-transform: none;
+  font-weight: 500;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+  height: 44px;
+  border-radius: 10px;
 }
 
 .rating-btn:hover {
-  opacity: 1;
   transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .rating-btn:active {
   transform: translateY(1px);
+}
+
+.absolute-top-left {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+
+.flip-hint {
+  position: absolute;
+  bottom: 1rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: rgba(0, 0, 0, 0.5);
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rating-buttons {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 </style>

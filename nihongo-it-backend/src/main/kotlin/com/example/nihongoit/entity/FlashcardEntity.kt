@@ -21,16 +21,10 @@ data class FlashcardEntity(
     val vocabulary: VocabularyEntity? = null,
 
     @Column(name = "front_text", nullable = false, columnDefinition = "text")
-    var frontText: String,
+    var frontText: String ?= null,
 
     @Column(name = "back_text", nullable = false, columnDefinition = "text")
-    var backText: String,
-
-    @Column(name = "notes", columnDefinition = "text")
-    var notes: String? = null,
-
-    @Column(name = "tags", columnDefinition = "text")
-    var tags: String? = null,
+    var backText: String ?= null,
 
     // FSRS algorithm fields
     @Column(name = "difficulty")

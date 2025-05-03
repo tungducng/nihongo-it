@@ -167,8 +167,6 @@ class FlashcardService(
             vocabulary = vocabulary,
             frontText = request.frontText,
             backText = request.backText,
-            notes = request.notes,
-            tags = request.tags
         )
         
         // Initialize with FSRS default values
@@ -212,7 +210,6 @@ class FlashcardService(
             vocabulary = vocabulary,
             frontText = frontText,
             backText = backText,
-            notes = null,
         )
         
         // Initialize with FSRS default values
@@ -284,9 +281,7 @@ class FlashcardService(
         
         existingFlashcard.frontText = request.frontText
         existingFlashcard.backText = request.backText
-        existingFlashcard.notes = request.notes
-        existingFlashcard.tags = request.tags
-        
+
         val savedFlashcard = flashcardRepository.save(existingFlashcard)
         
         val result = ResponseDto(
@@ -415,10 +410,8 @@ class FlashcardService(
     fun toDTO(flashcard: FlashcardEntity): FlashcardDTO {
         return FlashcardDTO(
             id = flashcard.flashCardId,
-            frontText = flashcard.frontText,
-            backText = flashcard.backText,
-            notes = flashcard.notes,
-            tags = flashcard.tags,
+            frontText = flashcard.frontText!!,
+            backText = flashcard.backText!!,
             vocabularyId = flashcard.vocabulary?.vocabId,
             due = flashcard.due,
             reps = flashcard.reps,

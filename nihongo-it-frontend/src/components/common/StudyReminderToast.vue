@@ -130,7 +130,7 @@ function navigateToStudy() {
 <style scoped>
 .study-reminder-toast {
   position: fixed;
-  top: 20px;
+  bottom: 88px;
   right: 20px;
   z-index: 10000;
   background-color: #4caf50;

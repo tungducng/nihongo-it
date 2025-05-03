@@ -6,11 +6,19 @@
         <v-btn icon class="mr-2" @click="goBack">
           <v-icon>mdi-chevron-left</v-icon>
         </v-btn>
-        <div class="text-h6 font-weight-bold text-dark">
+        <div class="text-subtitle-1 font-weight-bold text-dark">
           <span class="text-primary">IT</span>
-          <span class="japanese-text">単語学習 - トピック</span>
+          <span class="japanese-text">単語学習</span>
         </div>
       </div>
+
+      <!-- Topic Info (Centered) -->
+      <div v-if="topic" class="topic-center-info">
+        <div class="text-subtitle-1 font-weight-bold japanese-text">{{ topic.name }}
+          <span class="text-caption">({{ topic.meaning }})</span>
+        </div>
+      </div>
+
       <div class="d-flex align-center">
         <v-btn icon variant="text" @click="openFilterDialog">
           <v-icon>mdi-filter-variant</v-icon>
@@ -55,17 +63,6 @@
         >
           {{ topic.meaning }}
         </v-chip>
-      </div>
-    </div>
-
-    <!-- Topic Header -->
-    <div v-if="topic" class="px-4 mb-2">
-      <div class="d-flex align-center mb-2">
-        <div>
-          <div class="text-subtitle-1 font-weight-bold japanese-text">{{ topic.name }}
-            <span class="text-caption">({{ topic.meaning }})</span>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -1150,7 +1147,7 @@ function hasVietnameseStarted(example: any): boolean {
 }
 
 .vocabulary-section {
-  max-width: 1000px;
+  width: 100%;
   margin: 0 auto;
 }
 
@@ -1296,5 +1293,17 @@ function hasVietnameseStarted(example: any): boolean {
 .header {
   padding-top: 8px !important;
   padding-bottom: 8px !important;
+  position: relative;
+}
+
+.topic-center-info {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  max-width: 60%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 </style>

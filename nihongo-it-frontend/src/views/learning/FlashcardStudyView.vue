@@ -90,7 +90,7 @@
                 variant="text"
                 @click.stop="playAudio(currentCard)"
                 :loading="isPlayingAudio"
-                class="mb-6"
+                class="mb-6 audio-btn"
               >
                 <v-icon>mdi-volume-high</v-icon>
               </v-btn>
@@ -112,8 +112,10 @@
               <v-divider class="my-4"></v-divider>
 
               <div v-if="hasExample(currentCard.backText)" class="example-section pa-4 rounded-lg mb-4">
-                <div v-html="getExampleHtml(currentCard.backText)" class="text-body-1"></div>
-                <div class="d-flex justify-end mt-2">
+                <div class="example-content">
+                  <div class="example-text-container">
+                    <div v-html="getExampleHtml(currentCard.backText)" class="text-body-1"></div>
+                  </div>
                   <v-btn
                     icon
                     size="small"
@@ -121,6 +123,7 @@
                     variant="text"
                     @click.stop="playExampleAudio(currentCard)"
                     :loading="isPlayingExampleAudio"
+                    class="example-audio-btn"
                   >
                     <v-icon>mdi-volume-high</v-icon>
                   </v-btn>
@@ -321,18 +324,19 @@ function getExampleHtml(text: string) {
 
   if (exampleIndex === -1) return ''
 
-  let result = ''
-
-  // Add the example line and the next line (which should be the translation)
+  // Add the example and translation separately
   if (exampleIndex >= 0 && exampleIndex < lines.length) {
-    result += `<div class="japanese-text text-h6 mb-2">${lines[exampleIndex].replace('Example: ', '')}</div>`
+    const exampleText = lines[exampleIndex].replace('Example: ', '')
+    let result = `<div class="japanese-text text-h6 mb-2">${exampleText}</div>`
 
     if (exampleIndex + 1 < lines.length) {
       result += `<div class="text-body-1 text-medium-emphasis">${lines[exampleIndex + 1]}</div>`
     }
+
+    return result
   }
 
-  return result
+  return ''
 }
 
 function flipCard() {
@@ -709,5 +713,44 @@ function goBack() {
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+.audio-btn {
+  padding: 8px;
+  transition: all 0.3s ease;
+  border-radius: 50%;
+}
+
+.audio-btn:hover {
+  background-color: rgba(25, 118, 210, 0.15);
+  transform: scale(1.1);
+}
+
+.audio-btn:active {
+  transform: scale(0.95);
+}
+
+.example-section .v-btn {
+  padding: 6px;
+  transition: all 0.3s ease;
+}
+
+.example-section .v-btn:hover {
+  background-color: rgba(25, 118, 210, 0.15);
+  transform: scale(1.1);
+}
+
+.example-content {
+  display: flex;
+  align-items: center;
+}
+
+.example-text-container {
+  flex: 1;
+}
+
+.example-audio-btn {
+  margin-left: 16px;
+  align-self: center;
 }
 </style>

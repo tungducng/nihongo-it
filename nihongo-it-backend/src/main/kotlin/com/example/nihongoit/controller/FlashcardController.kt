@@ -234,6 +234,32 @@ class FlashcardController(
         return flashcardService.getStudyStatistics()
     }
 
+    @GetMapping(
+        "/vocabulary/{vocabId}",
+        produces = [MediaType.APPLICATION_JSON_VALUE]
+    )
+    @Operation(
+        summary = "Get flashcards by vocabulary ID",
+        description = "Retrieves all flashcards associated with a specific vocabulary item"
+    )
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "Successfully retrieved flashcards for vocabulary",
+                content = [Content(mediaType = "application/json", schema = Schema(implementation = GetFlashcardsResponseDto::class))]
+            ),
+            ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
+            ApiResponse(responseCode = "404", description = "Vocabulary not found")
+        ]
+    )
+    fun getFlashcardsByVocabulary(
+        @Parameter(description = "Unique identifier of the vocabulary item", required = true)
+        @PathVariable vocabId: UUID
+    ): GetFlashcardsResponseDto {
+        return flashcardService.getFlashcardsByVocabulary(vocabId)
+    }
+
     @PostMapping(
         "/vocabulary/{vocabId}",
         produces = [MediaType.APPLICATION_JSON_VALUE]

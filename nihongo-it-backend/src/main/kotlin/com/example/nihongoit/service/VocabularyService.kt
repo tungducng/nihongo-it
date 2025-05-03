@@ -54,7 +54,7 @@ class VocabularyService(
                 ),
             )
         }
-        
+
         // Check if vocabulary with this term already exists
         if (vocabularyRepository.existsByTerm(request.term)) {
             return CreateVocabularyResponseDto(
@@ -309,7 +309,7 @@ class VocabularyService(
 
         // Use pagination parameters from the filter
         val pageable = createPageableWithSort(filter.page, filter.size, filter.sort)
-        
+
         // Apply keyword filter if provided
         val result = if (filter.keyword != null && filter.keyword.isNotBlank()) {
             vocabularyRepository.findSavedByUserAndKeyword(currentUserId, filter.keyword, pageable)
@@ -331,7 +331,7 @@ class VocabularyService(
             lastPage = result.isLast,
         )
     }
-    
+
     /**
      * Creates a PageRequest with sorting based on the sort parameter
      */

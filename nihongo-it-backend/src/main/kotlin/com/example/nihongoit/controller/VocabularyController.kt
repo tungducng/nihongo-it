@@ -302,7 +302,6 @@ class VocabularyController(
             keyword = keyword,
             page = validPage,
             size = validSize,
-            sort = sort
         )
         val result = vocabularyService.getSavedVocabulary(filter)
         return result

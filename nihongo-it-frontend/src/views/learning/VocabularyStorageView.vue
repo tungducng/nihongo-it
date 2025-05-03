@@ -436,7 +436,7 @@ function flipCard() {
   isFlipped.value = !isFlipped.value
 }
 
-function rateCard(rating: 'again' | 'hard' | 'good' | 'easy') {
+async function rateCard(rating: 'again' | 'hard' | 'good' | 'easy') {
   if (!currentVocab.value?.vocabId) return;
 
   // Convert text ratings to numeric values for FSRS (1-4 scale where 1 is Again, 4 is Easy)
@@ -448,28 +448,19 @@ function rateCard(rating: 'again' | 'hard' | 'good' | 'easy') {
   };
 
   const numericRating = ratingMap[rating];
-
-  // Get the flashcard for this vocabulary
   loading.value = true;
 
-  // First, get the flashcard for this vocabulary
-  flashcardService.getFlashcardsByVocabulary(currentVocab.value.vocabId)
-    .then(flashcards => {
-      if (flashcards.length > 0) {
-        const flashcard = flashcards[0];
+  try {
+    // Get the flashcards for this vocabulary
+    const flashcards = await flashcardService.getFlashcardsByVocabulary(currentVocab.value.vocabId);
 
-        // Submit the rating
-        return flashcardService.reviewFlashcard(flashcard.id, numericRating);
-      } else {
-        // No flashcard exists yet, create one first
-        return flashcardService.createFlashcardFromVocabulary(currentVocab.value!.vocabId)
-          .then(newFlashcard => {
-            // Then submit the rating
-            return flashcardService.reviewFlashcard(newFlashcard.id, numericRating);
-          });
-      }
-    })
-    .then(response => {
+    if (flashcards.length > 0) {
+      // Use the first flashcard found for this vocabulary
+      const flashcard = flashcards[0];
+
+      // Submit the rating with the flashcard ID
+      const response = await flashcardService.reviewFlashcard(flashcard.id, numericRating);
+
       // Show success message based on rating
       const ratingMessages = {
         again: 'Bạn sẽ gặp lại từ này sớm',
@@ -490,17 +481,21 @@ function rateCard(rating: 'again' | 'hard' | 'good' | 'easy') {
 
       // Close the flashcard after rating
       closeFlashcard();
-    })
-    .catch(error => {
-      console.error('Error submitting flashcard rating:', error);
-      toast.error('Không thể lưu đánh giá cho thẻ này. Vui lòng thử lại.', {
+    } else {
+      toast.warning('Không tìm thấy thẻ ghi nhớ cho từ vựng này', {
         position: 'top',
         duration: 3000
       });
-    })
-    .finally(() => {
-      loading.value = false;
+    }
+  } catch (error) {
+    console.error('Error submitting flashcard rating:', error);
+    toast.error('Không thể lưu đánh giá cho thẻ này. Vui lòng thử lại.', {
+      position: 'top',
+      duration: 3000
     });
+  } finally {
+    loading.value = false;
+  }
 }
 
 function getJlptLevelColor(level: string): string {

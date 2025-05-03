@@ -18,73 +18,31 @@
       </div>
     </div>
 
+    <!-- Search Field -->
+    <div class="search-container px-4 mb-4">
+      <div class="search-field d-flex align-center pa-2 rounded-pill">
+        <v-text-field
+          v-model="search"
+          placeholder="検索 / Tìm kiếm từ vựng"
+          prepend-inner-icon="mdi-magnify"
+          variant="plain"
+          hide-details
+          single-line
+          density="compact"
+          @update:model-value="debouncedFilterVocabulary"
+        ></v-text-field>
+      </div>
+    </div>
+
     <div class="content-grid px-4">
       <!-- Left Column: Main Content -->
       <div class="main-content-column">
-        <!-- Search Field -->
-        <div class="search-container mb-4">
-          <div class="search-field d-flex align-center pa-2 rounded-pill">
-            <v-text-field
-              v-model="search"
-              placeholder="検索 / Tìm kiếm từ vựng"
-              prepend-inner-icon="mdi-magnify"
-              variant="plain"
-              hide-details
-              single-line
-              density="compact"
-              @update:model-value="debouncedFilterVocabulary"
-            ></v-text-field>
-          </div>
-        </div>
-
-        <!-- Active Filters (if any) -->
-        <div class="active-filters mb-3" v-if="hasActiveFilters">
-          <div class="d-flex flex-wrap">
-            <v-chip
-              v-if="selectedJlptLevel"
-              size="small"
-              color="primary"
-              class="mr-2 mb-1"
-              closable
-              @click:close="clearFilter('jlptLevel')"
-            >
-              {{ selectedJlptLevel }}
-            </v-chip>
-            <v-chip
-              v-if="selectedTopic"
-              size="small"
-              color="success"
-              class="mr-2 mb-1"
-              closable
-              @click:close="clearFilter('topic')"
-            >
-              {{ selectedTopic.meaning }}
-            </v-chip>
-            <v-chip
-              v-if="selectedCategory"
-              size="small"
-              color="info"
-              class="mr-2 mb-1"
-              closable
-              @click:close="clearFilter('category')"
-            >
-              {{ selectedCategory.meaning }}
-            </v-chip>
-          </div>
-        </div>
-
-        <!-- Loading Indicator -->
-        <div v-if="loading" class="text-center py-8">
-          <v-progress-circular indeterminate color="primary"></v-progress-circular>
-          <p class="text-body-1 text-medium-emphasis mt-3">Loading...</p>
-        </div>
-
         <!-- Main Content -->
-        <div v-else>
+        <div v-if="!loading">
           <!-- Category View -->
           <div class="category-section">
-            <div v-for="category in filteredCategories" :key="category.id" class="mb-3">
-              <div class="mb-2">
+            <div v-for="category in filteredCategories" :key="category.id" class="category-item">
+              <div class="text-center mb-1">
                 <div class="text-h5 font-weight-bold text-center japanese-text">{{ category.name }}</div>
                 <div class="text-subtitle-2 text-center">{{ category.meaning }}</div>
               </div>
@@ -103,10 +61,10 @@
                     class="position-relative"
                   >
                     <div class="category-overlay d-flex flex-column justify-center align-center">
-                      <div class="text-h6 font-weight-bold text-white text-center pb-2">
+                      <div class="text-h6 font-weight-bold text-white text-center">
                         {{ category.meaning }}
                       </div>
-                      <div class="text-body-2 text-white">
+                      <div class="text-body-2 text-white mt-1">
                         {{ getTopicsCount(category) }} topics
                       </div>
                     </div>
@@ -127,6 +85,12 @@
               </v-btn>
             </div>
           </div>
+        </div>
+
+        <!-- Loading Indicator -->
+        <div v-if="loading" class="text-center py-8">
+          <v-progress-circular indeterminate color="primary"></v-progress-circular>
+          <p class="text-body-1 text-medium-emphasis mt-3">Loading...</p>
         </div>
       </div>
 
@@ -1178,7 +1142,7 @@ function navigateToDetail(term: string) {
 
 <style scoped lang="scss">
 .vocabulary-learning-container {
-  background-color: #f8f9fa;
+  background-color: #f7f8fa;
   min-height: 100vh;
   padding-bottom: 64px;
 }
@@ -1193,6 +1157,9 @@ function navigateToDetail(term: string) {
 
 .main-content-column {
   width: 100%;
+  background-color: #f1f5f9;
+  border-radius: 8px;
+  padding: 16px;
 }
 
 .banner-column {
@@ -1210,6 +1177,13 @@ function navigateToDetail(term: string) {
   }
 }
 
+/* Make categories single column on mobile */
+@media (max-width: 768px) {
+  .category-section {
+    grid-template-columns: 1fr;
+  }
+}
+
 .japanese-text {
   font-family: 'Noto Sans JP', sans-serif;
 }
@@ -1220,10 +1194,15 @@ function navigateToDetail(term: string) {
   border-radius: 24px;
 }
 
+.category-item {
+  margin-bottom: 24px;
+}
+
 .category-lesson-card {
   overflow: hidden;
   transition: transform 0.2s ease;
   max-width: 100%;
+  background-color: rgba(255, 255, 255, 0.8);
 
   &:hover {
     transform: translateY(-3px);
@@ -1233,8 +1212,9 @@ function navigateToDetail(term: string) {
 
 .category-section {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-top: 16px;
 }
 
 .category-overlay {
@@ -1245,6 +1225,10 @@ function navigateToDetail(term: string) {
   width: 100%;
   height: 100%;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Banner card styles */

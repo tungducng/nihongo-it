@@ -380,7 +380,7 @@ class FlashcardService(
                 mapOf(
                     "due" to it.value.due,
                     "interval" to it.value.scheduledDays,
-                    "state" to FSRSService.State.values()[it.value.state].name.lowercase(),
+                    "state" to FSRSService.State.entries[it.value.state].name.lowercase(),
                     "stability" to it.value.stability.toFloat(),
                     "difficulty" to it.value.difficulty.toFloat()
                 )

@@ -26,6 +26,7 @@
           variant="flat"
         >
           {{ tab.name }}
+          <span class="tab-count ml-1" v-if="getTabCount(index) > 0">({{ getTabCount(index) }})</span>
         </v-btn>
       </div>
     </div>
@@ -42,14 +43,14 @@
       </v-alert>
     </div>
 
-    <div v-else-if="!loading && savedVocabulary.length === 0" class="empty-state-container text-center px-4">
+    <div v-else-if="!loading && filteredVocabulary.length === 0" class="empty-state-container text-center px-4">
       <v-img
         src="https://cdn.iconscout.com/icon/free/png-256/free-box-1439-1156305.png?f=webp"
         max-width="180"
         class="mx-auto my-12 empty-box-image"
       ></v-img>
       <div class="text-h6 text-grey-darken-1 empty-message mb-8">
-        Hiện không có từ nào đã được lưu.
+        {{ activeTabIndex === 0 ? 'Hiện không có từ nào đã được lưu.' : 'Không có từ vựng nào trong trạng thái này.' }}
       </div>
     </div>
 
@@ -265,6 +266,7 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const errorMessage = ref('')
 const savedVocabulary = ref<VocabularyItem[]>([])
+const filteredVocabulary = ref<VocabularyItem[]>([])
 const currentPage = ref(1)
 const pageSize = ref(20)
 const totalPages = ref(0)
@@ -273,13 +275,14 @@ const playingAudioId = ref<string | null>(null)
 const showFlashcard = ref(false)
 const isFlipped = ref(false)
 const currentVocab = ref<VocabularyItem | null>(null)
+const vocabFlashcardMap = ref<Map<string, any>>(new Map())
 
 // Tab configuration
 const tabs = [
-  { name: 'Mới học', activeColor: '#ffcc00' },
-  { name: 'Mới ôn', activeColor: '#ff9800' },
-  { name: 'Gần nhớ', activeColor: '#ff5722' },
-  { name: 'Đã nhớ', activeColor: '#e64a19' }
+  { name: 'Mới học', activeColor: '#ffcc00', state: 0 }, // New
+  { name: 'Mới ôn', activeColor: '#ff9800', state: 1 }, // Learning
+  { name: 'Gần nhớ', activeColor: '#ff5722', state: 2 }, // Review
+  { name: 'Đã nhớ', activeColor: '#e64a19', state: 3 } // Relearning/Mature
 ]
 
 const activeTabIndex = ref(0)
@@ -288,7 +291,7 @@ const activeTabIndex = ref(0)
 const groupedVocabulary = computed(() => {
   const groups: Record<string, VocabularyItem[]> = {};
 
-  savedVocabulary.value.forEach(item => {
+  filteredVocabulary.value.forEach(item => {
     const topic = item.topicName || 'Chưa phân loại';
     if (!groups[topic]) {
       groups[topic] = [];
@@ -306,9 +309,12 @@ onMounted(async () => {
 
 // Watch for tab changes
 watch(activeTabIndex, () => {
-  // In a real app, you might filter vocabulary based on the active tab
-  // For now, we'll just refetch the data
-  fetchSavedVocabulary();
+  filterVocabularyByState();
+});
+
+// Watch for changes in savedVocabulary
+watch(savedVocabulary, () => {
+  filterVocabularyByState();
 });
 
 // Methods
@@ -330,6 +336,9 @@ async function fetchSavedVocabulary() {
     totalItems.value = vocabularyStore.totalSavedItems;
     totalPages.value = vocabularyStore.totalSavedPages;
 
+    // Fetch flashcard states for the vocabulary items
+    await fetchFlashcardStates();
+
   } catch (error) {
     console.error('Error fetching saved vocabulary:', error);
     errorMessage.value = 'Không thể tải dữ liệu từ vựng đã lưu.';
@@ -339,6 +348,65 @@ async function fetchSavedVocabulary() {
     });
   } finally {
     loading.value = false;
+  }
+}
+
+// Fetch flashcard states for all vocabulary items
+async function fetchFlashcardStates() {
+  vocabFlashcardMap.value.clear();
+
+  const fetchPromises = savedVocabulary.value.map(async (vocab) => {
+    if (!vocab.vocabId) return;
+
+    try {
+      const flashcards = await flashcardService.getFlashcardsByVocabulary(vocab.vocabId);
+      if (flashcards.length > 0) {
+        vocabFlashcardMap.value.set(vocab.vocabId, flashcards[0]);
+      }
+    } catch (error) {
+      console.error(`Error fetching flashcard for vocabulary ${vocab.vocabId}:`, error);
+    }
+  });
+
+  await Promise.all(fetchPromises);
+
+  // Initial filtering
+  filterVocabularyByState();
+}
+
+// Filter vocabulary by flashcard state
+function filterVocabularyByState() {
+  const selectedState = tabs[activeTabIndex.value].state;
+
+  if (activeTabIndex.value === 0 && vocabFlashcardMap.value.size === 0) {
+    // If on first tab and no flashcards loaded yet, show all
+    filteredVocabulary.value = savedVocabulary.value;
+    return;
+  }
+
+  filteredVocabulary.value = savedVocabulary.value.filter(vocab => {
+    if (!vocab.vocabId) return false;
+
+    const flashcard = vocabFlashcardMap.value.get(vocab.vocabId);
+
+    if (!flashcard) {
+      // Vocabulary items without flashcards only show in the first tab (New)
+      return activeTabIndex.value === 0;
+    }
+
+    // Match flashcard state with tab state
+    return flashcard.state === getStateNameFromValue(selectedState);
+  });
+}
+
+// Helper function to convert state number to string name
+function getStateNameFromValue(state: number): string {
+  switch (state) {
+    case 0: return 'new';
+    case 1: return 'learning';
+    case 2: return 'review';
+    case 3: return 'relearning';
+    default: return 'new';
   }
 }
 
@@ -508,6 +576,32 @@ function getJlptLevelColor(level: string): string {
     default: return 'grey';
   }
 }
+
+// Function to get count of vocabulary for each tab
+function getTabCount(index: number): number {
+  const selectedState = tabs[index].state;
+
+  if (index === 0 && vocabFlashcardMap.value.size === 0) {
+    // If first tab and no flashcards loaded yet
+    return savedVocabulary.value.length;
+  }
+
+  if (index === 0) {
+    // For the first tab (New), include both new flashcards and vocabularies without flashcards
+    return savedVocabulary.value.filter(vocab => {
+      if (!vocab.vocabId) return false;
+      const flashcard = vocabFlashcardMap.value.get(vocab.vocabId);
+      return !flashcard || flashcard.state === 'new';
+    }).length;
+  }
+
+  // For other tabs, only count flashcards with the matching state
+  return savedVocabulary.value.filter(vocab => {
+    if (!vocab.vocabId) return false;
+    const flashcard = vocabFlashcardMap.value.get(vocab.vocabId);
+    return flashcard && flashcard.state === getStateNameFromValue(selectedState);
+  }).length;
+}
 </script>
 
 <style scoped lang="scss">
@@ -550,6 +644,12 @@ function getJlptLevelColor(level: string): string {
   &.active-tab {
     font-weight: 600;
   }
+}
+
+.tab-count {
+  font-size: 0.85rem;
+  opacity: 0.9;
+  margin-left: 4px;
 }
 
 .vocabulary-item {

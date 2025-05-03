@@ -6,22 +6,11 @@ import jakarta.validation.constraints.Size
 import java.util.UUID
 
 data class CreateFlashcardRequestDto(
-    @field:NotBlank(message = "Front text is required")
-    @field:Size(max = 1000, message = "Front text must be less than 1000 characters")
     @JsonProperty("frontText")
-    val frontText: String,
+    val frontText: String ?= null,
     
-    @field:NotBlank(message = "Back text is required")
-    @field:Size(max = 1000, message = "Back text must be less than 1000 characters")
     @JsonProperty("backText")
-    val backText: String,
-    
-    @field:Size(max = 2000, message = "Notes must be less than 2000 characters")
-    @JsonProperty("notes")
-    val notes: String? = null,
-    
-    @JsonProperty("tags")
-    val tags: String? = null,
+    val backText: String ?= null,
     
     @JsonProperty("vocabularyId")
     val vocabularyId: UUID? = null

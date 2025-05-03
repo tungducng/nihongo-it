@@ -183,7 +183,7 @@ class FlashcardService(
         )
     }
     
-    // Create flashcard from vocabulary
+    // Create flashcard from vocabulary //use this method
     @Transactional
     fun createFlashcardFromVocabulary(vocabId: UUID): CreateFlashcardResponseDto {
         val userId = userAuthUtil.getCurrentUserId()
@@ -416,7 +416,7 @@ class FlashcardService(
             due = flashcard.due,
             reps = flashcard.reps,
             lapses = flashcard.lapses,
-            state = FSRSService.State.values().find { it.value == flashcard.state }?.name?.lowercase() ?: "new",
+            state = FSRSService.State.entries.find { it.value == flashcard.state }?.name?.lowercase() ?: "new",
             difficulty = flashcard.difficulty,
             stability = flashcard.stability,
             interval = flashcard.scheduledDays

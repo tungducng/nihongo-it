@@ -11,16 +11,10 @@ data class FlashcardDTO(
     val id: UUID? = null,
     
     @JsonProperty("frontText")
-    val frontText: String,
+    val frontText: String ?= null,
     
     @JsonProperty("backText")
-    val backText: String,
-    
-    @JsonProperty("notes")
-    val notes: String? = null,
-    
-    @JsonProperty("tags")
-    val tags: String? = null,
+    val backText: String ?= null,
     
     @JsonProperty("vocabularyId")
     val vocabularyId: UUID? = null,

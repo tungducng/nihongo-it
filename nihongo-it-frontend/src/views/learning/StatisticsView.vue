@@ -153,17 +153,17 @@
               </v-card-title>
               <v-card-text>
                 <div class="d-flex flex-wrap justify-center gap-4">
-                  <div
-                    v-for="(count, level) in stats.cardsByJlptLevel"
-                    :key="level"
-                    class="jlpt-level-card"
-                    :class="`jlpt-${level.toLowerCase()}`"
-                    v-if="level !== 'unknown' && count > 0"
-                  >
-                    <div class="text-h5 font-weight-bold">{{ level }}</div>
-                    <div class="text-body-1">{{ count }} thẻ</div>
-                    <div class="text-caption">{{ calculateJlptPercent(level, count) }}%</div>
-                  </div>
+                  <template v-for="(count, level) in stats.cardsByJlptLevel" :key="level">
+                    <div
+                      v-if="String(level) !== 'unknown' && Number(count) > 0"
+                      class="jlpt-level-card"
+                      :class="`jlpt-${String(level).toLowerCase()}`"
+                    >
+                      <div class="text-h5 font-weight-bold">{{ level }}</div>
+                      <div class="text-body-1">{{ count }} thẻ</div>
+                      <div class="text-caption">{{ calculateJlptPercent(String(level), Number(count)) }}%</div>
+                    </div>
+                  </template>
                 </div>
               </v-card-text>
             </v-card>
@@ -180,16 +180,16 @@
               </v-card-title>
               <v-card-text>
                 <div class="d-flex flex-wrap justify-center gap-4">
-                  <div
-                    v-for="(count, state) in stats.cardsByState"
-                    :key="state"
-                    class="state-card"
-                    :class="`state-${state}`"
-                  >
-                    <div class="text-h6 text-capitalize">{{ formatState(state) }}</div>
-                    <div class="text-body-1">{{ count }} thẻ</div>
-                    <div class="text-caption">{{ calculateStatePercent(state, count) }}%</div>
-                  </div>
+                  <template v-for="(count, state) in stats.cardsByState" :key="state">
+                    <div
+                      class="state-card"
+                      :class="`state-${state}`"
+                    >
+                      <div class="text-h6 text-capitalize">{{ formatState(String(state)) }}</div>
+                      <div class="text-body-1">{{ count }} thẻ</div>
+                      <div class="text-caption">{{ calculateStatePercent(String(state), Number(count)) }}%</div>
+                    </div>
+                  </template>
                 </div>
               </v-card-text>
             </v-card>
@@ -211,38 +211,44 @@
             <span class="text-info cursor-pointer" @click="navigateToVocabularyStorage">Xem chi tiết</span>
           </div>
 
-          <div class="text-center mt-6">
-            <v-avatar size="140" color="white" class="vocab-progress-circle">
-              <v-avatar size="110" color="#fff3e0">
-                <div>
-                  <div class="text-h4 text-grey-darken-1">1</div>
-                  <div class="text-caption text-grey-darken-1">từ</div>
-                </div>
+          <div v-if="vocabLoading" class="text-center my-6">
+            <v-progress-circular indeterminate color="warning" size="64"></v-progress-circular>
+          </div>
+
+          <template v-else>
+            <div class="text-center mt-6">
+              <v-avatar size="140" color="white" class="vocab-progress-circle">
+                <v-avatar size="110" color="#fff3e0">
+                  <div>
+                    <div class="text-h4 text-grey-darken-1">{{ vocabStats.totalVocabulary }}</div>
+                    <div class="text-caption text-grey-darken-1">từ</div>
+                  </div>
+                </v-avatar>
               </v-avatar>
-            </v-avatar>
-            <div class="text-center mt-2">
-              <div class="text-body-2">thu nạp</div>
-              <div class="text-h5 font-weight-bold">100%</div>
+              <div class="text-center mt-2">
+                <div class="text-body-2">thu nạp</div>
+                <div class="text-h5 font-weight-bold">100%</div>
+              </div>
             </div>
-          </div>
 
-          <div class="vocab-stats d-flex justify-space-around mt-4">
-            <div class="text-caption">
-              <span class="vocab-indicator new"></span> mới học (1 từ)
+            <div class="vocab-stats d-flex justify-space-around mt-4">
+              <div class="text-caption">
+                <span class="vocab-indicator new"></span> mới học ({{ vocabStats.newCount }} từ)
+              </div>
+              <div class="text-caption">
+                <span class="vocab-indicator reviewing"></span> mới ôn ({{ vocabStats.learningCount }} từ)
+              </div>
             </div>
-            <div class="text-caption">
-              <span class="vocab-indicator reviewing"></span> mới ôn (0 từ)
-            </div>
-          </div>
 
-          <div class="vocab-stats d-flex justify-space-around mt-2">
-            <div class="text-caption">
-              <span class="vocab-indicator familiar"></span> gần nhớ (0 từ)
+            <div class="vocab-stats d-flex justify-space-around mt-2">
+              <div class="text-caption">
+                <span class="vocab-indicator familiar"></span> gần nhớ ({{ vocabStats.reviewCount }} từ)
+              </div>
+              <div class="text-caption">
+                <span class="vocab-indicator mastered"></span> đã nhớ ({{ vocabStats.matureCount }} từ)
+              </div>
             </div>
-            <div class="text-caption">
-              <span class="vocab-indicator mastered"></span> đã nhớ (0 từ)
-            </div>
-          </div>
+          </template>
         </v-card-text>
       </v-card>
     </v-container>
@@ -264,18 +270,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import flashcardService from '@/services/flashcard.service';
+import { useVocabularyStore } from '@/stores';
 import Chart from 'chart.js/auto';
 
 const router = useRouter();
+const vocabularyStore = useVocabularyStore();
 
 // State for statistics
 const loading = ref(true);
 const error = ref(false);
 const stats = ref<any>(null);
 const charts = ref<{ [key: string]: Chart }>({});
+const vocabStats = ref({
+  totalVocabulary: 0,
+  newCount: 0,
+  learningCount: 0,
+  reviewCount: 0,
+  matureCount: 0
+});
+const vocabLoading = ref(false);
 
 // Chart references
 const reviewActivityChart = ref<HTMLCanvasElement | null>(null);
@@ -297,8 +313,8 @@ const hasJlptCards = computed(() => {
   return jlptLevels.some(level => stats.value.cardsByJlptLevel[level] > 0);
 });
 
-// Method to format date
-function formatDate() {
+// Method to format display date
+function formatDisplayDate() {
   const date = new Date();
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -349,6 +365,12 @@ const calculateStatePercent = (state: string, count: number) => {
   return Math.round((count / stats.value.summary.totalCards) * 100);
 };
 
+// Format date for charts
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' });
+};
+
 // Fetch statistics
 const fetchStatistics = async () => {
   loading.value = true;
@@ -365,7 +387,87 @@ const fetchStatistics = async () => {
   }
 };
 
-// Generate chart data objects
+// Fetch vocabulary statistics
+const fetchVocabularyStats = async () => {
+  vocabLoading.value = true;
+
+  try {
+    // Use the store to fetch saved vocabulary (all saved items)
+    await vocabularyStore.fetchSavedVocabulary(
+      0,  // First page
+      100, // Larger page size to get more items at once
+      '',  // No search filter
+      'date_desc'  // Sort by date, newest first
+    );
+
+    // Get flashcard states for all vocabulary items
+    const fetchPromises = vocabularyStore.savedVocabulary.map(async (vocab) => {
+      if (!vocab.vocabId) return null;
+
+      try {
+        const flashcards = await flashcardService.getFlashcardsByVocabulary(vocab.vocabId);
+        return { vocab, flashcards: flashcards.length > 0 ? flashcards[0] : null };
+      } catch (error) {
+        console.error(`Error fetching flashcard for vocabulary ${vocab.vocabId}:`, error);
+        return { vocab, flashcards: null };
+      }
+    });
+
+    const results = await Promise.all(fetchPromises);
+
+    // Count by states
+    let newCount = 0;
+    let learningCount = 0;
+    let reviewCount = 0;
+    let matureCount = 0;
+
+    results.forEach(result => {
+      if (!result) return;
+
+      const { flashcards } = result;
+
+      if (!flashcards) {
+        // No flashcard means it's new
+        newCount++;
+      } else {
+        // Count based on flashcard state
+        switch (flashcards.state) {
+          case 'new':
+            newCount++;
+            break;
+          case 'learning':
+            learningCount++;
+            break;
+          case 'review':
+            reviewCount++;
+            break;
+          case 'relearning':
+            matureCount++;
+            break;
+          default:
+            // Unknown state, count as new
+            newCount++;
+        }
+      }
+    });
+
+    // Update state
+    vocabStats.value = {
+      totalVocabulary: vocabularyStore.totalSavedItems,
+      newCount,
+      learningCount,
+      reviewCount,
+      matureCount
+    };
+
+  } catch (error) {
+    console.error('Error fetching vocabulary statistics:', error);
+  } finally {
+    vocabLoading.value = false;
+  }
+};
+
+// Update chart data functions to use formatDate
 const getReviewActivityChartData = () => {
   if (!stats.value?.dailyReviews) return null;
 
@@ -374,7 +476,7 @@ const getReviewActivityChartData = () => {
   const reviewCounts = dates.map(date => stats.value.dailyReviews[date] || 0);
 
   return {
-    labels: dates.map(date => formatChartDate(date)),
+    labels: dates.map(date => formatDate(date)),
     datasets: [{
       label: 'Số lượt ôn tập',
       data: reviewCounts,
@@ -394,7 +496,7 @@ const getRetentionRateChartData = () => {
   const retentionRates = dates.map(date => stats.value.retentionRateByDay[date] || 0);
 
   return {
-    labels: dates.map(date => formatChartDate(date)),
+    labels: dates.map(date => formatDate(date)),
     datasets: [{
       label: 'Tỷ lệ ghi nhớ (%)',
       data: retentionRates,
@@ -414,7 +516,7 @@ const getCardsDueChartData = () => {
   const dueCounts = dates.map(date => stats.value.cardsDueByDay[date] || 0);
 
   return {
-    labels: dates.map(date => formatChartDate(date)),
+    labels: dates.map(date => formatDate(date)),
     datasets: [{
       label: 'Thẻ đến hạn',
       data: dueCounts,
@@ -425,6 +527,7 @@ const getCardsDueChartData = () => {
   };
 };
 
+// Add the getMemoryStrengthChartData function back
 const getMemoryStrengthChartData = () => {
   if (!stats.value?.memoryStrengthDistribution) return null;
 
@@ -454,13 +557,7 @@ const getMemoryStrengthChartData = () => {
   };
 };
 
-// Format date helper
-const formatChartDate = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString('vi-VN', { month: 'short', day: 'numeric' });
-};
-
-// Initialize charts
+// Rename to initCharts to match FlashcardStatsView.vue
 const initCharts = () => {
   if (!stats.value) return;
 
@@ -565,14 +662,19 @@ watch(stats, () => {
   }
 }, { deep: true });
 
-// Lifecycle hooks
-onMounted(() => {
+// Update lifecycle hooks to match FlashcardStatsView.vue pattern
+// but keep the vocabulary stats fetch since that's specific to StatisticsView.vue
+onMounted(async () => {
+  // Format date and start time interval
+  formatDisplayDate();
   updateTime();
-  formatDate();
-  fetchStatistics();
-
-  // Update time every minute
   setInterval(updateTime, 60000);
+
+  // Fetch statistics data
+  await fetchStatistics();
+
+  // Also fetch vocabulary stats (specific to StatisticsView)
+  fetchVocabularyStats();
 });
 </script>
 

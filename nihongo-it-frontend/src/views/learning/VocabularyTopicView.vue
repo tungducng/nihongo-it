@@ -133,7 +133,7 @@
                   color="blue"
                   title="Phát âm"
                   :loading="playingAudioId === item.vocabId"
-                  :disabled="playingAudioId !== null && playingAudioId !== item.vocabId || playingExampleAudioId !== null"
+                  :disabled="playingAudioId === item.vocabId"
                 ></v-btn>
                 <v-btn
                   :icon="item.isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
@@ -185,7 +185,7 @@
                     color="blue"
                     title="Phát âm câu ví dụ"
                     :loading="playingExampleAudioId === item.vocabId"
-                    :disabled="playingExampleAudioId !== null && playingExampleAudioId !== item.vocabId || playingAudioId !== null"
+                    :disabled="playingExampleAudioId === item.vocabId"
                   ></v-btn>
                 </div>
                 <div v-if="item.exampleMeaning" class="example-translation ml-6 mt-1 text-caption text-medium-emphasis">

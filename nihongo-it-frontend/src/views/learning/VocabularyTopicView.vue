@@ -101,6 +101,7 @@
           v-for="item in vocabularyItems"
           :key="item.vocabId"
           class="vocabulary-item mb-4"
+          :class="{ 'expanded': expandedItems.includes(item.vocabId) }"
           variant="outlined"
           rounded="lg"
           @click="toggleExpand(item.vocabId)"
@@ -155,7 +156,7 @@
                   size="small"
                   variant="outlined"
                   color="success"
-                  @click.stop="toggleChatGPT(item.vocabId)"
+                  @click.stop.prevent="toggleChatGPT(item.vocabId)"
                   :disabled="loadingChatGPT === item.vocabId"
                   :loading="loadingChatGPT === item.vocabId"
                   class="chat-gpt-btn"
@@ -204,107 +205,109 @@
                   Xem chi tiết
                 </v-btn>
               </div>
+            </div>
 
-              <!-- ChatGPT Content -->
-              <div v-if="chatGPTItems.includes(item.vocabId)" class="chatgpt-content mt-3 py-2 px-3 rounded" @click.stop.prevent>
-                <!-- Initial AI Explanation -->
-                <v-card flat class="chatgpt-card pa-3 mb-3" v-if="item.aiExplanation">
-                  <div class="d-flex align-items-start mb-2">
-                    <v-avatar size="32" color="green" class="mr-2">
-                      <span class="text-caption text-white">AI</span>
+            <!-- ChatGPT Content (not dependent on expandedItems) -->
+            <div v-if="chatGPTItems.includes(item.vocabId)" class="chatgpt-content mt-3 py-2 px-3 rounded" @click.stop>
+              <v-divider v-if="!expandedItems.includes(item.vocabId)" class="mb-3"></v-divider>
+              <!-- Initial AI Explanation -->
+              <v-card flat class="chatgpt-card pa-3 mb-3" v-if="item.aiExplanation" @click.stop>
+                <div class="d-flex align-items-start mb-2">
+                  <v-avatar size="32" color="green" class="mr-2">
+                    <span class="text-caption text-white">AI</span>
+                  </v-avatar>
+                  <div>
+                    <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
+                    <div class="chatgpt-message text-body-2 mt-1">
+                      <p v-html="displayedText[item.vocabId] || ''"></p>
+                      <span v-if="typingInProgress === item.vocabId && typingExamples[item.vocabId] === undefined" class="typing-cursor">|</span>
+
+                      <div v-if="item.aiExamples && item.aiExamples.length > 0 && typingExamples[item.vocabId] !== undefined" class="mt-3">
+                        <p class="font-weight-medium">Câu ví dụ:</p>
+                        <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-2">
+                          <template v-if="typingExamples[item.vocabId] > exIndex || typingExamples[item.vocabId] === -1">
+                            <!-- Fully displayed examples -->
+                            <p class="example-text">{{ example.japanese }}</p>
+                            <p class="text-caption ml-3">{{ example.vietnamese }}</p>
+                          </template>
+                          <template v-else-if="typingExamples[item.vocabId] === exIndex">
+                            <!-- Currently typing example -->
+                            <p class="example-text">
+                              {{ getExampleProperty(example, 'japaneseDisplayed') || '' }}
+                              <span v-if="isJapaneseComplete(example) && !hasVietnameseStarted(example)" class="typing-cursor">|</span>
+                            </p>
+                            <p v-if="hasVietnameseStarted(example)" class="text-caption ml-3">
+                              {{ getExampleProperty(example, 'vietnameseDisplayed') || '' }}
+                              <span class="typing-cursor">|</span>
+                            </p>
+                          </template>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </v-card>
+
+              <!-- Chat History -->
+              <template v-if="item.chatHistory && item.chatHistory.length > 0">
+                <div
+                  v-for="(message, msgIndex) in item.chatHistory"
+                  :key="msgIndex"
+                  class="mb-3"
+                  @click.stop
+                >
+                  <!-- User Message -->
+                  <div v-if="message.role === 'user'" class="d-flex align-items-start">
+                    <v-avatar size="32" color="blue" class="mr-2">
+                      <span class="text-caption text-white">Bạn</span>
                     </v-avatar>
                     <div>
-                      <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
+                      <div class="text-subtitle-2 font-weight-medium">Bạn</div>
                       <div class="chatgpt-message text-body-2 mt-1">
-                        <p v-html="displayedText[item.vocabId] || ''"></p>
-                        <span v-if="typingInProgress === item.vocabId && typingExamples[item.vocabId] === undefined" class="typing-cursor">|</span>
-
-                        <div v-if="item.aiExamples && item.aiExamples.length > 0 && typingExamples[item.vocabId] !== undefined" class="mt-3">
-                          <p class="font-weight-medium">Câu ví dụ:</p>
-                          <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-2">
-                            <template v-if="typingExamples[item.vocabId] > exIndex || typingExamples[item.vocabId] === -1">
-                              <!-- Fully displayed examples -->
-                              <p class="example-text">{{ example.japanese }}</p>
-                              <p class="text-caption ml-3">{{ example.vietnamese }}</p>
-                            </template>
-                            <template v-else-if="typingExamples[item.vocabId] === exIndex">
-                              <!-- Currently typing example -->
-                              <p class="example-text">
-                                {{ getExampleProperty(example, 'japaneseDisplayed') || '' }}
-                                <span v-if="isJapaneseComplete(example) && !hasVietnameseStarted(example)" class="typing-cursor">|</span>
-                              </p>
-                              <p v-if="hasVietnameseStarted(example)" class="text-caption ml-3">
-                                {{ getExampleProperty(example, 'vietnameseDisplayed') || '' }}
-                                <span class="typing-cursor">|</span>
-                              </p>
-                            </template>
-                          </div>
-                        </div>
+                        {{ message.content }}
                       </div>
                     </div>
                   </div>
-                </v-card>
 
-                <!-- Chat History -->
-                <template v-if="item.chatHistory && item.chatHistory.length > 0">
-                  <div
-                    v-for="(message, msgIndex) in item.chatHistory"
-                    :key="msgIndex"
-                    class="mb-3"
-                  >
-                    <!-- User Message -->
-                    <div v-if="message.role === 'user'" class="d-flex align-items-start">
-                      <v-avatar size="32" color="blue" class="mr-2">
-                        <span class="text-caption text-white">Bạn</span>
+                  <!-- AI Response -->
+                  <v-card v-else flat class="chatgpt-card pa-3" @click.stop>
+                    <div class="d-flex align-items-start">
+                      <v-avatar size="32" color="green" class="mr-2">
+                        <span class="text-caption text-white">AI</span>
                       </v-avatar>
                       <div>
-                        <div class="text-subtitle-2 font-weight-medium">Bạn</div>
+                        <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
                         <div class="chatgpt-message text-body-2 mt-1">
-                          {{ message.content }}
+                          <span v-html="message.content"></span>
+                          <span v-if="typingInProgress === item.vocabId &&
+                                      msgIndex === (item.chatHistory?.length - 1)"
+                                class="typing-cursor">|</span>
                         </div>
                       </div>
                     </div>
-
-                    <!-- AI Response -->
-                    <v-card v-else flat class="chatgpt-card pa-3">
-                      <div class="d-flex align-items-start">
-                        <v-avatar size="32" color="green" class="mr-2">
-                          <span class="text-caption text-white">AI</span>
-                        </v-avatar>
-                        <div>
-                          <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
-                          <div class="chatgpt-message text-body-2 mt-1">
-                            <span v-html="message.content"></span>
-                            <span v-if="typingInProgress === item.vocabId &&
-                                        msgIndex === (item.chatHistory?.length - 1)"
-                                  class="typing-cursor">|</span>
-                          </div>
-                        </div>
-                      </div>
-                    </v-card>
-                  </div>
-                </template>
-
-                <!-- User Input -->
-                <div class="chat-input-container d-flex mt-3">
-                  <v-text-field
-                    v-model="chatInputs[item.vocabId]"
-                    placeholder="Nhập tin nhắn của bạn..."
-                    variant="outlined"
-                    density="comfortable"
-                    hide-details
-                    @keyup.enter="sendChatMessage(item.vocabId)"
-                    @click.stop.prevent
-                    class="mr-2"
-                  ></v-text-field>
-                  <v-btn
-                    color="primary"
-                    :disabled="!chatInputs[item.vocabId]"
-                    @click.stop.prevent="sendChatMessage(item.vocabId)"
-                  >
-                    <v-icon>mdi-send</v-icon>
-                  </v-btn>
+                  </v-card>
                 </div>
+              </template>
+
+              <!-- User Input -->
+              <div class="chat-input-container d-flex mt-3">
+                <v-text-field
+                  v-model="chatInputs[item.vocabId]"
+                  placeholder="Nhập tin nhắn của bạn..."
+                  variant="outlined"
+                  density="comfortable"
+                  hide-details
+                  @keyup.enter="sendChatMessage(item.vocabId)"
+                  @click.stop.prevent
+                  class="mr-2"
+                ></v-text-field>
+                <v-btn
+                  color="primary"
+                  :disabled="!chatInputs[item.vocabId]"
+                  @click.stop.prevent="sendChatMessage(item.vocabId)"
+                >
+                  <v-icon>mdi-send</v-icon>
+                </v-btn>
               </div>
             </div>
           </div>
@@ -806,6 +809,11 @@ function getJlptColor(level: string): string {
 async function toggleChatGPT(vocabId: string) {
   const index = chatGPTItems.value.indexOf(vocabId)
 
+  // Make sure the item is expanded when toggling ChatGPT
+  if (!expandedItems.value.includes(vocabId)) {
+    expandedItems.value.push(vocabId)
+  }
+
   if (index >= 0) {
     // If already open, close it
     chatGPTItems.value.splice(index, 1)
@@ -1142,6 +1150,10 @@ function hasVietnameseStarted(example: any): boolean {
     transform: translateY(-2px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
   }
+
+  & .chatgpt-content {
+    transform: none !important;
+  }
 }
 
 .meaning-text {
@@ -1171,6 +1183,17 @@ function hasVietnameseStarted(example: any): boolean {
   transition: none !important;
   z-index: 10;
   position: relative;
+  pointer-events: auto;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-radius: 8px;
+}
+
+/* When ChatGPT is visible but the item is not expanded,
+   add a divider to separate from the meaning text */
+.vocabulary-item:not(.expanded) .chatgpt-content {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  padding-top: 1rem;
 }
 
 .chatgpt-card {

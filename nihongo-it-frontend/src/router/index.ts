@@ -115,6 +115,12 @@ const routes = [
     name: 'changePassword',
     component: () => import('@/views/auth/ChangePasswordView.vue'),
     meta: { requiresAuth: true } // Requires authentication to change password
+  },
+  {
+    path: '/flashcards/study',
+    name: 'flashcardStudy',
+    component: () => import('@/views/learning/FlashcardStudyView.vue'),
+    meta: { requiresAuth: true } // Flashcard study requires authentication
   }
 ]
 

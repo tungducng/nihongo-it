@@ -254,6 +254,7 @@ import { useVocabularyStore, useAuthStore } from '@/stores'
 import axios from 'axios'
 import type { VocabularyItem } from '@/services/vocabulary.service'
 import authService from '@/services/auth.service'
+import flashcardService from '@/services/flashcard.service'
 
 const router = useRouter()
 const toast = useToast()
@@ -436,22 +437,70 @@ function flipCard() {
 }
 
 function rateCard(rating: 'again' | 'hard' | 'good' | 'easy') {
-  // In a real implementation, you would store the rating and update the learning algorithm
-  // For now, we'll just show a toast message
-  const ratingMessages = {
-    again: 'Bạn sẽ gặp lại từ này sớm',
-    hard: 'Từ này khó, sẽ lặp lại sau',
-    good: 'Tốt! Bạn đã nhớ được từ này',
-    easy: 'Rất tốt! Bạn đã nắm vững từ này'
-  }
+  if (!currentVocab.value?.vocabId) return;
 
-  toast.success(ratingMessages[rating], {
-    position: 'top',
-    duration: 2000
-  })
+  // Convert text ratings to numeric values for FSRS (1-4 scale where 1 is Again, 4 is Easy)
+  const ratingMap = {
+    again: 1, // Hardest rating
+    hard: 2,
+    good: 3,
+    easy: 4   // Easiest rating
+  };
 
-  // Close the flashcard after rating
-  closeFlashcard()
+  const numericRating = ratingMap[rating];
+
+  // Get the flashcard for this vocabulary
+  loading.value = true;
+
+  // First, get the flashcard for this vocabulary
+  flashcardService.getFlashcardsByVocabulary(currentVocab.value.vocabId)
+    .then(flashcards => {
+      if (flashcards.length > 0) {
+        const flashcard = flashcards[0];
+
+        // Submit the rating
+        return flashcardService.reviewFlashcard(flashcard.id, numericRating);
+      } else {
+        // No flashcard exists yet, create one first
+        return flashcardService.createFlashcardFromVocabulary(currentVocab.value!.vocabId)
+          .then(newFlashcard => {
+            // Then submit the rating
+            return flashcardService.reviewFlashcard(newFlashcard.id, numericRating);
+          });
+      }
+    })
+    .then(response => {
+      // Show success message based on rating
+      const ratingMessages = {
+        again: 'Bạn sẽ gặp lại từ này sớm',
+        hard: 'Từ này khó, sẽ lặp lại sau',
+        good: 'Tốt! Bạn đã nhớ được từ này',
+        easy: 'Rất tốt! Bạn đã nắm vững từ này'
+      };
+
+      // Update next scheduled date in the UI if available
+      const nextReview = response?.data?.due ?
+        new Date(response.data.due).toLocaleDateString('vi-VN') :
+        'soon';
+
+      toast.success(`${ratingMessages[rating]} - Lần ôn tiếp theo: ${nextReview}`, {
+        position: 'top',
+        duration: 3000
+      });
+
+      // Close the flashcard after rating
+      closeFlashcard();
+    })
+    .catch(error => {
+      console.error('Error submitting flashcard rating:', error);
+      toast.error('Không thể lưu đánh giá cho thẻ này. Vui lòng thử lại.', {
+        position: 'top',
+        duration: 3000
+      });
+    })
+    .finally(() => {
+      loading.value = false;
+    });
 }
 
 function getJlptLevelColor(level: string): string {

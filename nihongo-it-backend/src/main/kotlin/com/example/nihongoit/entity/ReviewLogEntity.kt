@@ -11,9 +11,9 @@ import java.util.UUID
 @Table(name = "review_logs")
 data class ReviewLogEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "review_log_id")
-    val reviewLogId: UUID = UUID.randomUUID(),
+    @GeneratedValue(generator = "UUID")
+    @Column(name = "review_log_id", updatable = false, nullable = false)
+    val reviewLogId: UUID? = null,
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "flashcard_id")

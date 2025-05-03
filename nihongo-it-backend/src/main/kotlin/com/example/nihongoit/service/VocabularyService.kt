@@ -16,7 +16,9 @@ import com.example.nihongoit.exception.BusinessException
 import com.example.nihongoit.repository.UserRepository
 import com.example.nihongoit.repository.VocabularyRepository
 import com.example.nihongoit.repository.TopicRepository
+import com.example.nihongoit.repository.CategoryRepository
 import com.example.nihongoit.util.UserAuthUtil
+import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
@@ -29,8 +31,11 @@ class VocabularyService(
     private val vocabularyRepository: VocabularyRepository,
     private val userRepository: UserRepository,
     private val topicRepository: TopicRepository,
+    private val categoryRepository: CategoryRepository,
     private val userAuthUtil: UserAuthUtil,
+    private val flashcardService: FlashcardService,
 ) {
+    private val logger = LoggerFactory.getLogger(VocabularyService::class.java)
 
     @Transactional
     fun createVocabulary(request: CreateVocabularyRequestDto): CreateVocabularyResponseDto {
@@ -269,9 +274,19 @@ class VocabularyService(
         vocabulary.savedByUsers.add(user)
         vocabularyRepository.save(vocabulary)
 
+        // Automatically create a flashcard for this vocabulary
+        try {
+            flashcardService.createFlashcardFromVocabulary(vocabId)
+            logger.info("Automatically created flashcard for vocabulary $vocabId when saved to notebook")
+        } catch (e: Exception) {
+            // Log the error but don't fail the save operation
+            // This allows vocabulary to be saved even if flashcard creation fails
+            // (e.g., if a flashcard already exists)
+            logger.warn("Failed to auto-create flashcard for vocabulary $vocabId: ${e.message}")
+        }
+
         return mapToResponse(vocabulary, true)
     }
-
 
     @Transactional
     fun removeVocabularyFromNotebook(vocabId: UUID): VocabularyDto {
@@ -286,8 +301,6 @@ class VocabularyService(
 
         return mapToResponse(vocabulary, false)
     }
-
-
 
     @Transactional(readOnly = true)
     fun getSavedVocabulary(filter: VocabularyFilterRequestDto): PagedVocabularyResponseDto {

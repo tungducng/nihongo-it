@@ -57,7 +57,7 @@ class FSRSService @Autowired constructor(
         RELEARNING(3);
 
         companion object {
-            fun fromInt(value: Int): State = values().first { it.value == value }
+            fun fromInt(value: Int): State = State.entries.first { it.value == value }
         }
     }
 
@@ -81,7 +81,7 @@ class FSRSService @Autowired constructor(
     @Transactional
     fun processReview(flashcard: FlashcardEntity, ratingValue: Int): FlashcardEntity {
         val rating = Rating.fromInt(ratingValue)
-        logger.info("Processing review with FSRS - Flashcard ID: ${flashcard.flashCardId}, Rating: $rating")
+        logger.info("Processing review with FSRS - Flashcard ID: ${flashcard.flashcardId}, Rating: $rating")
 
         // Calculate elapsed time since due date
         val now = LocalDateTime.now()

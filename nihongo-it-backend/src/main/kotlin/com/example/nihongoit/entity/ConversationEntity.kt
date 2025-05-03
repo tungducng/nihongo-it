@@ -8,9 +8,9 @@ import java.util.UUID
 @Table(name = "conversations")
 data class ConversationEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "conversation_id", nullable = false)
-    val conversationId: UUID = UUID.randomUUID(),
+    @GeneratedValue(generator = "UUID")
+    @Column(name = "conversation_id", updatable = false, nullable = false)
+    val conversationId: UUID? = null,
 
     @Column(name = "title", nullable = false)
     val title: String,

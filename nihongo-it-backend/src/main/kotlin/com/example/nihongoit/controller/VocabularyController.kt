@@ -244,7 +244,6 @@ class VocabularyController(
     @Operation(
         summary = "Remove vocabulary from user's notebook",
         description = "Removes a vocabulary entry from the current user's personal notebook",
-        security = [SecurityRequirement(name = "bearerAuth")]
     )
     @ApiResponses(
         value = [

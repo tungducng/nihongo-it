@@ -8,9 +8,9 @@ import java.util.*
 @Table(name = "flashcards")
 data class FlashcardEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "flashcard_id")
-    val flashCardId: UUID? = UUID.randomUUID(),
+    @GeneratedValue(generator = "UUID")
+    @Column(name = "flashcard_id", updatable = false, nullable = false)
+    val flashcardId: UUID? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -20,11 +20,11 @@ data class FlashcardEntity(
     @JoinColumn(name = "vocabulary_id")
     val vocabulary: VocabularyEntity? = null,
 
-    @Column(name = "front_text", nullable = false, columnDefinition = "text")
-    var frontText: String ?= null,
+    @Column(name = "front_text", columnDefinition = "text")
+    var frontText: String,
 
-    @Column(name = "back_text", nullable = false, columnDefinition = "text")
-    var backText: String ?= null,
+    @Column(name = "back_text",  columnDefinition = "text")
+    var backText: String,
 
     // FSRS algorithm fields
     @Column(name = "difficulty")

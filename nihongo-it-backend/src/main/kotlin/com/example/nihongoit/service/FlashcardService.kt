@@ -171,7 +171,7 @@ class FlashcardService(
         
         // Initialize with FSRS default values
         val savedFlashcard = fsrsService.initializeFlashcard(flashcard)
-        
+
         val result = ResponseDto(
             status = ResponseType.OK,
             message = "Flashcard created successfully"
@@ -188,38 +188,38 @@ class FlashcardService(
     fun createFlashcardFromVocabulary(vocabId: UUID): CreateFlashcardResponseDto {
         val userId = userAuthUtil.getCurrentUserId()
         logger.info("Creating flashcard from vocabulary: $vocabId for user: $userId")
-        
+
         val user = userRepository.findById(userId!!)
             .orElseThrow { EntityNotFoundException("User not found with id: $userId") }
-        
+
         val vocabulary = vocabularyRepository.findById(vocabId)
             .orElseThrow { EntityNotFoundException("Vocabulary item not found with id: $vocabId") }
-        
+
         // Check if flashcard already exists for this vocabulary and user
         val existingFlashcard = flashcardRepository.findByUser_UserIdAndVocabulary_VocabId(userId, vocabId)
         if (existingFlashcard.isNotEmpty()) {
             throw BusinessException("Flashcard for this vocabulary item already exists")
         }
-        
+
         // Create front and back text based on vocabulary
         val frontText = buildFrontText(vocabulary)
         val backText = buildBackText(vocabulary)
-        
+
         val flashcard = FlashcardEntity(
             user = user,
             vocabulary = vocabulary,
             frontText = frontText,
             backText = backText,
         )
-        
+
         // Initialize with FSRS default values
         val savedFlashcard = fsrsService.initializeFlashcard(flashcard)
-        
+
         val result = ResponseDto(
             status = ResponseType.OK,
             message = "Flashcard created from vocabulary successfully"
         )
-        
+
         return CreateFlashcardResponseDto(
             result = result,
             data = toDTO(savedFlashcard)
@@ -279,8 +279,8 @@ class FlashcardService(
             throw AccessDeniedException("User does not have access to this flashcard")
         }
         
-        existingFlashcard.frontText = request.frontText
-        existingFlashcard.backText = request.backText
+        existingFlashcard.frontText = request.frontText!!
+        existingFlashcard.backText = request.backText!!
 
         val savedFlashcard = flashcardRepository.save(existingFlashcard)
         
@@ -409,9 +409,9 @@ class FlashcardService(
     // Convert entity to DTO
     fun toDTO(flashcard: FlashcardEntity): FlashcardDTO {
         return FlashcardDTO(
-            id = flashcard.flashCardId,
-            frontText = flashcard.frontText!!,
-            backText = flashcard.backText!!,
+            id = flashcard.flashcardId,
+            frontText = flashcard.frontText,
+            backText = flashcard.backText,
             vocabularyId = flashcard.vocabulary?.vocabId,
             due = flashcard.due,
             reps = flashcard.reps,
@@ -419,7 +419,10 @@ class FlashcardService(
             state = FSRSService.State.entries.find { it.value == flashcard.state }?.name?.lowercase() ?: "new",
             difficulty = flashcard.difficulty,
             stability = flashcard.stability,
-            interval = flashcard.scheduledDays
+            interval = flashcard.scheduledDays,
+            createdAt = flashcard.createdAt,
+            updatedAt = flashcard.updatedAt
+
         )
     }
 }

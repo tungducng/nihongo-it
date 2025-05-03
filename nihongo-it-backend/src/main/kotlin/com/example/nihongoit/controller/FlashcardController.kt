@@ -3,6 +3,7 @@ package com.example.nihongoit.controller
 import com.example.nihongoit.dto.flashcard.*
 import com.example.nihongoit.dto.review.ReviewFlashcardResponseDto
 import com.example.nihongoit.dto.review.ReviewRequest
+import com.example.nihongoit.security.PreAuthFilter
 import com.example.nihongoit.service.FlashcardService
 import com.example.nihongoit.util.UserAuthUtil
 import io.swagger.v3.oas.annotations.Operation
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -95,6 +97,7 @@ class FlashcardController(
         return flashcardService.getFlashcardById(id)
     }
 
+    @PreAuthFilter(hasAnyRole = ["ADMIN", "USER"])
     @PostMapping(
         produces = [MediaType.APPLICATION_JSON_VALUE],
         consumes = [MediaType.APPLICATION_JSON_VALUE]
@@ -102,7 +105,8 @@ class FlashcardController(
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(
         summary = "Create new flashcard",
-        description = "Creates a new flashcard with the provided details"
+        description = "Creates a new flashcard with the provided details",
+        security = [SecurityRequirement(name = "bearerAuth")]
     )
     @ApiResponses(
         value = [

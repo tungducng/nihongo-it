@@ -1,7 +1,12 @@
 package com.example.nihongoit.dto.flashcard
 
+import com.fasterxml.jackson.annotation.JsonFormat
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -18,7 +23,10 @@ data class FlashcardDTO(
     
     @JsonProperty("vocabularyId")
     val vocabularyId: UUID? = null,
-    
+
+    @JsonDeserialize(using = LocalDateTimeDeserializer::class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+    @JsonSerialize(using = LocalDateTimeSerializer::class)
     @JsonProperty("due")
     val due: LocalDateTime? = null,
     
@@ -38,5 +46,17 @@ data class FlashcardDTO(
     val stability: Double? = null,
     
     @JsonProperty("interval")
-    val interval: Double? = null
+    val interval: Double? = null,
+
+    @JsonDeserialize(using = LocalDateTimeDeserializer::class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+    @JsonSerialize(using = LocalDateTimeSerializer::class)
+    @JsonProperty("createdAt")
+    val createdAt: LocalDateTime? = null,
+
+    @JsonDeserialize(using = LocalDateTimeDeserializer::class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+    @JsonSerialize(using = LocalDateTimeSerializer::class)
+    @JsonProperty("updatedAt")
+    val updatedAt: LocalDateTime? = null
 )

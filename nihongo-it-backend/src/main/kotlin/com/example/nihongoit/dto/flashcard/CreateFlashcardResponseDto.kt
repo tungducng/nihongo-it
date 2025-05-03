@@ -8,5 +8,5 @@ data class CreateFlashcardResponseDto(
     val result: ResponseDto,
     
     @JsonProperty("data")
-    val data: FlashcardDTO
+    val data: FlashcardDTO ?= null
 ) 

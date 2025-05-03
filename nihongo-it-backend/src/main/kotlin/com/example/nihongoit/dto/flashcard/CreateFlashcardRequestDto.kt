@@ -7,11 +7,11 @@ import java.util.UUID
 
 data class CreateFlashcardRequestDto(
     @JsonProperty("frontText")
-    val frontText: String ?= null,
+    val frontText: String,
     
     @JsonProperty("backText")
-    val backText: String ?= null,
-    
+    val backText: String,
+
     @JsonProperty("vocabularyId")
     val vocabularyId: UUID? = null
 ) 

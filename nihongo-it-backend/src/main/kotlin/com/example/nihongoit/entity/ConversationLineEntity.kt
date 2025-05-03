@@ -15,9 +15,9 @@ import java.util.*
 @Table(name = "conversation_lines")
 data class ConversationLineEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "line_id")
-    val lineId: UUID = UUID.randomUUID(),
+    @GeneratedValue(generator = "UUID")
+    @Column(name = "line_id", updatable = false, nullable = false)
+    val lineId: UUID? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "conversation_id", nullable = false)

@@ -8,9 +8,9 @@ import java.util.*
 @Table(name = "notifications")
 data class NotificationEntity(
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "notification_id")
-    val notificationId: UUID = UUID.randomUUID(),
+    @GeneratedValue(generator = "UUID")
+    @Column(name = "notification_id", updatable = false, nullable = false)
+    val notificationId: UUID? = null,
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")

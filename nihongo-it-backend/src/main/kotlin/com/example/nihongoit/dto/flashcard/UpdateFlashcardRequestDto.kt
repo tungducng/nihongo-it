@@ -6,8 +6,8 @@ import jakarta.validation.constraints.Size
 
 data class UpdateFlashcardRequestDto(
     @JsonProperty("frontText")
-    val frontText: String ?= null,
+    val frontText: String,
     
     @JsonProperty("backText")
-    val backText: String ?= null,
+    val backText: String,
 )

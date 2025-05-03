@@ -9,28 +9,22 @@
     </v-main>
 
     <Footer />
+
+    <!-- Study Reminder Toast -->
+    <study-reminder-toast v-if="isAuthenticated" />
   </v-app>
 </template>
 
-<script lang="ts">
-import { Component, Vue } from 'vue-facing-decorator'
+<script setup lang="ts">
 import { RouterView } from 'vue-router'
+import { computed } from 'vue'
 import AppHeader from './components/common/Header.vue'
 import Footer from './components/common/Footer.vue'
+import StudyReminderToast from './components/common/StudyReminderToast.vue'
+import { useAuthStore } from './stores'
 
-@Component({
-  name: 'App',
-  components: {
-    RouterView,
-    AppHeader,
-    Footer,
-  },
-})
-export default class App extends Vue {
-  mounted(): void {
-    // Initialize user from localStorage if available
-  }
-}
+const authStore = useAuthStore()
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 </script>
 
 <style lang="sass"></style>

@@ -63,7 +63,7 @@ const routes = [
     meta: { requiresAuth: true }, // Personalized content requires auth
   },
   {
-    path: '/vocabulary/learning',
+    path: '/vocabulary/category',
     name: 'vocabularyLearning',
     component: () => import('@/views/learning/VocabularyLearningView.vue'),
     meta: { requiresAuth: true }, // Personalized content requires auth

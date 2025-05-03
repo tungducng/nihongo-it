@@ -18,7 +18,7 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/vocabulary/learning"
+        to="/vocabulary/category"
         class="mx-2"
       >
         Từ vựng

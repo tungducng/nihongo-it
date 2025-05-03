@@ -300,7 +300,7 @@ class FlashcardService(
     fun deleteFlashcard(flashcardId: UUID): DeleteFlashcardResponseDto {
         val userId = userAuthUtil.getCurrentUserId()
         logger.info("Deleting flashcard: $flashcardId")
-        
+
         val flashcard = flashcardRepository.findById(flashcardId)
             .orElseThrow { EntityNotFoundException("Flashcard not found with id: $flashcardId") }
             

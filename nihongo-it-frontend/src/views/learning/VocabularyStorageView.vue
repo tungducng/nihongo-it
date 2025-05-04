@@ -1,16 +1,16 @@
 <template>
   <div class="vocabulary-storage-container">
     <!-- Header with Back Button -->
-    <div class="header-container d-flex align-center px-4 pb-2">
-      <v-btn icon class="mr-2" @click="goBack">
+    <div class="header-container d-flex align-center px-3 py-2">
+      <v-btn icon class="mr-2 back-btn" @click="goBack" variant="outlined" color="primary" size="x-small">
         <v-icon>mdi-chevron-left</v-icon>
       </v-btn>
-      <h1 class="text-h6 font-weight-bold">Kho từ của tôi</h1>
+      <h1 class="text-h6 font-weight-bold">Thẻ của tôi</h1>
     </div>
 
     <!-- Vocabulary Status Tabs -->
-    <div class="vocab-status-tabs px-4 pt-2">
-      <div class="d-flex">
+    <div class="vocab-status-tabs px-3 py-1">
+      <div class="d-flex custom-tabs-container">
         <v-btn
           v-for="(tab, index) in tabs"
           :key="index"
@@ -21,9 +21,10 @@
             { 'active-tab': activeTabIndex === index }
           ]"
           @click="activeTabIndex = index"
-          :style="activeTabIndex === index ? { color: 'white' } : {}"
+          :style="activeTabIndex === index ? { color: 'white', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' } : {}"
           rounded="pill"
           variant="flat"
+          density="compact"
         >
           {{ tab.name }}
           <span class="tab-count ml-1" v-if="getTabCount(index) > 0">({{ getTabCount(index) }})</span>
@@ -50,45 +51,47 @@
         class="mx-auto my-12 empty-box-image"
       ></v-img>
       <div class="text-h6 text-grey-darken-1 empty-message mb-8">
-        {{ activeTabIndex === 0 ? 'Hiện không có từ nào đã được lưu.' : 'Không có từ vựng nào trong trạng thái này.' }}
+        {{ activeTabIndex === 0 ? 'Hiện không có thẻ nào đã được lưu.' : 'Không có thẻ nào trong trạng thái này.' }}
       </div>
     </div>
 
     <template v-else>
       <!-- Group vocabulary by topic -->
-      <div v-for="(group, topic) in groupedVocabulary" :key="topic" class="mt-4">
+      <div v-for="(group, topic) in groupedVocabulary" :key="topic" class="mt-3">
         <!-- Divider with Topic Information -->
-        <div class="category-divider mt-4 px-4">
+        <div class="category-divider px-3 py-1">
           <div class="d-flex justify-space-between align-center">
-            <div class="category-label text-subtitle-1 font-weight-medium" :class="activeTabIndex === 0 ? 'text-warning' : 'text-grey'">
+            <div class="category-label text-subtitle-2 font-weight-bold" :class="activeTabIndex === 0 ? 'text-primary' : 'text-grey'">
               {{ topic }}
             </div>
-            <div class="count-label text-subtitle-1 font-weight-medium" :class="activeTabIndex === 0 ? 'text-warning' : 'text-grey'">
+            <div class="count-label text-caption rounded-pill pa-1" :class="activeTabIndex === 0 ? 'primary-count' : 'grey-count'">
               {{ group.length }} từ
             </div>
           </div>
-          <v-divider :color="activeTabIndex === 0 ? '#ffcc00' : '#e0e0e0'" class="mt-1"></v-divider>
+          <v-divider :color="activeTabIndex === 0 ? '#3B82F6' : '#e0e0e0'" class="mt-1 custom-divider"></v-divider>
         </div>
 
         <!-- Vocabulary List -->
-        <div class="vocabulary-list px-4 mt-4">
+        <div class="vocabulary-list px-3 mt-2">
           <div
             v-for="item in group"
             :key="item.vocabId"
-            class="vocabulary-item d-flex"
+            class="vocabulary-item d-flex align-center"
           >
-            <v-icon
-              size="24"
-              class="mr-4 mt-1"
+            <v-btn
+              icon
+              variant="text"
+              size="x-small"
+              class="mr-2 audio-btn"
               :color="playingAudioId === item.vocabId ? 'primary' : 'grey'"
               :loading="playingAudioId === item.vocabId"
               @click.stop="playAudio(item)"
             >
-              mdi-volume-high
-            </v-icon>
+              <v-icon>mdi-volume-high</v-icon>
+            </v-btn>
             <div class="vocabulary-content" @click="openFlashcard(item)">
-              <div class="text-h6 font-weight-bold">{{ item.term }}</div>
-              <div class="vocabulary-meaning text-subtitle-1 text-grey">{{ item.meaning }}</div>
+              <div class="text-subtitle-1 font-weight-bold japanese-text">{{ item.term }}</div>
+              <div class="vocabulary-meaning text-caption text-grey">{{ item.meaning }}</div>
             </div>
           </div>
         </div>
@@ -279,10 +282,10 @@ const vocabFlashcardMap = ref<Map<string, any>>(new Map())
 
 // Tab configuration
 const tabs = [
-  { name: 'Mới học', activeColor: '#ffcc00', state: 0 }, // New
-  { name: 'Mới ôn', activeColor: '#ff9800', state: 1 }, // Learning
-  { name: 'Gần nhớ', activeColor: '#ff5722', state: 2 }, // Review
-  { name: 'Đã nhớ', activeColor: '#e64a19', state: 3 } // Relearning/Mature
+  { name: 'Mới học', activeColor: '#6366F1', state: 0 }, // New
+  { name: 'Mới ôn', activeColor: '#F97316', state: 1 }, // Learning
+  { name: 'Gần nhớ', activeColor: '#22C55E', state: 2 }, // Review
+  { name: 'Đã nhớ', activeColor: '#3B82F6', state: 3 } // Relearning/Mature
 ]
 
 const activeTabIndex = ref(0)
@@ -606,77 +609,119 @@ function getTabCount(index: number): number {
 
 <style scoped lang="scss">
 .vocabulary-storage-container {
-  background-color: white;
+  background-color: #f8f9fa;
   min-height: 100vh;
-  padding-top: 8px;
+  padding-top: 4px;
 }
 
-.top-bar {
-  margin-bottom: 8px;
+.header-container {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background-color: white;
+  margin-bottom: 4px;
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
-.data-rate {
-  font-size: 0.7rem;
+.back-btn {
+  border-radius: 50%;
 }
 
-.status-icons {
-  display: flex;
-  align-items: center;
-}
-
-.battery-status {
-  display: flex;
-  align-items: center;
-}
-
-.time-display {
-  font-weight: 500;
+.custom-tabs-container {
+  overflow-x: auto;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  &::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+  }
 }
 
 .status-tab {
-  padding: 10px 20px;
+  padding: 6px 16px;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   border-radius: 50px;
   text-transform: none;
   letter-spacing: 0;
+  min-width: 100px;
 
   &.active-tab {
     font-weight: 600;
+    transform: translateY(-2px);
   }
 }
 
 .tab-count {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   opacity: 0.9;
-  margin-left: 4px;
+  margin-left: 2px;
+}
+
+.primary-count {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.grey-count {
+  background-color: rgba(0, 0, 0, 0.05);
+  color: #616161;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+.custom-divider {
+  height: 2px;
+  border-radius: 2px;
 }
 
 .vocabulary-item {
-  margin-bottom: 16px;
-  padding: 12px 0;
+  margin-bottom: 8px;
+  padding: 10px;
   cursor: pointer;
+  background-color: white;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
   &:hover {
-    background-color: rgba(0, 0, 0, 0.02);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.audio-btn {
+  transition: all 0.2s ease;
+
+  &:hover {
+    transform: scale(1.1);
   }
 }
 
 .vocabulary-meaning {
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .empty-box-image {
   opacity: 0.7;
+  max-width: 120px !important;
+  margin: 30px auto !important;
 }
 
 .empty-message {
   color: #757575;
+  font-size: 0.9rem;
 }
 
 .vocabulary-content {
   cursor: pointer;
   flex-grow: 1;
+}
+
+.japanese-text {
+  font-family: 'Noto Sans JP', sans-serif;
+  letter-spacing: 0.02em;
 }
 
 .flashcard-container {
@@ -737,10 +782,6 @@ function getTabCount(index: number): number {
 
 .example-section:hover {
   background-color: rgba(0, 0, 0, 0.05);
-}
-
-.japanese-text {
-  font-family: 'Noto Sans JP', sans-serif;
 }
 
 .rating-btn {

@@ -1,7 +1,7 @@
 <template>
   <!-- Navigation Header -->
   <v-app-bar flat density="compact" class="px-2 header-bar">
-    <v-app-bar-title>
+    <v-app-bar-title class="logo-container pa-0">
       <router-link to="/" class="app-logo d-flex align-center text-decoration-none">
         <img src="/nihongo_it_logo_larger_text.svg" alt="Nihongo IT" class="logo-image" />
       </router-link>
@@ -156,10 +156,6 @@
     temporary
     location="left"
   >
-    <div class="pa-4">
-      <img src="/nihongo_it_logo.svg" alt="Nihongo IT" class="drawer-logo mb-2" />
-    </div>
-    <v-divider></v-divider>
     <v-list density="compact">
       <v-list-item prepend-icon="mdi-home" title="Trang chủ" to="/" />
       <v-list-item prepend-icon="mdi-book-open-variant" title="Từ vựng" to="/vocabulary/category" />
@@ -216,28 +212,35 @@ export default class AppHeader extends Vue {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
 }
 
-.navigation-links {
-  @media (min-width: 960px) {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+.logo-container {
+  height: auto;
+  display: flex;
+  align-items: center;
+
+  :deep(.v-app-bar-title__content) {
+    width: auto !important;
+    overflow: visible;
+    height: auto !important;
   }
 }
 
 .logo-image {
   height: 56px;
   width: auto;
+  max-height: 56px;
+  display: block;
 
   &:hover {
     opacity: 0.9;
   }
 }
 
-.drawer-logo {
-  width: 100%;
-  max-width: 180px;
-  height: auto;
-  display: block;
+.navigation-links {
+  @media (min-width: 960px) {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 }
 
 .nav-btn {

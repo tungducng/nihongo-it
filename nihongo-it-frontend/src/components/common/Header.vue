@@ -1,8 +1,10 @@
 <template>
   <!-- Navigation Header -->
   <v-app-bar flat density="compact" class="px-2 header-bar">
-    <v-app-bar-title class="text-subtitle-1 font-weight-bold">
-      <router-link to="/" class="app-name text-decoration-none text-inherit">Nihongo IT</router-link>
+    <v-app-bar-title>
+      <router-link to="/" class="app-logo d-flex align-center text-decoration-none">
+        <img src="/nihongo_it_logo_larger_text.svg" alt="Nihongo IT" class="logo-image" />
+      </router-link>
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
@@ -139,6 +141,9 @@
             <v-list-item to="/account/settings" density="compact" prepend-icon="mdi-cog-outline">
               <v-list-item-title class="text-body-2">Cài đặt</v-list-item-title>
             </v-list-item>
+            <v-list-item @click="logout" density="compact" prepend-icon="mdi-logout">
+              <v-list-item-title class="text-body-2">Đăng xuất</v-list-item-title>
+            </v-list-item>
           </v-list>
         </v-card>
       </v-menu>
@@ -151,11 +156,16 @@
     temporary
     location="left"
   >
+    <div class="pa-4">
+      <img src="/nihongo_it_logo.svg" alt="Nihongo IT" class="drawer-logo mb-2" />
+    </div>
+    <v-divider></v-divider>
     <v-list density="compact">
       <v-list-item prepend-icon="mdi-home" title="Trang chủ" to="/" />
       <v-list-item prepend-icon="mdi-book-open-variant" title="Từ vựng" to="/vocabulary/category" />
       <v-list-item prepend-icon="mdi-forum" title="Hội thoại" to="/kaiwa" />
-      <v-list-item prepend-icon="mdi-translate" title="Furigana" to="/furigana" />
+      <v-list-item prepend-icon="mdi-translate" title="Dịch thuật" to="/translations" />
+      <v-list-item prepend-icon="mdi-alphabetical-variant" title="Furigana" to="/furigana" />
       <v-list-item prepend-icon="mdi-chart-line" title="Tiến độ học tập" to="/statistics" />
     </v-list>
   </v-navigation-drawer>
@@ -214,8 +224,20 @@ export default class AppHeader extends Vue {
   }
 }
 
-.text-inherit {
-  color: inherit !important;
+.logo-image {
+  height: 56px;
+  width: auto;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.drawer-logo {
+  width: 100%;
+  max-width: 180px;
+  height: auto;
+  display: block;
 }
 
 .nav-btn {
@@ -223,16 +245,5 @@ export default class AppHeader extends Vue {
   letter-spacing: 0 !important;
   font-weight: 500 !important;
   font-size: 0.9rem !important;
-}
-
-:deep(.app-name) {
-  cursor: pointer;
-
-  a {
-    color: inherit;
-    &:hover {
-      opacity: 0.85;
-    }
-  }
 }
 </style>

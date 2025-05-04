@@ -172,17 +172,15 @@
       </template>
 
       <v-card class="mt-4">
-        <v-card-text>
-          <div class="d-flex justify-space-between align-center">
-            <div class="d-flex align-center">
-              <v-avatar color="#ffcc00" class="mr-3">
-                <v-icon color="white">mdi-book</v-icon>
-              </v-avatar>
-              <span class="text-h6 font-weight-bold">Thu nạp</span>
-            </div>
-            <span class="text-info cursor-pointer" @click="navigateToVocabularyStorage">Xem chi tiết</span>
-          </div>
+        <div class="d-flex justify-space-between align-center">
+          <v-card-title class="text-subtitle-1">
+                  <v-icon start icon="mdi-layers"></v-icon>
+                  Phân bố trạng thái thẻ
+          </v-card-title>
+          <span class="text-info cursor-pointer pr-4 link-underline" @click="navigateToVocabularyStorage">Xem chi tiết</span>
+        </div>
 
+        <v-card-text>
           <div v-if="vocabLoading" class="text-center my-6">
             <v-progress-circular indeterminate color="warning" size="64"></v-progress-circular>
           </div>
@@ -207,28 +205,21 @@
               </div>
             </div>
 
-            <!-- New canvas for state distribution -->
-            <div class="mt-4 text-center">
-              <div class="vocab-progress-container position-relative mx-auto" style="width: 200px; height: 200px;">
-                <canvas ref="vocabStateChart"></canvas>
-              </div>
-            </div>
-
             <div class="d-flex flex-wrap justify-center mt-4 mb-2">
               <div class="legend-item mx-3 d-flex align-center">
-                <div class="legend-color" style="background-color: rgba(255, 236, 179, 0.8);"></div>
+                <div class="legend-color" style="background-color: #6366F1;"></div>
                 <span class="legend-text">mới học ({{ vocabStats.newCount }} từ)</span>
               </div>
               <div class="legend-item mx-3 d-flex align-center">
-                <div class="legend-color" style="background-color: rgba(255, 204, 128, 0.8);"></div>
+                <div class="legend-color" style="background-color: #F97316;"></div>
                 <span class="legend-text">mới ôn ({{ vocabStats.learningCount }} từ)</span>
               </div>
               <div class="legend-item mx-3 d-flex align-center">
-                <div class="legend-color" style="background-color: rgba(255, 167, 38, 0.8);"></div>
+                <div class="legend-color" style="background-color: #22C55E;"></div>
                 <span class="legend-text">gần nhớ ({{ vocabStats.reviewCount }} từ)</span>
               </div>
               <div class="legend-item mx-3 d-flex align-center">
-                <div class="legend-color" style="background-color: rgba(245, 124, 0, 0.8);"></div>
+                <div class="legend-color" style="background-color: #3B82F6;"></div>
                 <span class="legend-text">đã nhớ ({{ vocabStats.matureCount }} từ)</span>
               </div>
             </div>
@@ -283,9 +274,7 @@ const retentionRateChart = ref<HTMLCanvasElement | null>(null);
 const cardsDueChart = ref<HTMLCanvasElement | null>(null);
 const memoryStrengthChart = ref<HTMLCanvasElement | null>(null);
 const vocabDonutChart = ref<HTMLCanvasElement | null>(null);
-const vocabStateChart = ref<HTMLCanvasElement | null>(null);
 let vocabChart: Chart | null = null;
-let donutChart: Chart | null = null;
 
 // Date and time
 const currentTime = ref('21:18');
@@ -662,7 +651,7 @@ const initCharts = () => {
   }
 };
 
-// Simplify and fix the initVocabChart function
+// Simplify the initVocabChart function
 const initVocabChart = () => {
   if (!vocabDonutChart.value) return;
 
@@ -719,10 +708,10 @@ const initVocabChart = () => {
       datasets: [{
         data: [newCount, learningCount, reviewCount, matureCount],
         backgroundColor: [
-          'rgba(255, 236, 179, 0.8)', // Light orange for new
-          'rgba(255, 204, 128, 0.8)', // Medium orange for learning
-          'rgba(255, 167, 38, 0.8)',  // Darker orange for review
-          'rgba(245, 124, 0, 0.8)'    // Deep orange for mastered
+          '#6366F1', // Mới học - Indigo
+          '#F97316', // Mới ôn - Orange
+          '#22C55E', // Gần nhớ - Green
+          '#3B82F6'  // Đã nhớ - Blue
         ],
         borderWidth: 1,
         borderColor: '#fff'
@@ -741,70 +730,6 @@ const initVocabChart = () => {
             label: function(context: any) {
               const label = context.label || '';
               const value = context.raw !== undefined ? Number(context.raw) : 0;
-              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-              return `${label}: ${value} từ (${percentage}%)`;
-            }
-          }
-        }
-      }
-    }
-  });
-};
-
-// Simplify the initializeDonutChart function
-const initializeDonutChart = () => {
-  if (!vocabStateChart.value) return;
-
-  // Destroy existing chart
-  if (donutChart) {
-    donutChart.destroy();
-    donutChart = null;
-  }
-
-  const ctx = vocabStateChart.value.getContext('2d');
-  if (!ctx) return;
-
-  const stateData = calculateStatePercent();
-
-  donutChart = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Mới học', 'Mới ôn', 'Gần nhớ', 'Đã nhớ'],
-      datasets: [{
-        data: [
-          stateData.new,
-          stateData.learning,
-          stateData.reviewing,
-          stateData.relearning
-        ],
-        backgroundColor: [
-          '#6366F1', // Mới học - Indigo
-          '#F97316', // Mới ôn - Orange
-          '#22C55E', // Gần nhớ - Green
-          '#3B82F6'  // Đã nhớ - Blue
-        ],
-        borderWidth: 1,
-        borderColor: '#ffffff'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      cutout: '70%',
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            boxWidth: 12,
-            padding: 8
-          }
-        },
-        tooltip: {
-          callbacks: {
-            label: function(context: any) {
-              const label = context.label || '';
-              const value = context.raw !== undefined ? Number(context.raw) : 0;
-              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
               const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
               return `${label}: ${percentage}%`;
             }
@@ -832,7 +757,6 @@ watch(stats, () => {
   if (stats.value) {
     setTimeout(() => {
       initCharts();
-      initializeDonutChart();
     }, 100);
   }
 }, { deep: true });
@@ -1010,5 +934,11 @@ const calculateRetentionRate = () => {
 
 .cursor-pointer {
   cursor: pointer;
+}
+
+.link-underline {
+  text-decoration: underline;
+  color: #1867c0;
+  font-weight: 500;
 }
 </style>

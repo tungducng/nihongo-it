@@ -144,7 +144,7 @@
         </v-row>
 
         <!-- JLPT Level Distribution -->
-        <v-row class="mt-4" v-if="stats.cardsByJlptLevel && hasJlptCards">
+        <v-row class="mt-4" v-if="stats.cardsByJlptLevel">
           <v-col cols="12">
             <v-card>
               <v-card-title class="text-subtitle-1">
@@ -153,15 +153,15 @@
               </v-card-title>
               <v-card-text>
                 <div class="d-flex flex-wrap justify-center gap-4">
-                  <template v-for="(count, level) in stats.cardsByJlptLevel" :key="level">
+                  <!-- Display all JLPT levels in ascending order from N5 to N1 -->
+                  <template v-for="level in ['N5', 'N4', 'N3', 'N2', 'N1']" :key="level">
                     <div
-                      v-if="String(level) !== 'unknown' && Number(count) > 0"
-                      class="jlpt-level-card"
-                      :class="`jlpt-${String(level).toLowerCase()}`"
+                      class="jlpt-level-card mx-2 my-2"
+                      :class="`jlpt-${level.toLowerCase()}`"
                     >
                       <div class="text-h5 font-weight-bold">{{ level }}</div>
-                      <div class="text-body-1">{{ count }} thẻ</div>
-                      <div class="text-caption">{{ calculateJlptPercent(String(level), Number(count)) }}%</div>
+                      <div class="text-body-1">{{ stats.cardsByJlptLevel[level] || 0 }} thẻ</div>
+                      <div class="text-caption">{{ calculateJlptPercent(level, stats.cardsByJlptLevel[level] || 0) }}%</div>
                     </div>
                   </template>
                 </div>
@@ -169,34 +169,6 @@
             </v-card>
           </v-col>
         </v-row>
-
-        <!-- Card State Distribution -->
-        <v-row class="mt-4">
-          <v-col cols="12">
-            <v-card>
-              <v-card-title class="text-subtitle-1">
-                <v-icon start icon="mdi-layers"></v-icon>
-                Phân bố trạng thái thẻ
-              </v-card-title>
-              <v-card-text>
-                <div class="d-flex flex-wrap justify-center gap-4">
-                  <template v-for="(count, state) in stats.cardsByState" :key="state">
-                    <div
-                      class="state-card"
-                      :class="`state-${state}`"
-                    >
-                      <div class="text-h6 text-capitalize">{{ formatState(String(state)) }}</div>
-                      <div class="text-body-1">{{ count }} thẻ</div>
-                      <div class="text-caption">{{ calculateStatePercent(String(state), Number(count)) }}%</div>
-                    </div>
-                  </template>
-                </div>
-              </v-card-text>
-            </v-card>
-          </v-col>
-        </v-row>
-
-
       </template>
 
       <v-card class="mt-4">
@@ -217,35 +189,47 @@
 
           <template v-else>
             <div class="text-center mt-6">
-              <v-avatar size="140" color="white" class="vocab-progress-circle">
-                <v-avatar size="110" color="#fff3e0">
-                  <div>
-                    <div class="text-h4 text-grey-darken-1">{{ vocabStats.totalVocabulary }}</div>
-                    <div class="text-caption text-grey-darken-1">từ</div>
-                  </div>
-                </v-avatar>
-              </v-avatar>
+              <div class="vocab-progress-container position-relative mx-auto" style="width: 200px; height: 200px;">
+                <canvas ref="vocabDonutChart"></canvas>
+                <div class="vocab-count-overlay">
+                  <div class="text-h4 text-grey-darken-1">{{ vocabStats.totalVocabulary }}</div>
+                  <div class="text-caption text-grey-darken-1">từ</div>
+                </div>
+              </div>
               <div class="text-center mt-2">
                 <div class="text-body-2">thu nạp</div>
-                <div class="text-h5 font-weight-bold">100%</div>
+                <div class="text-h5 font-weight-bold" v-if="stats?.cardsByState && stats.summary?.totalCards">
+                  {{ calculateRetentionRate() }}%
+                </div>
+                <div class="text-h5 font-weight-bold" v-else>
+                  0%
+                </div>
               </div>
             </div>
 
-            <div class="vocab-stats d-flex justify-space-around mt-4">
-              <div class="text-caption">
-                <span class="vocab-indicator new"></span> mới học ({{ vocabStats.newCount }} từ)
-              </div>
-              <div class="text-caption">
-                <span class="vocab-indicator reviewing"></span> mới ôn ({{ vocabStats.learningCount }} từ)
+            <!-- New canvas for state distribution -->
+            <div class="mt-4 text-center">
+              <div class="vocab-progress-container position-relative mx-auto" style="width: 200px; height: 200px;">
+                <canvas ref="vocabStateChart"></canvas>
               </div>
             </div>
 
-            <div class="vocab-stats d-flex justify-space-around mt-2">
-              <div class="text-caption">
-                <span class="vocab-indicator familiar"></span> gần nhớ ({{ vocabStats.reviewCount }} từ)
+            <div class="d-flex flex-wrap justify-center mt-4 mb-2">
+              <div class="legend-item mx-3 d-flex align-center">
+                <div class="legend-color" style="background-color: rgba(255, 236, 179, 0.8);"></div>
+                <span class="legend-text">mới học ({{ vocabStats.newCount }} từ)</span>
               </div>
-              <div class="text-caption">
-                <span class="vocab-indicator mastered"></span> đã nhớ ({{ vocabStats.matureCount }} từ)
+              <div class="legend-item mx-3 d-flex align-center">
+                <div class="legend-color" style="background-color: rgba(255, 204, 128, 0.8);"></div>
+                <span class="legend-text">mới ôn ({{ vocabStats.learningCount }} từ)</span>
+              </div>
+              <div class="legend-item mx-3 d-flex align-center">
+                <div class="legend-color" style="background-color: rgba(255, 167, 38, 0.8);"></div>
+                <span class="legend-text">gần nhớ ({{ vocabStats.reviewCount }} từ)</span>
+              </div>
+              <div class="legend-item mx-3 d-flex align-center">
+                <div class="legend-color" style="background-color: rgba(245, 124, 0, 0.8);"></div>
+                <span class="legend-text">đã nhớ ({{ vocabStats.matureCount }} từ)</span>
               </div>
             </div>
           </template>
@@ -298,6 +282,10 @@ const reviewActivityChart = ref<HTMLCanvasElement | null>(null);
 const retentionRateChart = ref<HTMLCanvasElement | null>(null);
 const cardsDueChart = ref<HTMLCanvasElement | null>(null);
 const memoryStrengthChart = ref<HTMLCanvasElement | null>(null);
+const vocabDonutChart = ref<HTMLCanvasElement | null>(null);
+const vocabStateChart = ref<HTMLCanvasElement | null>(null);
+let vocabChart: Chart | null = null;
+let donutChart: Chart | null = null;
 
 // Date and time
 const currentTime = ref('21:18');
@@ -360,9 +348,30 @@ const calculateJlptPercent = (level: string, count: number) => {
   return Math.round((count / stats.value.summary.totalCards) * 100);
 };
 
-const calculateStatePercent = (state: string, count: number) => {
-  if (!stats.value?.summary?.totalCards || stats.value.summary.totalCards === 0) return 0;
-  return Math.round((count / stats.value.summary.totalCards) * 100);
+const calculateStatePercent = () => {
+  if (!stats.value?.cardsByState || !stats.value?.summary?.totalCards) {
+    return {
+      new: 0,
+      learning: 0,
+      reviewing: 0,
+      relearning: 0,
+      graduated: 0
+    };
+  }
+
+  const newCount = stats.value.cardsByState['new'] || 0;
+  const learningCount = stats.value.cardsByState['learning'] || 0;
+  const reviewCount = stats.value.cardsByState['review'] || 0;
+  const relearningCount = stats.value.cardsByState['relearning'] || 0;
+  const graduatedCount = stats.value.cardsByState['graduated'] || 0;
+
+  return {
+    new: newCount,
+    learning: learningCount,
+    reviewing: reviewCount,
+    relearning: relearningCount,
+    graduated: graduatedCount
+  };
 };
 
 // Format date for charts
@@ -480,7 +489,7 @@ const getReviewActivityChartData = () => {
     datasets: [{
       label: 'Số lượt ôn tập',
       data: reviewCounts,
-      fill: true,
+      fill: false,
       backgroundColor: 'rgba(75, 192, 192, 0.2)',
       borderColor: 'rgba(75, 192, 192, 1)',
       tension: 0.4,
@@ -527,7 +536,7 @@ const getCardsDueChartData = () => {
   };
 };
 
-// Add the getMemoryStrengthChartData function back
+// Fix memoryStrengthChart to prevent errors
 const getMemoryStrengthChartData = () => {
   if (!stats.value?.memoryStrengthDistribution) return null;
 
@@ -557,7 +566,7 @@ const getMemoryStrengthChartData = () => {
   };
 };
 
-// Rename to initCharts to match FlashcardStatsView.vue
+// Simplify the initCharts function to match FlashcardStatsView.vue
 const initCharts = () => {
   if (!stats.value) return;
 
@@ -653,29 +662,204 @@ const initCharts = () => {
   }
 };
 
-// Watch for changes to stats
-watch(stats, () => {
-  if (stats.value) {
-    setTimeout(() => {
-      initCharts();
-    }, 100);
-  }
-}, { deep: true });
+// Simplify and fix the initVocabChart function
+const initVocabChart = () => {
+  if (!vocabDonutChart.value) return;
 
-// Update lifecycle hooks to match FlashcardStatsView.vue pattern
-// but keep the vocabulary stats fetch since that's specific to StatisticsView.vue
-onMounted(async () => {
+  // Destroy previous chart if it exists
+  if (vocabChart) {
+    vocabChart.destroy();
+    vocabChart = null;
+  }
+
+  const ctx = vocabDonutChart.value.getContext('2d');
+  if (!ctx) return;
+
+  // Properly access the vocabStats ref values
+  const newCount = vocabStats.value.newCount || 0;
+  const learningCount = vocabStats.value.learningCount || 0;
+  const reviewCount = vocabStats.value.reviewCount || 0;
+  const matureCount = vocabStats.value.matureCount || 0;
+  const total = newCount + learningCount + reviewCount + matureCount;
+
+  // If no data, show empty chart with more visible placeholder
+  if (total === 0) {
+    vocabChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Không có dữ liệu'],
+        datasets: [{
+          data: [1],
+          backgroundColor: ['rgba(200, 200, 200, 0.5)'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        cutout: '70%',
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            enabled: false
+          }
+        }
+      }
+    });
+    return;
+  }
+
+  // Create chart with real data (simplified)
+  vocabChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Mới học', 'Mới ôn', 'Gần nhớ', 'Đã nhớ'],
+      datasets: [{
+        data: [newCount, learningCount, reviewCount, matureCount],
+        backgroundColor: [
+          'rgba(255, 236, 179, 0.8)', // Light orange for new
+          'rgba(255, 204, 128, 0.8)', // Medium orange for learning
+          'rgba(255, 167, 38, 0.8)',  // Darker orange for review
+          'rgba(245, 124, 0, 0.8)'    // Deep orange for mastered
+        ],
+        borderWidth: 1,
+        borderColor: '#fff'
+      }]
+    },
+    options: {
+      cutout: '70%',
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context: any) {
+              const label = context.label || '';
+              const value = context.raw !== undefined ? Number(context.raw) : 0;
+              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+              return `${label}: ${value} từ (${percentage}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+};
+
+// Simplify the initializeDonutChart function
+const initializeDonutChart = () => {
+  if (!vocabStateChart.value) return;
+
+  // Destroy existing chart
+  if (donutChart) {
+    donutChart.destroy();
+    donutChart = null;
+  }
+
+  const ctx = vocabStateChart.value.getContext('2d');
+  if (!ctx) return;
+
+  const stateData = calculateStatePercent();
+
+  donutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['New', 'Learning', 'Reviewing', 'Relearning', 'Graduated'],
+      datasets: [{
+        data: [
+          stateData.new,
+          stateData.learning,
+          stateData.reviewing,
+          stateData.relearning,
+          stateData.graduated
+        ],
+        backgroundColor: [
+          '#6366F1', // New - Indigo
+          '#F97316', // Learning - Orange
+          '#22C55E', // Reviewing - Green
+          '#EF4444', // Relearning - Red
+          '#3B82F6'  // Graduated - Blue
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: '70%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            boxWidth: 12,
+            padding: 8
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: function(context: any) {
+              const label = context.label || '';
+              const value = context.raw !== undefined ? Number(context.raw) : 0;
+              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+              const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
+              return `${label}: ${percentage}%`;
+            }
+          }
+        }
+      }
+    }
+  });
+};
+
+// Update lifecycle hooks - simplify to match FlashcardStatsView.vue
+onMounted(() => {
   // Format date and start time interval
   formatDisplayDate();
   updateTime();
   setInterval(updateTime, 60000);
 
-  // Fetch statistics data
-  await fetchStatistics();
-
-  // Also fetch vocabulary stats (specific to StatisticsView)
+  // Fetch statistics data and vocabulary stats
+  fetchStatistics();
   fetchVocabularyStats();
 });
+
+// Simplify the watch functions
+watch(stats, () => {
+  if (stats.value) {
+    setTimeout(() => {
+      initCharts();
+      initializeDonutChart();
+    }, 100);
+  }
+}, { deep: true });
+
+watch(vocabStats, () => {
+  if (vocabStats.value) {
+    setTimeout(() => {
+      initVocabChart();
+    }, 100);
+  }
+}, { deep: true });
+
+// Add a new function to calculate overall retention rate
+const calculateRetentionRate = () => {
+  if (!stats.value?.cardsByState || !stats.value?.summary?.totalCards) return 0;
+
+  // Calculate retention based on ratio of review and relearning cards
+  const reviewCount = stats.value.cardsByState['review'] || 0;
+  const relearningCount = stats.value.cardsByState['relearning'] || 0;
+  const totalCards = stats.value.summary.totalCards;
+
+  if (totalCards === 0) return 0;
+
+  // Calculate retention as percentage of cards in mature states
+  return Math.round(((reviewCount + relearningCount) / totalCards) * 100);
+};
 </script>
 
 <style scoped lang="scss">
@@ -710,9 +894,17 @@ onMounted(async () => {
 
 .jlpt-level-card {
   padding: 16px;
-  border-radius: 8px;
-  min-width: 100px;
+  border-radius: 12px;
+  min-width: 120px;
+  width: 140px;
   text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  }
 
   &.jlpt-n1 {
     background-color: rgba(244, 67, 54, 0.1);
@@ -747,10 +939,18 @@ onMounted(async () => {
 
 .state-card {
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   min-width: 120px;
+  width: 140px;
   text-align: center;
   margin: 4px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  }
 
   &.state-new {
     background-color: rgba(33, 150, 243, 0.1);
@@ -778,36 +978,35 @@ onMounted(async () => {
 }
 
 // Original vocabulary card styling
-.vocab-progress-circle {
-  box-shadow: 0 0 0 10px rgba(255, 204, 0, 0.1);
+.vocab-progress-container {
+  width: 180px;
+  height: 180px;
+  margin: 0 auto;
+  position: relative;
 }
 
-.vocab-stats {
-  color: #757575;
+.vocab-count-overlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
 }
 
-.vocab-indicator {
-  display: inline-block;
+.legend-item {
+  margin-bottom: 8px;
+}
+
+.legend-color {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  margin-right: 4px;
+  margin-right: 8px;
 }
 
-.vocab-indicator.new {
-  background-color: #ffe0b2;
-}
-
-.vocab-indicator.reviewing {
-  background-color: #ffcc80;
-}
-
-.vocab-indicator.familiar {
-  background-color: #ffa726;
-}
-
-.vocab-indicator.mastered {
-  background-color: #f57c00;
+.legend-text {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.6);
 }
 
 .cursor-pointer {

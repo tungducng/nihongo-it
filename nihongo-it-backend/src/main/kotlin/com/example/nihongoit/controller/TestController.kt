@@ -68,16 +68,17 @@ class TestController @Autowired constructor(
             reviewCategory = "flashcard"
         )
         
-        // Force send email regardless of user preferences
-        notificationService.sendEmailNotification(
-            user.email,
-            "TEST: Nhắc nhở ôn tập thẻ ghi nhớ",
-            "Bạn có ${dueCards.size} thẻ ghi nhớ đang chờ được ôn tập.\n\nĐây là email thử nghiệm để kiểm tra tính năng gửi thông báo qua email.",
-            actionUrl
+        // Force send HTML email using the specialized flashcard reminder method
+        val baseUrl = "http://localhost:5173"
+        val fullActionUrl = "$baseUrl$actionUrl"
+        notificationService.sendFlashcardReminderEmail(
+            to = user.email,
+            cardCount = dueCards.size,
+            actionUrl = fullActionUrl
         )
         
         return ResponseEntity.ok(mapOf(
-            "message" to "Test email sent successfully",
+            "message" to "Test email sent successfully with new HTML template",
             "emailSentTo" to user.email,
             "cardCount" to dueCards.size,
             "notificationId" to notification.notificationId

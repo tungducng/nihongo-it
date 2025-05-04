@@ -1,11 +1,11 @@
 package com.example.nihongoit.service
 
-import com.example.nihongoit.entity.NotificationType
 import com.example.nihongoit.entity.UserEntity
 import com.example.nihongoit.repository.FlashcardRepository
 import com.example.nihongoit.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -23,12 +23,16 @@ class ScheduledReminderService @Autowired constructor(
     private val notificationService: NotificationService
 ) {
     private val logger = LoggerFactory.getLogger(ScheduledReminderService::class.java)
-
+    /**
+     * Base URL for the frontend application, used for generating action URLs in notifications
+     */
+    @Value("\${app.frontend-url:http://localhost:5173}")
+    private lateinit var baseFrontendUrl: String
     /**
      * Scheduled task that runs every 10 seconds to check for users who need flashcard review reminders
      * Note: This is a testing frequency; change to a longer interval for production use
      */
-    @Scheduled(fixedDelay = 20000) // Run every 10 seconds
+    @Scheduled(fixedDelay = 1 * 60 * 1000) // Run every 10 seconds
     @Transactional
     fun checkAndSendFlashcardReminders() {
         try {
@@ -97,15 +101,32 @@ class ScheduledReminderService @Autowired constructor(
             
             // Send notification
             logger.info("SCHEDULER: Sending reminder to user ${user.userId} for ${dueCards.size} due cards")
-            notificationService.sendNotification(
-                user = user,
-                title = "Thẻ ghi nhớ cần ôn tập",
-                message = "Bạn có ${dueCards.size} thẻ ghi nhớ đang chờ được ôn tập.",
-                type = NotificationType.REVIEW_DUE,
-                actionUrl = actionUrl,
-                reviewCount = dueCards.size,
-                reviewCategory = "flashcard"
-            )
+            
+            // Create in-app notification
+//            notificationService.sendNotification(
+//                user = user,
+//                title = "Thẻ ghi nhớ cần ôn tập",
+//                message = "Bạn có ${dueCards.size} thẻ ghi nhớ đang chờ được ôn tập.",
+//                type = NotificationType.REVIEW_DUE,
+//                actionUrl = actionUrl,
+//                reviewCount = dueCards.size,
+//                reviewCategory = "flashcard"
+//            )
+
+            // If email notification is enabled for this user
+            if (user.notificationPreferences.contains("email")) {
+                // Get the base URL from environment or config
+                val baseUrl = baseFrontendUrl // or fetch from config
+                val fullActionUrl = "$baseUrl$actionUrl"
+                
+                // Send specialized flashcard reminder email
+                notificationService.sendFlashcardReminderEmail(
+                    to = user.email,
+                    cardCount = dueCards.size,
+                    actionUrl = fullActionUrl
+                )
+            }
+
             return true
         } catch (e: Exception) {
             logger.error("SCHEDULER ERROR: Failed to process reminder for user ${user.userId}", e)
@@ -124,7 +145,8 @@ class ScheduledReminderService @Autowired constructor(
             reminderTime, 
             currentTime
         ).let { if (it < 0) it + 24 * 60 else it } // Handle wrapping around midnight
-        
-        return minuteDifference < 15
+
+//        return minuteDifference < 15
+        return minuteDifference < 5
     }
 } 

@@ -5,6 +5,7 @@ import com.example.nihongoit.entity.NotificationType
 import com.example.nihongoit.entity.NotificationChannel
 import com.example.nihongoit.entity.UserEntity
 import com.example.nihongoit.repository.NotificationRepository
+import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
@@ -14,6 +15,9 @@ import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
+import jakarta.mail.MessagingException
+import jakarta.mail.internet.MimeMessage
+import org.springframework.mail.javamail.MimeMessageHelper
 
 /**
  * Service for managing notifications for the Japanese IT vocabulary learning application
@@ -22,16 +26,24 @@ import java.time.LocalDateTime
 @Service
 class NotificationService @Autowired constructor(
     private val notificationRepository: NotificationRepository,
-    private val emailSender: JavaMailSender
+    private val javaMailSender: JavaMailSender
 ) {
     private val logger = LoggerFactory.getLogger(NotificationService::class.java)
 
     @Value("\${spring.mail.username:no.reply.nihongo.it@gmail.com}")
     private lateinit var senderEmail: String
 
-    @Value("\${app.frontend-url:localhost:5173}")
+    @Value("\${app.frontend-url:http://localhost:5173}")
     private lateinit var frontendUrl: String
 
+    // Remove the property initialization here
+    private lateinit var disableNotificationActionUrl: String
+
+    // Initialize in a PostConstruct method
+    @PostConstruct
+    fun init() {
+        disableNotificationActionUrl = "$frontendUrl/account/notifications"
+    }
     /**
      * Send a notification to a user through their preferred channels
      */
@@ -77,39 +89,89 @@ class NotificationService @Autowired constructor(
     }
 
     /**
-     * Sends an email notification to the specified email address
+     * Sends an HTML email notification to the specified email address
      * 
      * @param to The recipient email address
      * @param subject The email subject
      * @param content The email content
      * @param actionUrl Optional URL for action buttons
+     * @param actionText Optional text for the action button (defaults to "Xem ngay")
      */
     @Async
-    fun sendEmailNotification(to: String, subject: String, content: String, actionUrl: String? = null) {
+    fun sendEmailNotification(to: String, subject: String, content: String, actionUrl: String? = null, actionText: String = "Xem ngay") {
         try {
             logger.debug("Sending email to $to - Subject: $subject")
 
-            val message = SimpleMailMessage()
-            message.setFrom(senderEmail)
-            message.setTo(to)
-            message.setSubject(subject)
+            val message = javaMailSender.createMimeMessage()
+            val helper = MimeMessageHelper(message, true, "UTF-8")
+            
+            helper.setFrom(senderEmail)
+            helper.setTo(to)
+            helper.setSubject(subject)
 
-            // Build email content with action URL if provided
-            val emailContent = if (actionUrl != null) {
-                "$content\n\nClick here to view: $actionUrl"
-            } else {
-                content
-            }
+            // Build HTML email content with styling
+            val htmlContent = buildHtmlEmailContent(content, actionUrl, actionText)
+            helper.setText(htmlContent, true)
 
-            message.setText(emailContent)
-            emailSender.send(message)
-
-            logger.debug("Email sent successfully to $to")
+            javaMailSender.send(message)
+            logger.debug("HTML email sent successfully to $to")
         } catch (e: Exception) {
             // In development, just log the error but don't fail
             logger.error("Failed to send email to $to: ${e.message}")
             logger.debug("Email content would have been: $content")
         }
+    }
+
+    /**
+     * Builds a styled HTML email template
+     */
+    private fun buildHtmlEmailContent(content: String, actionUrl: String?, actionText: String): String {
+        val paragraphs = content.split("\n\n").filter { it.isNotEmpty() }
+        val paragraphHtml = paragraphs.joinToString("") { "<p style=\"margin: 0 0 16px 0; line-height: 1.5;\">$it</p>" }
+        
+        val buttonHtml = if (actionUrl != null) {
+            """
+            <div style="text-align: center; margin: 24px 0;">
+                <a href="$actionUrl" 
+                   style="display: inline-block; background-color: #3B82F6; color: white; 
+                          font-weight: bold; padding: 12px 24px; text-decoration: none; 
+                          border-radius: 4px; font-size: 16px;">
+                    $actionText
+                </a>
+            </div>
+            """
+        } else {
+            ""
+        }
+
+        return """
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        </head>
+        <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <div style="text-align: center; margin-bottom: 24px;">
+                    <img src="https://nihongo-it.com/logo.png" alt="Nihongo IT" width="180" style="margin-bottom: 16px;">
+                    <h1 style="color: #3B82F6; margin: 0; font-size: 24px;">Nihongo IT</h1>
+                    <p style="margin: 8px 0 0 0; color: #666;">Học tiếng Nhật chuyên ngành IT</p>
+                </div>
+                
+                <div style="background-color: #f8f9fa; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+                    $paragraphHtml
+                    $buttonHtml
+                </div>
+                
+                <div style="text-align: center; padding-top: 24px; border-top: 1px solid #eee; color: #888; font-size: 14px;">
+                    <p>© 2023 Nihongo IT. Tất cả các quyền được bảo lưu.</p>
+                    <p>Nếu bạn không muốn nhận email này, vui lòng cập nhật <a href="$disableNotificationActionUrl" style="color: #3B82F6;">tùy chọn thông báo</a> của bạn.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
     }
 
     /**
@@ -120,7 +182,6 @@ class NotificationService @Autowired constructor(
      */
     @Async
     fun sendPasswordResetEmail(email: String, resetToken: String) {
-        val frontendUrl = "http://localhost:5173" // Change this to match your frontend URL
         val resetUrl = "$frontendUrl/account/reset-password?token=$resetToken"
         
         sendPasswordResetEmail(email, resetToken, resetUrl)
@@ -161,7 +222,7 @@ class NotificationService @Autowired constructor(
             message.setSubject(subject)
             message.setText(content)
             
-            emailSender.send(message)
+            javaMailSender.send(message)
             
             logger.debug("Password change email sent successfully to $email")
         } catch (e: Exception) {
@@ -179,5 +240,31 @@ class NotificationService @Autowired constructor(
      */
     fun getLastNotificationByType(user: UserEntity, type: NotificationType): NotificationEntity? {
         return notificationRepository.findFirstByUserAndTypeOrderBySentAtDesc(user, type)
+    }
+
+    /**
+     * Sends a flashcard review reminder email with special styling and card count information
+     */
+    @Async
+    fun sendFlashcardReminderEmail(to: String, cardCount: Int, actionUrl: String) {
+        val subject = "Nhắc nhở: $cardCount thẻ ghi nhớ cần ôn tập"
+        
+        // Build more targeted content for flashcard reminders
+        val content = """
+            Xin chào,
+            
+            Bạn có $cardCount thẻ ghi nhớ đang chờ được ôn tập.
+            
+            Nghiên cứu đã chỉ ra rằng việc ôn tập theo lịch trình sẽ giúp bạn ghi nhớ tốt hơn 80% so với học một lần. Hãy dành vài phút để ôn tập ngay bây giờ!
+            
+            Chúc bạn học tập hiệu quả,
+            Đội ngũ Nihongo IT
+        """.trimIndent()
+        
+        // More specific action text for flashcards
+        val actionText = "Ôn tập $cardCount thẻ ngay"
+        
+        // Send the HTML email
+        sendEmailNotification(to, subject, content, actionUrl, actionText)
     }
 }

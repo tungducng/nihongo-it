@@ -29,6 +29,7 @@
             hide-details
             density="compact"
             inset
+            class="mini-switch"
           ></v-switch>
         </div>
 
@@ -43,6 +44,7 @@
             hide-details
             density="compact"
             inset
+            class="mini-switch"
           ></v-switch>
         </div>
       </v-card-text>
@@ -72,6 +74,7 @@
             hide-details
             density="compact"
             inset
+            class="mini-switch"
           ></v-switch>
         </div>
 
@@ -152,6 +155,7 @@
             hide-details
             density="compact"
             inset
+            class="mini-switch"
           ></v-switch>
         </div>
 
@@ -166,6 +170,7 @@
             hide-details
             density="compact"
             inset
+            class="mini-switch"
           ></v-switch>
         </div>
       </v-card-text>
@@ -353,12 +358,21 @@ function updateReminderTime() {
   width: 80px;
 }
 
-:deep(.v-slider .v-slider-track__fill) {
-  background-color: var(--v-theme-primary);
+.mini-switch {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-:deep(.v-slider .v-slider-thumb__surface) {
+:deep(.mini-switch .v-switch__track) {
+  opacity: 0.5;
+  transform: scale(0.75);
+}
+
+:deep(.mini-switch .v-switch__thumb) {
+  transform: scale(0.75);
+}
+
+:deep(.v-slider .v-slider-track__fill) {
   background-color: var(--v-theme-primary);
-  border-color: var(--v-theme-primary);
 }
 </style>

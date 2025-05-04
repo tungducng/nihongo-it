@@ -1,235 +1,197 @@
 <template>
-  <v-container>
-    <v-row>
-      <v-col cols="12">
-        <div class="d-flex align-center">
-          <v-btn icon class="mr-3" @click="$router.go(-1)">
-            <v-icon>mdi-arrow-left</v-icon>
-          </v-btn>
-          <h1 class="text-h4 font-weight-bold">Công cụ dịch thuật</h1>
+  <v-container class="translation-container py-2 px-3">
+    <div class="header d-flex align-center mb-2">
+      <v-btn icon density="compact" class="mr-2" @click="$router.go(-1)">
+        <v-icon>mdi-arrow-left</v-icon>
+      </v-btn>
+      <h1 class="text-h5 font-weight-bold mb-0">Công cụ dịch thuật</h1>
+    </div>
+
+    <v-card class="translation-card">
+      <v-card-title class="translation-card-title py-2 px-3">
+        <v-icon color="amber-darken-2" size="small" class="mr-1">mdi-translate</v-icon>
+        <span class="text-subtitle-1">Dịch Tiếng Nhật - Tiếng Việt</span>
+      </v-card-title>
+
+      <v-card-text class="py-2 px-3">
+        <div class="d-flex align-center flex-wrap">
+          <v-btn-toggle
+            v-model="translationDirection"
+            mandatory
+            color="primary"
+            density="compact"
+            class="mr-3 mb-1"
+          >
+            <v-btn value="vn-to-jp" class="translation-toggle-btn px-2" size="small">
+              <v-icon size="small" class="mr-1">mdi-arrow-right</v-icon>
+              <span class="text-caption">VN → JP</span>
+            </v-btn>
+            <v-btn value="jp-to-vn" class="translation-toggle-btn px-2" size="small">
+              <v-icon size="small" class="mr-1">mdi-arrow-right</v-icon>
+              <span class="text-caption">JP → VN</span>
+            </v-btn>
+          </v-btn-toggle>
+
+          <!-- Model Selection Switch -->
+          <div class="d-flex align-center mb-1">
+            <v-switch
+              v-model="useGpt4"
+              :color="useGpt4 ? 'primary' : 'success'"
+              hide-details
+              density="compact"
+              class="mini-switch mx-1"
+              inset
+            ></v-switch>
+            <span class="text-caption" :class="{'text-primary': useGpt4}">
+              {{ useGpt4 ? 'GPT-4o' : 'GPT-3.5 Turbo' }}
+              <v-tooltip activator="parent" location="end">
+                {{ useGpt4 ? 'Độ chính xác cao hơn cho thuật ngữ chuyên ngành nhưng đắt hơn 20 lần' : 'Bật để có độ chính xác cao hơn' }}
+              </v-tooltip>
+            </span>
+          </div>
         </div>
-      </v-col>
-    </v-row>
 
-    <v-row>
-      <v-col cols="12" md="12" class="mx-auto">
-        <v-card class="translation-card mt-4">
-          <v-card-title class="translation-card-title">
-            <v-icon color="amber-darken-2" class="mr-2">mdi-translate</v-icon>
-            <span>Dịch Tiếng Nhật - Tiếng Việt</span>
-          </v-card-title>
-
-          <v-card-text>
-            <v-row>
-              <v-col cols="12">
-                <v-btn-toggle
-                  v-model="translationDirection"
-                  mandatory
-                  color="primary"
-                  class="mb-4"
-                >
-                  <v-btn value="vn-to-jp" class="translation-toggle-btn">
-                    <v-icon class="mr-1">mdi-arrow-right</v-icon>
-                    Tiếng Việt → Tiếng Nhật
-                  </v-btn>
-                  <v-btn value="jp-to-vn" class="translation-toggle-btn">
-                    <v-icon class="mr-1">mdi-arrow-right</v-icon>
-                    Tiếng Nhật → Tiếng Việt
-                  </v-btn>
-                </v-btn-toggle>
-
-                <!-- Model Selection Switch -->
-                <div class="d-flex align-center mt-2">
-                  <v-switch
-                    v-model="useGpt4"
-                    :color="useGpt4 ? 'primary' : 'success'"
-                    hide-details
-                    density="compact"
-                    class="mx-2"
-                  ></v-switch>
-                  <span class="text-body-2" :class="{'text-primary': useGpt4}">
-                    {{ useGpt4 ? 'GPT-4o' : 'GPT-3.5 Turbo' }}
-                    <v-tooltip activator="parent" location="end">
-                      {{ useGpt4 ? 'Độ chính xác cao hơn cho thuật ngữ chuyên ngành nhưng đắt hơn 20 lần' : 'Bật để có độ chính xác cao hơn' }}
-                    </v-tooltip>
-                  </span>
-                </div>
-              </v-col>
-            </v-row>
-
-            <v-row>
-              <v-col cols="12" md="6">
-                <div class="input-section">
-                  <div class="text-subtitle-1 font-weight-medium mb-2">
-                    {{ translationDirection === 'vn-to-jp' ? 'Tiếng Việt' : 'Tiếng Nhật' }}
-                  </div>
-                  <v-textarea
-                    v-model="sourceText"
-                    :label="translationDirection === 'vn-to-jp' ? 'Nhập văn bản tiếng Việt' : 'Nhập văn bản tiếng Nhật'"
-                    :placeholder="translationDirection === 'vn-to-jp' ? 'Nhập văn bản tiếng Việt tại đây...' : 'Nhập văn bản tiếng Nhật tại đây...'"
-                    variant="outlined"
-                    rows="8"
-                    hide-details
-                    class="source-textarea"
-                  ></v-textarea>
-                  <div class="d-flex justify-space-between align-center mt-2">
-                    <v-btn
-                      size="small"
-                      variant="text"
-                      prepend-icon="mdi-content-copy"
-                      @click="copyText(sourceText)"
-                      :disabled="!sourceText"
-                    >
-                      Sao chép
-                    </v-btn>
-                    <v-btn
-                      size="small"
-                      variant="text"
-                      prepend-icon="mdi-trash-can-outline"
-                      @click="clearSourceText"
-                      :disabled="!sourceText"
-                    >
-                      Xóa
-                    </v-btn>
-                  </div>
-                </div>
-              </v-col>
-
-              <v-col cols="12" md="6">
-                <div class="output-section">
-                  <div class="text-subtitle-1 font-weight-medium mb-2">
-                    {{ translationDirection === 'vn-to-jp' ? 'Tiếng Nhật' : 'Tiếng Việt' }}
-                  </div>
-                  <div
-                    class="translation-output"
-                    :class="{'japanese-text': translationDirection === 'vn-to-jp', 'vietnamese-text': translationDirection === 'jp-to-vn'}"
-                  >
-                    <div v-if="translating" class="translation-loading pa-4">
-                      <v-progress-circular indeterminate color="primary"></v-progress-circular>
-                      <span class="ml-2">Đang dịch...</span>
-                    </div>
-                    <div v-else-if="translationResult" class="translation-text pa-4">
-                      {{ translationResult }}
-                    </div>
-                    <div v-else class="empty-translation pa-4">
-                      Bản dịch sẽ hiển thị ở đây
-                    </div>
-                  </div>
-                  <div class="d-flex justify-space-between align-center mt-2">
-                    <v-btn
-                      size="small"
-                      variant="text"
-                      prepend-icon="mdi-content-copy"
-                      @click="copyText(translationResult)"
-                      :disabled="!translationResult"
-                    >
-                      Sao chép
-                    </v-btn>
-                    <v-btn
-                      size="small"
-                      variant="tonal"
-                      color="primary"
-                      prepend-icon="mdi-volume-high"
-                      @click="speakText(translationResult)"
-                      :disabled="!translationResult"
-                    >
-                      Đọc
-                    </v-btn>
-                  </div>
-                </div>
-              </v-col>
-            </v-row>
-
-            <v-row class="mt-4">
-              <v-col cols="12" class="text-center">
-                <v-btn
-                  color="primary"
-                  size="large"
-                  :loading="translating"
-                  :disabled="!sourceText"
-                  @click="translateText"
-                >
-                  <v-icon left>mdi-translate</v-icon>
-                  Dịch
-                </v-btn>
-              </v-col>
-            </v-row>
-
-            <!-- Translation History -->
-            <v-row v-if="translationHistory.length > 0" class="mt-6">
-              <v-col cols="12">
-                <div class="d-flex justify-space-between align-center mb-3">
-                  <h3 class="text-h6">Lịch sử dịch</h3>
-                  <v-btn
-                    size="small"
-                    variant="text"
-                    color="error"
-                    @click="clearHistory"
-                  >
-                    Xóa lịch sử
-                  </v-btn>
-                </div>
-                <v-list>
-                  <v-list-item
-                    v-for="(item, index) in translationHistory"
-                    :key="index"
-                    @click="loadFromHistory(item)"
-                    class="history-item mb-2"
-                  >
-                    <template v-slot:prepend>
-                      <v-icon :color="item.direction === 'vn-to-jp' ? 'green' : 'blue'">
-                        mdi-translate
-                      </v-icon>
-                    </template>
-                    <v-list-item-title>
-                      <small class="text-caption text-secondary">
-                        {{ item.direction === 'vn-to-jp' ? 'VN → JP' : 'JP → VN' }}
-                        <v-chip size="x-small" class="ml-2" :color="item.isEconomy ? 'success' : 'primary'" variant="outlined">
-                          {{ item.isEconomy ? 'GPT-3.5 Turbo' : 'GPT-4o' }}
-                        </v-chip>
-                      </small>
-                      <span class="ml-2 text-truncate history-text">{{ item.source }}</span>
-                    </v-list-item-title>
-                    <v-list-item-subtitle class="text-truncate history-text">
-                      {{ item.result }}
-                    </v-list-item-subtitle>
-                  </v-list-item>
-                </v-list>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-
-        <!-- Related Vocabulary Suggestions -->
-        <v-card class="mt-6 related-vocab-card">
-          <v-card-title>
-            <v-icon color="primary" class="mr-2">mdi-information-outline</v-icon>
-            Từ vựng liên quan
-          </v-card-title>
-          <v-card-text>
-            <p class="text-body-2 text-medium-emphasis mb-4">
-              Dưới đây là một số thuật ngữ IT thường được sử dụng liên quan đến bản dịch của bạn:
-            </p>
-            <v-row>
-              <v-col
-                v-for="(term, index) in relatedVocabulary"
-                :key="index"
-                cols="12" sm="6" md="4"
+        <div class="d-flex flex-column flex-md-row mt-2">
+          <div class="input-section flex-grow-1 mr-md-2 mb-3 mb-md-0">
+            <div class="text-caption font-weight-medium mb-1">
+              {{ translationDirection === 'vn-to-jp' ? 'Tiếng Việt' : 'Tiếng Nhật' }}
+            </div>
+            <v-textarea
+              v-model="sourceText"
+              :placeholder="translationDirection === 'vn-to-jp' ? 'Nhập văn bản tiếng Việt tại đây...' : 'Nhập văn bản tiếng Nhật tại đây...'"
+              variant="outlined"
+              rows="6"
+              hide-details
+              density="compact"
+              bg-color="grey-lighten-5"
+              class="source-textarea rounded-lg"
+            ></v-textarea>
+            <div class="d-flex justify-end align-center mt-1">
+              <v-btn
+                density="compact"
+                size="x-small"
+                variant="text"
+                class="mr-2"
+                @click="clearSourceText"
+                :disabled="!sourceText"
               >
-                <v-card variant="outlined" class="vocab-item-card">
-                  <v-card-text>
-                    <div class="d-flex flex-column">
-                      <span class="japanese-text text-subtitle-1">{{ term.japanese }}</span>
-                      <span class="text-caption text-medium-emphasis">{{ term.vietnamese }}</span>
-                    </div>
-                  </v-card-text>
-                </v-card>
-              </v-col>
-            </v-row>
-          </v-card-text>
-        </v-card>
-      </v-col>
-    </v-row>
+                <v-icon size="small">mdi-trash-can-outline</v-icon>
+              </v-btn>
+              <v-btn
+                density="compact"
+                size="x-small"
+                variant="text"
+                @click="copyText(sourceText)"
+                :disabled="!sourceText"
+              >
+                <v-icon size="small">mdi-content-copy</v-icon>
+              </v-btn>
+            </div>
+          </div>
+
+          <div class="output-section flex-grow-1 ml-md-2">
+            <div class="text-caption font-weight-medium mb-1">
+              {{ translationDirection === 'vn-to-jp' ? 'Tiếng Nhật' : 'Tiếng Việt' }}
+            </div>
+            <div
+              class="translation-output rounded-lg"
+              :class="{'japanese-text': translationDirection === 'vn-to-jp', 'vietnamese-text': translationDirection === 'jp-to-vn'}"
+            >
+              <div v-if="translating" class="translation-loading pa-2">
+                <v-progress-circular indeterminate color="primary" size="24"></v-progress-circular>
+                <span class="ml-2 text-caption">Đang dịch...</span>
+              </div>
+              <div v-else-if="translationResult" class="translation-text pa-2">
+                {{ translationResult }}
+              </div>
+              <div v-else class="empty-translation pa-2 text-caption">
+                Bản dịch sẽ hiển thị ở đây
+              </div>
+            </div>
+            <div class="d-flex justify-end align-center mt-1">
+              <v-btn
+                density="compact"
+                size="x-small"
+                variant="text"
+                class="mr-2"
+                @click="speakText(translationResult)"
+                :disabled="!translationResult"
+              >
+                <v-icon size="small">mdi-volume-high</v-icon>
+              </v-btn>
+              <v-btn
+                density="compact"
+                size="x-small"
+                variant="text"
+                @click="copyText(translationResult)"
+                :disabled="!translationResult"
+              >
+                <v-icon size="small">mdi-content-copy</v-icon>
+              </v-btn>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center mt-2">
+          <v-btn
+            color="primary"
+            size="small"
+            :loading="translating"
+            :disabled="!sourceText"
+            @click="translateText"
+            rounded
+            class="px-4"
+          >
+            <v-icon size="small" class="mr-1">mdi-translate</v-icon>
+            Dịch
+          </v-btn>
+        </div>
+
+        <!-- Translation History -->
+        <div v-if="translationHistory.length > 0" class="mt-3 pb-0">
+          <div class="d-flex justify-space-between align-center mb-1">
+            <div class="text-subtitle-2">Lịch sử dịch</div>
+            <v-btn
+              density="compact"
+              size="x-small"
+              variant="text"
+              color="error"
+              @click="clearHistory"
+            >
+              <v-icon size="small" class="mr-1">mdi-delete-sweep</v-icon>
+              Xóa
+            </v-btn>
+          </div>
+          <v-list density="compact" class="pa-0 history-list">
+            <v-list-item
+              v-for="(item, index) in translationHistory"
+              :key="index"
+              @click="loadFromHistory(item)"
+              class="history-item mb-1 px-2 py-1"
+              rounded="lg"
+            >
+              <template v-slot:prepend>
+                <v-icon :color="item.direction === 'vn-to-jp' ? 'green' : 'blue'" size="small">
+                  mdi-translate
+                </v-icon>
+              </template>
+              <v-list-item-title class="text-caption d-flex align-center">
+                <span class="text-caption text-medium-emphasis">
+                  {{ item.direction === 'vn-to-jp' ? 'VN → JP' : 'JP → VN' }}
+                </span>
+                <v-chip size="x-small" class="ml-1" :color="item.isEconomy ? 'success' : 'primary'" variant="outlined">
+                  {{ item.isEconomy ? 'GPT-3.5' : 'GPT-4o' }}
+                </v-chip>
+                <span class="ml-2 text-truncate history-text">{{ item.source }}</span>
+              </v-list-item-title>
+              <v-list-item-subtitle class="text-truncate history-text text-caption">
+                {{ item.result }}
+              </v-list-item-subtitle>
+            </v-list-item>
+          </v-list>
+        </div>
+      </v-card-text>
+    </v-card>
   </v-container>
 </template>
 
@@ -449,16 +411,21 @@ export default defineComponent({
 </script>
 
 <style scoped lang="scss">
+.translation-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
 .translation-card {
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
 }
 
 .translation-card-title {
-  background-color: #f8f8f8;
+  background-color: rgba(248, 248, 248, 0.8);
   border-bottom: 1px solid #e0e0e0;
-  font-size: 1.3rem;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .input-section, .output-section {
@@ -469,17 +436,23 @@ export default defineComponent({
 
 .source-textarea {
   flex-grow: 1;
+  font-size: 0.9rem;
+
+  :deep(.v-field__input) {
+    padding: 8px;
+  }
 }
 
 .translation-output {
   border: 1px solid #e0e0e0;
   border-radius: 4px;
-  min-height: 198px; // Match textarea height
-  background-color: #f9f9f9;
+  min-height: 146px; // Match textarea height
+  background-color: rgba(249, 249, 249, 0.5);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-grow: 1;
+  overflow: auto;
 }
 
 .translation-text {
@@ -487,7 +460,8 @@ export default defineComponent({
   height: 100%;
   white-space: pre-wrap;
   word-break: break-word;
-  min-height: 198px;
+  min-height: 146px;
+  font-size: 0.9rem;
 }
 
 .empty-translation {
@@ -496,44 +470,53 @@ export default defineComponent({
 }
 
 .translation-toggle-btn {
-  min-width: 150px;
+  height: 28px;
+  min-width: 80px;
+}
+
+.mini-switch {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+:deep(.mini-switch .v-switch__track) {
+  opacity: 0.5;
+  transform: scale(0.75);
+}
+
+:deep(.mini-switch .v-switch__thumb) {
+  transform: scale(0.75);
 }
 
 .japanese-text {
   font-family: 'Noto Sans JP', sans-serif;
-  line-height: 1.6;
+  line-height: 1.4;
 }
 
 .vietnamese-text {
-  line-height: 1.6;
+  line-height: 1.4;
+}
+
+.history-list {
+  max-height: 300px;
+  overflow-y: auto;
+  background-color: transparent;
 }
 
 .history-item {
-  border-radius: 8px;
-  margin-bottom: 4px;
+  border-radius: 4px;
   transition: background-color 0.2s;
+  border: 1px solid rgba(0,0,0,0.05);
 
   &:hover {
-    background-color: #f5f5f5;
+    background-color: rgba(245, 245, 245, 0.8);
   }
 }
 
 .history-text {
-  max-width: 300px;
-}
-
-.related-vocab-card {
-  border-radius: 12px;
-}
-
-.vocab-item-card {
-  border-radius: 8px;
-  height: 100%;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  max-width: 200px;
+  @media (min-width: 600px) {
+    max-width: 300px;
   }
 }
 </style>

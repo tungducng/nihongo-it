@@ -1,50 +1,61 @@
 <template>
   <!-- Navigation Header -->
-  <v-app-bar flat class="px-3">
-    <v-app-bar-title class="text-h6 font-weight-bold">
+  <v-app-bar flat density="compact" class="px-2 header-bar">
+    <v-app-bar-title class="text-subtitle-1 font-weight-bold">
       <router-link to="/" class="app-name text-decoration-none text-inherit">Nihongo IT</router-link>
     </v-app-bar-title>
 
     <v-spacer></v-spacer>
 
-    <!-- Main Navigation Links -->
-    <div class="d-flex align-center navigation-links">
+    <!-- Main Navigation Links - Desktop -->
+    <div class="d-none d-md-flex align-center navigation-links">
       <v-btn
         variant="text"
         to="/"
-        class="mx-2"
+        density="compact"
+        class="mx-1 nav-btn"
       >
         Trang chủ
       </v-btn>
       <v-btn
         variant="text"
         to="/vocabulary/category"
-        class="mx-2"
+        density="compact"
+        class="mx-1 nav-btn"
       >
         Từ vựng
       </v-btn>
       <v-btn
         variant="text"
         to="/kaiwa"
-        class="mx-2"
+        density="compact"
+        class="mx-1 nav-btn"
       >
         Hội thoại
       </v-btn>
       <v-btn
         variant="text"
         to="/furigana"
-        class="mx-2"
+        density="compact"
+        class="mx-1 nav-btn"
       >
         Furigana
       </v-btn>
       <v-btn
         variant="text"
         to="/statistics"
-        class="mx-2"
+        density="compact"
+        class="mx-1 nav-btn"
       >
-        Tiến độ học tập
+        Tiến độ
       </v-btn>
     </div>
+
+    <!-- Mobile Menu Button -->
+    <v-app-bar-nav-icon
+      class="d-md-none"
+      @click="mobileMenuOpen = !mobileMenuOpen"
+    ></v-app-bar-nav-icon>
 
     <v-spacer></v-spacer>
 
@@ -53,7 +64,8 @@
       <v-btn
         variant="text"
         to="/login"
-        class="mx-1"
+        size="small"
+        class="mx-1 d-none d-sm-flex"
       >
         Đăng nhập
       </v-btn>
@@ -61,7 +73,8 @@
         to="/register"
         color="primary"
         variant="elevated"
-        class="ml-2"
+        size="small"
+        class="ml-1"
       >
         Đăng ký
       </v-btn>
@@ -70,7 +83,7 @@
     <!-- User Avatar & Dropdown (for logged in users) -->
     <div v-else class="d-flex align-center">
       <!-- Notification Button -->
-      <v-btn icon color="blue" variant="text" class="mr-2">
+      <v-btn icon color="blue" variant="text" size="small" class="mr-1 d-none d-sm-flex">
         <v-icon>mdi-bell</v-icon>
       </v-btn>
 
@@ -79,49 +92,68 @@
           <v-btn
             variant="text"
             v-bind="props"
+            size="small"
           >
-            <v-avatar size="40" color="primary" class="mr-2">
+            <v-avatar size="32" color="primary" class="mr-1">
               <v-img
                 v-if="userProfilePicture"
                 :src="userProfilePicture"
                 alt="Ảnh đại diện"
               ></v-img>
-              <span v-else class="text-h6 text-white">{{ avatarInitials }}</span>
+              <span v-else class="text-subtitle-1 text-white">{{ avatarInitials }}</span>
             </v-avatar>
-            <v-icon>mdi-chevron-down</v-icon>
+            <v-icon size="small" class="d-none d-sm-flex">mdi-chevron-down</v-icon>
           </v-btn>
         </template>
 
         <v-card>
           <v-card-text>
-            <div class="d-flex align-center mb-3">
-              <v-avatar size="40" color="primary" class="mr-3">
+            <div class="d-flex align-center mb-2">
+              <v-avatar size="32" color="primary" class="mr-2">
                 <v-img
                   v-if="userProfilePicture"
                   :src="userProfilePicture"
                   alt="Ảnh đại diện"
                 ></v-img>
-                <span v-else class="text-h6 text-white">{{ avatarInitials }}</span>
+                <span v-else class="text-subtitle-1 text-white">{{ avatarInitials }}</span>
               </v-avatar>
               <div>
-                <div class="text-subtitle-1 font-weight-medium">{{ username }}</div>
+                <div class="text-subtitle-2 font-weight-medium">{{ username }}</div>
                 <div class="text-caption text-medium-emphasis">{{ userLevel }}</div>
               </div>
             </div>
           </v-card-text>
           <v-divider></v-divider>
-          <v-list>
-            <v-list-item to="/account/profile" prepend-icon="mdi-account-outline">
-              <v-list-item-title>Hồ sơ cá nhân</v-list-item-title>
+          <v-list density="compact">
+            <v-list-item to="/account/profile" density="compact" prepend-icon="mdi-account-outline">
+              <v-list-item-title class="text-body-2">Hồ sơ cá nhân</v-list-item-title>
             </v-list-item>
-            <v-list-item to="/account/settings" prepend-icon="mdi-cog-outline">
-              <v-list-item-title>Cài đặt</v-list-item-title>
+            <v-list-item to="/account/settings" density="compact" prepend-icon="mdi-cog-outline">
+              <v-list-item-title class="text-body-2">Cài đặt</v-list-item-title>
+            </v-list-item>
+            <v-list-item @click="logout" density="compact" prepend-icon="mdi-logout">
+              <v-list-item-title class="text-body-2">Đăng xuất</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>
       </v-menu>
     </div>
   </v-app-bar>
+
+  <!-- Mobile Navigation Drawer -->
+  <v-navigation-drawer
+    v-model="mobileMenuOpen"
+    temporary
+    location="left"
+  >
+    <v-list density="compact">
+      <v-list-item prepend-icon="mdi-home" title="Trang chủ" to="/" />
+      <v-list-item prepend-icon="mdi-book-open-variant" title="Từ vựng" to="/vocabulary/category" />
+      <v-list-item prepend-icon="mdi-forum" title="Hội thoại" to="/kaiwa" />
+      <v-list-item prepend-icon="mdi-translate" title="Furigana" to="/furigana" />
+      <v-list-item prepend-icon="mdi-chart-line" title="Tiến độ học tập" to="/statistics" />
+    </v-list>
+  </v-navigation-drawer>
 </template>
 
 <script lang="ts">
@@ -134,6 +166,7 @@ import { useAuthStore } from '@/stores'
 })
 export default class AppHeader extends Vue {
   private authStore = useAuthStore()
+  private mobileMenuOpen = false
 
   get isLoggedIn(): boolean {
     return !!this.authStore.user
@@ -148,7 +181,7 @@ export default class AppHeader extends Vue {
   }
 
   get userProfilePicture(): string {
-    return this.authStore.user?.profilePicture || 'N5'
+    return this.authStore.user?.profilePicture || ''
   }
 
   get avatarInitials(): string {
@@ -163,20 +196,38 @@ export default class AppHeader extends Vue {
 }
 </script>
 
-<style lang="sass" scoped>
-.navigation-links
-  position: absolute
-  left: 50%
-  transform: translateX(-50%)
+<style lang="scss" scoped>
+.header-bar {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+}
 
-.text-inherit
-  color: inherit !important
+.navigation-links {
+  @media (min-width: 960px) {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
 
-::v-deep .app-name
-  cursor: pointer
+.text-inherit {
+  color: inherit !important;
+}
 
-  a
-    color: inherit
-    &:hover
-      opacity: 0.85
+.nav-btn {
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 500 !important;
+  font-size: 0.9rem !important;
+}
+
+:deep(.app-name) {
+  cursor: pointer;
+
+  a {
+    color: inherit;
+    &:hover {
+      opacity: 0.85;
+    }
+  }
+}
 </style>

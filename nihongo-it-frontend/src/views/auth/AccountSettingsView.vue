@@ -53,12 +53,6 @@
           </v-avatar>
           <span class="text-subtitle-1 ml-4">Thông báo</span>
           <v-spacer></v-spacer>
-          <v-switch
-            v-model="notificationsEnabled"
-            color="warning"
-            hide-details
-            @click.stop="toggleNotifications"
-          ></v-switch>
         </div>
       </v-card>
 
@@ -92,15 +86,6 @@ const appVersion = ref('1.0.0')
 
 function navigateTo(path: string) {
   router.push(path)
-}
-
-function toggleNotifications(event: Event) {
-  event.stopPropagation()
-  notificationsEnabled.value = !notificationsEnabled.value
-  toast.success(notificationsEnabled.value ? 'Thông báo đã được bật' : 'Thông báo đã được tắt', {
-    position: 'top',
-    duration: 2000
-  })
 }
 
 async function logout() {

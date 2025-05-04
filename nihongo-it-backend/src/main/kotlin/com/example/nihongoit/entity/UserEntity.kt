@@ -5,6 +5,14 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.*
 
+/**
+ * User entity for the Nihongo IT application
+ * 
+ * SCHEMA MIGRATION FOR minCardThreshold:
+ * When applying this change to an existing database, use the following SQL:
+ * 
+ * ALTER TABLE users ADD COLUMN min_card_threshold INT DEFAULT 5;
+ */
 @Entity
 @Table(name = "users")
 data class UserEntity(
@@ -71,6 +79,9 @@ data class UserEntity(
     
     @Column(name = "notification_preferences", columnDefinition = "TEXT")
     val notificationPreferences: String = "email,app", // Comma-separated preferences
+    
+    @Column(name = "min_card_threshold")
+    val minCardThreshold: Int? = 5, // Minimum number of cards before sending notification
     
     @Column(name = "firebase_token")
     val firebaseToken: String? = null,

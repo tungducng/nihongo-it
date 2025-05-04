@@ -169,4 +169,15 @@ class NotificationService @Autowired constructor(
             logger.debug("Email content would have been: $content")
         }
     }
+
+    /**
+     * Get the latest notification of a specific type for a user
+     * 
+     * @param user The user entity
+     * @param type The notification type to search for
+     * @return The latest notification of the specified type, or null if none found
+     */
+    fun getLastNotificationByType(user: UserEntity, type: NotificationType): NotificationEntity? {
+        return notificationRepository.findFirstByUserAndTypeOrderBySentAtDesc(user, type)
+    }
 }

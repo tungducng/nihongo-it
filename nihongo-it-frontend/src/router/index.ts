@@ -43,6 +43,11 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/account/notifications',
+    name: 'notificationSettings',
+    component: () => import('@/views/auth/NotificationSettingsView.vue')
+  },
+  {
     path: '/vocabulary',
     name: 'vocabulary',
     component: () => import('@/views/learning/vocabulary/VocabularyView.vue'),

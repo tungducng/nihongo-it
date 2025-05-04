@@ -62,12 +62,9 @@ data class NotificationEntity(
  * Notification types for Japanese IT vocabulary learning system
  */
 enum class NotificationType {
-    STREAK_REMINDER,      // Daily streak reminder
     STUDY_REMINDER,       // General study reminder
     REVIEW_DUE,           // FSRS-calculated flashcard review due
     SYSTEM_ANNOUNCEMENT,  // System announcements
-    QUIZ_REMINDER,        // Quiz reminder
-    LEECH_ALERT           // Alert for "leech" flashcards that need extra attention
 }
 
 /**
@@ -77,5 +74,4 @@ enum class NotificationChannel {
     APP,    // In-app notification
     EMAIL,  // Email notification
     PUSH,   // Push notification via Firebase
-    SMS     // SMS notification (future support)
 }

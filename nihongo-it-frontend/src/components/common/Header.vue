@@ -35,14 +35,6 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/furigana"
-        density="compact"
-        class="mx-1 nav-btn"
-      >
-        Furigana
-      </v-btn>
-      <v-btn
-        variant="text"
         to="/statistics"
         density="compact"
         class="mx-1 nav-btn"
@@ -56,6 +48,14 @@
         class="mx-1 nav-btn"
       >
         Dịch thuật
+      </v-btn>
+      <v-btn
+        variant="text"
+        to="/furigana"
+        density="compact"
+        class="mx-1 nav-btn"
+      >
+        Furigana
       </v-btn>
     </div>
 

@@ -189,7 +189,7 @@
 
           <template v-else>
             <div class="text-center mt-6">
-              <div class="vocab-progress-container position-relative mx-auto" style="width: 200px; height: 200px;">
+              <div class="vocab-progress-container position-relative mx-auto" style="width: 150px; height: 150px;">
                 <canvas ref="vocabDonutChart"></canvas>
                 <div class="vocab-count-overlay">
                   <div class="text-h4 text-grey-darken-1">{{ vocabStats.totalVocabulary }}</div>
@@ -769,23 +769,22 @@ const initializeDonutChart = () => {
   donutChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['New', 'Learning', 'Reviewing', 'Relearning', 'Graduated'],
+      labels: ['Mới học', 'Mới ôn', 'Gần nhớ', 'Đã nhớ'],
       datasets: [{
         data: [
           stateData.new,
           stateData.learning,
           stateData.reviewing,
-          stateData.relearning,
-          stateData.graduated
+          stateData.relearning
         ],
         backgroundColor: [
-          '#6366F1', // New - Indigo
-          '#F97316', // Learning - Orange
-          '#22C55E', // Reviewing - Green
-          '#EF4444', // Relearning - Red
-          '#3B82F6'  // Graduated - Blue
+          '#6366F1', // Mới học - Indigo
+          '#F97316', // Mới ôn - Orange
+          '#22C55E', // Gần nhớ - Green
+          '#3B82F6'  // Đã nhớ - Blue
         ],
-        borderWidth: 1
+        borderWidth: 1,
+        borderColor: '#ffffff'
       }]
     },
     options: {

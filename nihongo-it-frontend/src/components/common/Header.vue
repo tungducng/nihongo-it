@@ -49,6 +49,14 @@
       >
         Tiến độ
       </v-btn>
+      <v-btn
+        variant="text"
+        to="/translations"
+        density="compact"
+        class="mx-1 nav-btn"
+      >
+        Dịch thuật
+      </v-btn>
     </div>
 
     <!-- Mobile Menu Button -->
@@ -130,9 +138,6 @@
             </v-list-item>
             <v-list-item to="/account/settings" density="compact" prepend-icon="mdi-cog-outline">
               <v-list-item-title class="text-body-2">Cài đặt</v-list-item-title>
-            </v-list-item>
-            <v-list-item @click="logout" density="compact" prepend-icon="mdi-logout">
-              <v-list-item-title class="text-body-2">Đăng xuất</v-list-item-title>
             </v-list-item>
           </v-list>
         </v-card>

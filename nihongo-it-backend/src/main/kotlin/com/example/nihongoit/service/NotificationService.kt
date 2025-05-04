@@ -165,7 +165,6 @@ class NotificationService @Autowired constructor(
                 </div>
                 
                 <div style="text-align: center; padding-top: 24px; border-top: 1px solid #eee; color: #888; font-size: 14px;">
-                    <p>© 2023 Nihongo IT. Tất cả các quyền được bảo lưu.</p>
                     <p>Nếu bạn không muốn nhận email này, vui lòng cập nhật <a href="$disableNotificationActionUrl" style="color: #3B82F6;">tùy chọn thông báo</a> của bạn.</p>
                 </div>
             </div>

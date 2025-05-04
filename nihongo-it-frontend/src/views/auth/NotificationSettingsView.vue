@@ -7,162 +7,183 @@
       <h1 class="text-subtitle-1 font-weight-bold text-center flex-grow-1">Cài đặt thông báo</h1>
     </div>
 
-    <v-card class="mt-4 mb-6">
-      <v-card-title class="text-subtitle-1 pb-0">Thông báo chung</v-card-title>
+    <!-- All settings in one card -->
+    <v-card class="settings-card mt-2">
+      <!-- General Notifications -->
+      <v-card-item class="py-2">
+        <template v-slot:prepend>
+          <v-icon color="primary" size="small">mdi-bell-outline</v-icon>
+        </template>
+        <v-card-title class="text-subtitle-2 px-0">Thông báo chung</v-card-title>
+      </v-card-item>
 
-      <v-card-text>
-        <v-list density="compact">
-          <v-list-item>
-            <template v-slot:prepend>
-              <v-icon color="primary" class="mr-2">mdi-bell</v-icon>
-            </template>
-            <v-list-item-title>Thông báo từ hệ thống</v-list-item-title>
-            <template v-slot:append>
-              <v-switch
-                v-model="preferences.system"
-                color="primary"
-                hide-details
-              ></v-switch>
-            </template>
-          </v-list-item>
+      <v-card-text class="py-0">
+        <div class="d-flex justify-space-between align-center option-row">
+          <div class="d-flex align-center">
+            <v-icon color="primary" size="small" class="mr-2">mdi-bell</v-icon>
+            <span class="text-body-2">Thông báo từ hệ thống</span>
+          </div>
+          <v-switch
+            v-model="preferences.system"
+            color="primary"
+            hide-details
+            density="compact"
+            inset
+          ></v-switch>
+        </div>
 
-          <v-list-item>
-            <template v-slot:prepend>
-              <v-icon color="primary" class="mr-2">mdi-bell-ring</v-icon>
-            </template>
-            <v-list-item-title>Thông báo mục tiêu hàng ngày</v-list-item-title>
-            <template v-slot:append>
-              <v-switch
-                v-model="preferences.dailyGoal"
-                color="primary"
-                hide-details
-              ></v-switch>
-            </template>
-          </v-list-item>
-        </v-list>
+        <div class="d-flex justify-space-between align-center option-row">
+          <div class="d-flex align-center">
+            <v-icon color="primary" size="small" class="mr-2">mdi-bell-ring</v-icon>
+            <span class="text-body-2">Thông báo mục tiêu hàng ngày</span>
+          </div>
+          <v-switch
+            v-model="preferences.dailyGoal"
+            color="primary"
+            hide-details
+            density="compact"
+            inset
+          ></v-switch>
+        </div>
       </v-card-text>
-    </v-card>
 
-    <!-- Flashcard Reminder Settings -->
-    <v-card class="mb-6">
-      <v-card-title class="text-subtitle-1 pb-0 d-flex align-center">
-        <v-icon color="primary" class="mr-2">mdi-card-text</v-icon>
-        Nhắc nhở học thẻ ghi nhớ
-      </v-card-title>
+      <v-divider class="mx-3"></v-divider>
 
-      <v-card-text>
-        <div class="d-flex justify-space-between align-center py-2">
+      <!-- Flashcard Reminders -->
+      <v-card-item class="py-2">
+        <template v-slot:prepend>
+          <v-icon color="primary" size="small">mdi-card-text-outline</v-icon>
+        </template>
+        <v-card-title class="text-subtitle-2 px-0">Nhắc nhở học thẻ ghi nhớ</v-card-title>
+      </v-card-item>
+
+      <v-card-text class="py-0">
+        <div class="d-flex justify-space-between align-center option-row">
           <div>
-            <div class="text-subtitle-2">Bật nhắc nhở ôn tập</div>
-            <div class="text-caption text-medium-emphasis">Nhận thông báo khi có thẻ cần ôn tập</div>
+            <div class="d-flex align-center">
+              <v-icon color="primary" size="small" class="mr-2">mdi-cards</v-icon>
+              <span class="text-body-2">Bật nhắc nhở ôn tập</span>
+            </div>
+            <div class="text-caption text-medium-emphasis ml-8">Nhận thông báo khi có thẻ cần ôn tập</div>
           </div>
           <v-switch
             v-model="preferences.dueCards"
             color="primary"
             hide-details
+            density="compact"
+            inset
           ></v-switch>
         </div>
 
-        <v-divider class="my-2"></v-divider>
-
-        <div class="py-2">
-          <div class="text-subtitle-2 mb-2">Thời gian nhắc nhở</div>
-          <div class="time-selector-container">
-            <div class="d-flex align-center">
-              <v-select
-                v-model="timeHour"
-                :items="hours"
-                variant="outlined"
-                density="compact"
-                class="time-select mr-2"
-                hide-details
-                :disabled="!preferences.dueCards"
-                @update:model-value="updateReminderTime"
-              ></v-select>
-              <span class="mx-1">:</span>
-              <v-select
-                v-model="timeMinute"
-                :items="minutes"
-                variant="outlined"
-                density="compact"
-                class="time-select ml-2"
-                hide-details
-                :disabled="!preferences.dueCards"
-                @update:model-value="updateReminderTime"
-              ></v-select>
-            </div>
+        <!-- Time selector -->
+        <div class="option-row ml-8" :class="{ 'option-disabled': !preferences.dueCards }">
+          <div class="text-body-2 mb-1">Thời gian nhắc nhở</div>
+          <div class="d-flex align-center time-selector">
+            <v-select
+              v-model="timeHour"
+              :items="hours"
+              variant="outlined"
+              density="compact"
+              class="time-select mr-1"
+              hide-details
+              bg-color="white"
+              :disabled="!preferences.dueCards"
+              @update:model-value="updateReminderTime"
+            ></v-select>
+            <span class="mx-1 text-body-2">:</span>
+            <v-select
+              v-model="timeMinute"
+              :items="minutes"
+              variant="outlined"
+              density="compact"
+              class="time-select ml-1"
+              hide-details
+              bg-color="white"
+              :disabled="!preferences.dueCards"
+              @update:model-value="updateReminderTime"
+            ></v-select>
           </div>
-          <div class="text-caption text-medium-emphasis mt-2">
-              Bạn sẽ nhận được thông báo vào {{ timeHour }}:{{ timeMinute }} hàng ngày nếu có thẻ ghi nhớ cần ôn tập
-            </div>
+          <div class="text-caption text-medium-emphasis mt-1">
+            Thông báo hàng ngày vào {{ timeHour }}:{{ timeMinute }}
+          </div>
         </div>
 
-        <v-divider class="my-2"></v-divider>
+        <!-- Card threshold -->
+        <div class="option-row ml-8 mt-3" :class="{ 'option-disabled': !preferences.dueCards }">
+          <div class="text-body-2 mb-1">Số lượng thẻ tối thiểu</div>
+          <div class="d-flex align-center justify-space-between">
+            <div class="text-caption text-medium-emphasis flex-shrink-1 mr-2">Chỉ thông báo khi có trên {{ minCardThreshold }} thẻ</div>
+            <v-slider
+              v-model="minCardThreshold"
+              :min="1"
+              :max="20"
+              :step="1"
+              :ticks="[1, 5, 10, 15, 20]"
+              show-ticks="always"
+              thumb-label
+              :disabled="!preferences.dueCards"
+              density="compact"
+              hide-details
+              class="w-50"
+            ></v-slider>
+          </div>
+        </div>
+      </v-card-text>
 
-        <div class="py-2">
-          <div class="text-subtitle-2 mb-1">Số lượng thẻ tối thiểu</div>
-          <div class="text-caption text-medium-emphasis mb-2">Chỉ nhận thông báo khi có nhiều hơn số lượng thẻ này</div>
-          <v-slider
-            v-model="minCardThreshold"
-            :min="1"
-            :max="20"
-            :step="1"
-            :ticks="{ 1: '1', 5: '5', 10: '10', 15: '15', 20: '20' }"
-            show-ticks="always"
-            thumb-label
-            :disabled="!preferences.dueCards"
-          ></v-slider>
+      <v-divider class="mx-3"></v-divider>
+
+      <!-- Notification Channels -->
+      <v-card-item class="py-2">
+        <template v-slot:prepend>
+          <v-icon color="primary" size="small">mdi-message-settings-outline</v-icon>
+        </template>
+        <v-card-title class="text-subtitle-2 px-0">Kênh thông báo</v-card-title>
+      </v-card-item>
+
+      <v-card-text class="py-0">
+        <div class="d-flex justify-space-between align-center option-row">
+          <div class="d-flex align-center">
+            <v-icon color="primary" size="small" class="mr-2">mdi-bell</v-icon>
+            <span class="text-body-2">Thông báo trong ứng dụng</span>
+          </div>
+          <v-switch
+            v-model="channels.app"
+            color="primary"
+            hide-details
+            density="compact"
+            inset
+          ></v-switch>
+        </div>
+
+        <div class="d-flex justify-space-between align-center option-row">
+          <div class="d-flex align-center">
+            <v-icon color="primary" size="small" class="mr-2">mdi-email</v-icon>
+            <span class="text-body-2">Email</span>
+          </div>
+          <v-switch
+            v-model="channels.email"
+            color="primary"
+            hide-details
+            density="compact"
+            inset
+          ></v-switch>
         </div>
       </v-card-text>
     </v-card>
 
-    <!-- Notification Channels -->
-    <v-card class="mb-4">
-      <v-card-title class="text-subtitle-1 pb-0">Kênh thông báo</v-card-title>
-
-      <v-card-text>
-        <v-list density="compact">
-          <v-list-item>
-            <template v-slot:prepend>
-              <v-icon color="primary" class="mr-2">mdi-bell</v-icon>
-            </template>
-            <v-list-item-title>Thông báo trong ứng dụng</v-list-item-title>
-            <template v-slot:append>
-              <v-switch
-                v-model="channels.app"
-                color="primary"
-                hide-details
-              ></v-switch>
-            </template>
-          </v-list-item>
-
-          <v-list-item>
-            <template v-slot:prepend>
-              <v-icon color="primary" class="mr-2">mdi-email</v-icon>
-            </template>
-            <v-list-item-title>Email</v-list-item-title>
-            <template v-slot:append>
-              <v-switch
-                v-model="channels.email"
-                color="primary"
-                hide-details
-              ></v-switch>
-            </template>
-          </v-list-item>
-        </v-list>
-      </v-card-text>
-    </v-card>
-
-    <v-btn
-      block
-      color="primary"
-      class="mt-4 mb-8"
-      @click="savePreferences"
-      :loading="loading"
-      size="large"
-    >
-      Lưu thay đổi
-    </v-btn>
+    <div class="d-flex justify-center my-4">
+      <v-btn
+        color="primary"
+        class="px-6"
+        @click="savePreferences"
+        :loading="loading"
+        size="small"
+        rounded
+      >
+        <v-icon size="small" class="mr-1">mdi-content-save</v-icon>
+        Lưu thay đổi
+      </v-btn>
+    </div>
   </div>
 </template>
 
@@ -296,13 +317,13 @@ function updateReminderTime() {
 
 <style scoped>
 .notification-settings-container {
-  max-width: 800px;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 8px;
 }
 
 .header-container {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .back-btn {
@@ -311,11 +332,33 @@ function updateReminderTime() {
   border-radius: 50%;
 }
 
-.time-selector-container {
-  max-width: 300px;
+.settings-card {
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
+}
+
+.option-row {
+  padding: 6px 0;
+}
+
+.option-disabled {
+  opacity: 0.7;
+}
+
+.time-selector {
+  max-width: 200px;
 }
 
 .time-select {
-  width: 100px;
+  width: 80px;
+}
+
+:deep(.v-slider .v-slider-track__fill) {
+  background-color: var(--v-theme-primary);
+}
+
+:deep(.v-slider .v-slider-thumb__surface) {
+  background-color: var(--v-theme-primary);
+  border-color: var(--v-theme-primary);
 }
 </style>

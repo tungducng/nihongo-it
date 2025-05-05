@@ -32,5 +32,5 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Contact
 For inquiries or support, feel free to reach out:
-- **Email**: [your-email@example.com](mailto:no.reply.nihongo.it@gmail.com)
+- **Email**: [no.reply.nihongo.it@gmail.com](mailto:no.reply.nihongo.it@gmail.com)
 - **GitHub Issues**: [Submit an Issue](https://github.com/tungducng/nihongo-it/issues)

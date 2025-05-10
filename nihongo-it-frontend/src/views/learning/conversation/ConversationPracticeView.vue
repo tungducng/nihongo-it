@@ -74,9 +74,12 @@
           <div class="chat-container">
             <template v-for="(line, i) in conversation.dialogue" :key="i">
               <div
-                v-if="visibleLineIndices.includes(i)"
+                v-if="visibleLineIndices.includes(i) || dimmedLineIndices.includes(i)"
                 class="message-row mb-2"
-                :class="line.speaker === 'user' ? 'justify-end' : 'justify-start'"
+                :class="[
+                  line.speaker === 'user' ? 'justify-end' : 'justify-start',
+                  dimmedLineIndices.includes(i) ? 'dimmed-line' : ''
+                ]"
                 :data-index="i"
               >
                 <!-- Avatar for Native Speaker -->
@@ -272,6 +275,7 @@ let audioStream: MediaStream | null = null
 
 // Thêm refs và computed mới để quản lý hiệu ứng typing và hiển thị từng dòng
 const visibleLineIndices = ref<number[]>([0]); // Ban đầu chỉ hiển thị dòng đầu tiên
+const dimmedLineIndices = ref<number[]>([]) // Danh sách các dòng hiển thị mờ
 const isTyping = ref(true); // Bắt đầu với hiệu ứng typing
 const typedText = ref('');
 const currentTypeIndex = ref(0);
@@ -561,6 +565,11 @@ const startTypingNextLine = () => {
   if (nextIndex < conversation.value.dialogue.length) {
     const nextLine = conversation.value.dialogue[nextIndex];
 
+    // Nếu dòng tiếp theo đang hiển thị mờ, xóa khỏi danh sách hiển thị mờ
+    if (dimmedLineIndices.value.includes(nextIndex)) {
+      dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextIndex);
+    }
+
     // Thêm dòng vào danh sách hiển thị
     visibleLineIndices.value.push(nextIndex);
 
@@ -597,10 +606,23 @@ const typeTextEffect = (text: string) => {
     console.log("Typing effect completed");
     isTyping.value = false;
 
+    // Tìm dòng tiếp theo để hiển thị mờ nếu là dòng của người bản xứ
+    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+    const nextIndex = lastVisibleIndex + 1;
+
+    if (conversation.value && nextIndex < conversation.value.dialogue.length) {
+      const nextLine = conversation.value.dialogue[nextIndex];
+
+      // Chỉ hiển thị mờ dòng tiếp theo nếu là của người bản xứ
+      if (nextLine.speaker !== 'user') {
+        dimmedLineIndices.value.push(nextIndex);
+        console.log("Showing dimmed next line:", nextIndex);
+      }
+    }
+
     // Chỉ tự động hiển thị dòng tiếp theo nếu dòng hiện tại là người bản xứ
-    const lastIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
-    if (conversation.value && lastIndex < conversation.value.dialogue.length) {
-      const currentLine = conversation.value.dialogue[lastIndex];
+    if (conversation.value && lastVisibleIndex < conversation.value.dialogue.length) {
+      const currentLine = conversation.value.dialogue[lastVisibleIndex];
       if (currentLine.speaker !== 'user') {
         // Nếu dòng hiện tại là người bản xứ, hiển thị dòng tiếp theo
         setTimeout(() => {
@@ -618,6 +640,22 @@ const markAsComplete = (index: number) => {
   // Chỉ hiển thị dòng tiếp theo nếu đây là dòng cuối cùng đang hiển thị
   const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
   if (index === lastVisibleIndex) {
+    // Nếu dòng tiếp theo đã hiển thị mờ, cần bỏ khỏi danh sách dimmedLineIndices
+    const nextIndex = index + 1;
+    if (dimmedLineIndices.value.includes(nextIndex)) {
+      // Xóa khỏi danh sách mờ và thêm vào danh sách hiển thị đầy đủ
+      dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextIndex);
+
+      // Kiểm tra dòng tiếp theo sau dòng của người bản xứ
+      if (conversation.value && nextIndex + 1 < conversation.value.dialogue.length) {
+        const lineAfterNext = conversation.value.dialogue[nextIndex + 1];
+        // Nếu dòng sau đó là của người bản xứ, thêm vào danh sách hiển thị mờ
+        if (lineAfterNext.speaker !== 'user') {
+          dimmedLineIndices.value.push(nextIndex + 1);
+        }
+      }
+    }
+
     // Hiển thị dòng tiếp theo sau khi người dùng hoàn thành
     setTimeout(() => {
       startTypingNextLine();
@@ -706,9 +744,16 @@ onMounted(() => {
 
     // Đặt lại visibleLineIndices
     visibleLineIndices.value = [0];
+    dimmedLineIndices.value = [];
     isTyping.value = true;
     typedText.value = '';
     currentTypeIndex.value = 0;
+
+    // Kiểm tra xem dòng thứ 2 có phải của người bản xứ không để hiển thị mờ
+    if (conversation.value.dialogue.length > 1 && conversation.value.dialogue[1].speaker !== 'user') {
+      dimmedLineIndices.value.push(1);
+      console.log("Initially showing dimmed next line: 1");
+    }
 
     // Bắt đầu hiệu ứng typing cho tin nhắn đầu tiên
     if (conversation.value && conversation.value.dialogue.length > 0) {
@@ -796,6 +841,19 @@ onUnmounted(() => {
     margin-bottom: 8px;
     animation: fadeInUp 0.5s ease-out forwards;
     opacity: 0;
+
+    &.dimmed-line {
+      opacity: 0.6;
+      filter: blur(0.5px);
+      pointer-events: none;
+
+      .message-container {
+        opacity: 0.6;
+        border-left: 3px dashed rgba(0,0,0,0.1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        transform: scale(0.98);
+      }
+    }
   }
 
   @keyframes fadeInUp {

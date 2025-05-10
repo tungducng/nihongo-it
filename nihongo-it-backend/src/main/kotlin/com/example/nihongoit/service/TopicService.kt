@@ -63,6 +63,7 @@ class TopicService(
             name = request.name,
             meaning = request.meaning,
             displayOrder = request.displayOrder,
+            isActive = request.isActive,
             category = category,
             createdAt = LocalDateTime.now(),
             updatedAt = LocalDateTime.now()
@@ -97,7 +98,22 @@ class TopicService(
             name = request.name ?: topic.name,
             meaning = request.meaning ?: topic.meaning,
             displayOrder = request.displayOrder ?: topic.displayOrder,
+            isActive = request.isActive ?: topic.isActive,
             category = category,
+            updatedAt = LocalDateTime.now()
+        )
+
+        val savedTopic = topicRepository.save(updatedTopic)
+        return savedTopic.toDTO()
+    }
+
+    @Transactional
+    fun toggleTopicStatus(topicId: UUID): TopicDTO {
+        val topic = topicRepository.findById(topicId)
+            .orElseThrow { BusinessException("Topic not found with ID: $topicId") }
+
+        val updatedTopic = topic.copy(
+            isActive = !topic.isActive,
             updatedAt = LocalDateTime.now()
         )
 
@@ -121,7 +137,10 @@ class TopicService(
         val category = categoryRepository.findById(categoryId)
             .orElseThrow { BusinessException("Category not found with ID: $categoryId") }
 
-        val topics = topicRepository.findByCategoryAndNameContainingIgnoreCase(category, query)
+        // Tìm kiếm theo cả name và meaning
+        val topics = topicRepository.findByCategoryAndNameContainingIgnoreCaseOrCategoryAndMeaningContainingIgnoreCase(
+            category, query, category, query
+        )
         return topics.map { it.toDTO() }
     }
 }

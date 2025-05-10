@@ -174,3 +174,6 @@ VALUES
   (gen_random_uuid(), '過学習', 'Quá khớp', 'かがくしゅう', '過学習を防ぐ', 'Ngăn chặn quá khớp', 'N1', (SELECT topic_id FROM topic), NOW()),
   (gen_random_uuid(), 'ニューラルネットワーク', 'Mạng nơ-ron', 'にゅーらるねっとわーく', 'ニューラルネットワークを構築する', 'Xây dựng mạng nơ-ron', 'N1', (SELECT topic_id FROM topic), NOW())
 ON CONFLICT DO NOTHING;
+
+-- Add is_active column to topics table if it doesn't exist
+ALTER TABLE topics ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT TRUE;

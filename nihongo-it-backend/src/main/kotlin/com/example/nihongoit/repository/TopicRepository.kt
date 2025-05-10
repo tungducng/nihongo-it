@@ -13,6 +13,11 @@ interface TopicRepository : JpaRepository<TopicEntity, UUID> {
     
     fun findByCategoryAndNameContainingIgnoreCase(category: CategoryEntity, name: String): List<TopicEntity>
     
+    fun findByCategoryAndNameContainingIgnoreCaseOrCategoryAndMeaningContainingIgnoreCase(
+        category1: CategoryEntity, name: String, 
+        category2: CategoryEntity, meaning: String
+    ): List<TopicEntity>
+    
     fun findByCategoryCategoryId(categoryId: UUID): List<TopicEntity>
     
     fun findByName(name: String): List<TopicEntity>

@@ -22,6 +22,7 @@ data class TopicDTO(
     val categoryId: UUID?,
     val categoryName: String?,
     val vocabularyCount: Int? = null,
+    val isActive: Boolean = true,
 
     @JsonProperty("createdAt")
     @JsonDeserialize(using = LocalDateTimeDeserializer::class)
@@ -46,6 +47,7 @@ fun TopicEntity.toDTO(vocabularyCount: Int? = null): TopicDTO {
         categoryId = this.category.categoryId,
         categoryName = this.category.name,
         vocabularyCount = vocabularyCount ?: this.vocabularyItems.size,
+        isActive = this.isActive,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt
     )
@@ -57,6 +59,7 @@ data class CreateTopicRequest(
     val meaning: String,
     val description: String? = null,
     val displayOrder: Int = 0,
+    val isActive: Boolean = true,
     val categoryId: UUID
 )
 
@@ -66,5 +69,6 @@ data class UpdateTopicRequest(
     val meaning: String? = null,
     val description: String? = null,
     val displayOrder: Int? = null,
+    val isActive: Boolean? = null,
     val categoryId: UUID? = null
 ) 

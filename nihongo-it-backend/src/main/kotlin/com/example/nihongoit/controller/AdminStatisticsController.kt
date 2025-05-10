@@ -40,15 +40,16 @@ class AdminStatisticsController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "10") size: Int,
         @RequestParam(defaultValue = "lastActive") sortBy: String,
-        @RequestParam(defaultValue = "desc") sortDir: String
+        @RequestParam(defaultValue = "desc") sortDir: String,
+        @RequestParam(required = false) search: String?
     ): ResponseEntity<Any> {
-        logger.info("Fetching statistics for all users (page: $page, size: $size, sortBy: $sortBy, sortDir: $sortDir)")
+        logger.info("Fetching statistics for all users (page: $page, size: $size, sortBy: $sortBy, sortDir: $sortDir, search: $search)")
         
         try {
             val direction = if (sortDir.equals("desc", ignoreCase = true)) Sort.Direction.DESC else Sort.Direction.ASC
             val pageable = PageRequest.of(page, size, Sort.by(direction, sortBy))
             
-            val usersPage = userService.getAllUsers(pageable)
+            val usersPage = userService.getAllUsers(pageable, search)
             
             // Map users to their statistics
             val userStatsList = usersPage.content.map { user ->
@@ -62,8 +63,7 @@ class AdminStatisticsController(
                     "summary" to flashcardStats["summary"],
                     "cardsByState" to flashcardStats["cardsByState"],
                     "lastActive" to (lastReview?.format(dateTimeFormatter) ?: user.updatedAt?.format(dateTimeFormatter)),
-                    "progress" to calculateUserProgress(flashcardStats),
-                    "currentStreak" to user.streakCount,
+                    "progress" to calculateUserProgress(flashcardStats)
                 )
             }
             

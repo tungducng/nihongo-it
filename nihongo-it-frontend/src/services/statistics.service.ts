@@ -72,7 +72,7 @@ export interface AdminStatisticsOverview {
 
 class StatisticsService {
   // Get statistics for all users (admin only)
-  async getAllUserStatistics(page: number, size: number, sortBy: string, sortDir: string): Promise<{
+  async getAllUserStatistics(page: number, size: number, sortBy: string, sortDir: string, search?: string): Promise<{
     result?: {
       status: string;
       message: string;
@@ -97,7 +97,8 @@ class StatisticsService {
           page,
           size,
           sortBy,
-          sortDir
+          sortDir,
+          search
         }
       });
       return response.data; // Return the raw data that includes both result and data

@@ -340,19 +340,29 @@ class UserService @Autowired constructor(
     /**
      * Get all users with pagination
      */
-    fun getAllUsers(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<UserEntity> {
+    fun getAllUsers(pageable: org.springframework.data.domain.Pageable, search: String? = null): org.springframework.data.domain.Page<UserEntity> {
         // Since lastActive is not a field in UserEntity, we need special handling
         val sortBy = pageable.sort.map { order -> order.property }.firstOrNull() ?: "userId"
         
+        // Get all users, possibly filtered by search term
+        val allUsers = if (search.isNullOrBlank()) {
+            userRepository.findAll()
+        } else {
+            // Filter users by name or email containing the search term
+            val searchTerm = search.lowercase()
+            userRepository.findAll().filter { user ->
+                user.fullName.lowercase().contains(searchTerm) || 
+                user.email.lowercase().contains(searchTerm)
+            }
+        }
+        
         // For non-standard sort fields, we need to fetch all and sort in-memory
         if (sortBy == "lastActive") {
-            val allUsers = userRepository.findAll()
-            
             // Get review dates for all users
-            val userLastActiveDates = allUsers.associateWith { user ->
+            val userLastActiveDates = allUsers.associate { user ->
                 val lastReview = reviewLogRepository.findTopByUserIdOrderByReviewTimestampDesc(user.userId!!)
-                val lastActive = lastReview?.reviewTimestamp ?: user.updatedAt
-                lastActive
+                val lastActive = lastReview?.reviewTimestamp ?: user.updatedAt ?: user.lastLogin ?: user.createdAt
+                user to lastActive
             }
             
             // Sort based on the lastActive dates
@@ -374,9 +384,44 @@ class UserService @Autowired constructor(
                 pageable,
                 sortedUsers.size.toLong()
             )
+        } else if (!search.isNullOrBlank()) {
+            // If we have a search term but not sorting by lastActive, we still need to do in-memory pagination
+            // Sort users based on the standard field
+            val direction = pageable.sort.getOrderFor(sortBy)?.direction ?: org.springframework.data.domain.Sort.Direction.ASC
+            
+            val sortedUsers = when (sortBy) {
+                "userName", "fullName" -> if (direction == org.springframework.data.domain.Sort.Direction.ASC) {
+                    allUsers.sortedBy { it.fullName }
+                } else {
+                    allUsers.sortedByDescending { it.fullName }
+                }
+                "email" -> if (direction == org.springframework.data.domain.Sort.Direction.ASC) {
+                    allUsers.sortedBy { it.email }
+                } else {
+                    allUsers.sortedByDescending { it.email }
+                }
+                "userId" -> if (direction == org.springframework.data.domain.Sort.Direction.ASC) {
+                    allUsers.sortedBy { it.userId }
+                } else {
+                    allUsers.sortedByDescending { it.userId }
+                }
+                else -> allUsers // No specific sorting
+            }
+            
+            // Apply pagination
+            val start = pageable.pageNumber * pageable.pageSize
+            val end = (start + pageable.pageSize).coerceAtMost(sortedUsers.size)
+            val pagedContent = if (start < sortedUsers.size) sortedUsers.subList(start, end) else emptyList()
+            
+            // Create a custom Page implementation
+            return org.springframework.data.domain.PageImpl(
+                pagedContent,
+                pageable,
+                sortedUsers.size.toLong()
+            )
         }
         
-        // For standard fields, use repository's built-in pagination
+        // For standard fields with no search, use repository's built-in pagination
         return userRepository.findAll(pageable)
     }
 } 

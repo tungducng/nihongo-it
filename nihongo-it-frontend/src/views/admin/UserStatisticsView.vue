@@ -17,9 +17,14 @@
               label="Tìm kiếm theo tên hoặc email"
               prepend-inner-icon="mdi-magnify"
               density="compact"
-              hide-details
+              :hide-details="false"
               class="mb-2"
+              placeholder="Nhập tên hoặc email học viên"
+              hint="Tìm kiếm học viên theo tên hoặc địa chỉ email"
+              persistent-hint
+              clearable
               @keyup.enter="fetchUserStatistics"
+              @click:clear="clearSearch"
             ></v-text-field>
           </v-col>
           <v-col cols="12" sm="6" md="3">
@@ -27,9 +32,8 @@
               v-model="sortBy"
               :items="[
                 { title: 'Hoạt động gần đây', value: 'lastActive' },
-                { title: 'Tên', value: 'userName' },
-                { title: 'Tiến độ', value: 'progress' },
-                { title: 'Số thẻ', value: 'totalCards' }
+                { title: 'Tên', value: 'fullName' },
+                { title: 'Chuỗi ngày', value: 'streakCount' }
               ]"
               label="Sắp xếp theo"
               density="compact"
@@ -151,7 +155,7 @@
           <template v-slot:item.streak="{ item }">
             <div class="d-flex align-center">
               <v-icon icon="mdi-fire" color="orange" class="mr-1"></v-icon>
-              {{ item.currentStreak || 0 }}
+              {{ item.summary?.currentStreak || 0 }}
             </div>
           </template>
 
@@ -241,6 +245,12 @@ const goToOverview = () => {
   router.push('/admin/statistics');
 };
 
+// Clear search and refresh the data
+const clearSearch = () => {
+  searchQuery.value = '';
+  fetchUserStatistics();
+};
+
 const viewUserDetails = (userId: string) => {
   router.push(`/admin/statistics/users/${userId}`);
 };
@@ -264,22 +274,26 @@ const fetchUserStatistics = async () => {
     // Convert page from 1-based to 0-based for backend
     const pageIndex = page.value - 1;
 
-    // Fallback to a known field if we get an error with lastActive
-    const currentSortBy = sortBy.value === 'totalCards' ? 'summary.totalCards' : sortBy.value;
+    // Map frontend sorting fields to backend fields
+    let backendSortBy = sortBy.value;
+
+    // No need for complex mapping as we're now using backend field names directly
+    console.log(`Sorting by: ${backendSortBy}, direction: ${sortDirection.value}`);
 
     const response = await statisticsService.getAllUserStatistics(
       pageIndex,
       10, // Page size
-      currentSortBy,
-      sortDirection.value
+      backendSortBy,
+      sortDirection.value,
+      searchQuery.value
     );
 
     // Handle the error response format from the backend
     if (response.result && response.result.status === 'NG') {
       console.error('Backend error:', response.result.message);
       error.value = true;
-      // Fallback to userId sorting if there's an error with lastActive
-      if (sortBy.value === 'lastActive') {
+      // Fallback to userId sorting if there's an error
+      if (sortBy.value !== 'userId') {
         sortBy.value = 'userId';
         fetchUserStatistics();
         return;

@@ -11,10 +11,12 @@ import java.time.temporal.ChronoUnit
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.exp
+import kotlin.math.pow
+import kotlin.math.exp
 
 /**
  * Free Spaced Repetition Scheduler (FSRS) 4.0 implementation
- * Based on the open-spaced-repetition/go-fsrs algorithm
+ * Based on the FSRS v4 algorithm
  */
 @Service
 class FSRSService @Autowired constructor(
@@ -26,7 +28,7 @@ class FSRSService @Autowired constructor(
     private val w = doubleArrayOf(0.4, 0.6, 2.4, 5.8, 4.93, 0.94, 0.86, 0.01, 1.49, 0.14, 0.94, 2.18, 0.05, 0.34, 1.26, 0.29, 2.61)
     private val requestRetention = 0.9  // Target retention rate (90%)
     private val maximumInterval = 36500.0  // Maximum interval (100 years)
-
+    
     /**
      * Rating enum similar to the Go implementation
      */
@@ -82,17 +84,24 @@ class FSRSService @Autowired constructor(
     fun processReview(flashcard: FlashcardEntity, ratingValue: Int): FlashcardEntity {
         val rating = Rating.fromInt(ratingValue)
         logger.info("Processing review with FSRS - Flashcard ID: ${flashcard.flashcardId}, Rating: $rating")
+        logger.info("Previous state: State=${State.fromInt(flashcard.state)}, Difficulty=${flashcard.difficulty}, Stability=${flashcard.stability}, Reps=${flashcard.reps}")
 
         // Calculate elapsed time since due date
         val now = LocalDateTime.now()
         val elapsedDays = if (flashcard.due.isBefore(now)) {
-            ChronoUnit.DAYS.between(flashcard.due, now).toDouble().coerceAtLeast(0.0)
+            ChronoUnit.MILLIS.between(flashcard.due, now).toDouble() / (1000 * 60 * 60 * 24)
         } else {
             0.0
         }
+        
+        // Calculate retrievability before making changes
+        val retrievability = calculateRetrievability(flashcard.stability, elapsedDays)
+        logger.info("Review timing: Elapsed days=$elapsedDays, Retrievability=$retrievability")
 
         // Get scheduling info for this rating
         val info = calculateSchedulingInfo(flashcard, rating, elapsedDays, now)
+        logger.info("New scheduling: State=${State.fromInt(info.state)}, Difficulty=${info.difficulty}, Stability=${info.stability}")
+        logger.info("Next due: ${info.due}, Interval: ${info.scheduledDays} days")
 
         // Update flashcard with new values
         flashcard.difficulty = info.difficulty
@@ -100,9 +109,23 @@ class FSRSService @Autowired constructor(
         flashcard.state = info.state
         flashcard.elapsedDays = info.elapsedDays
         flashcard.scheduledDays = info.scheduledDays
-        flashcard.due = info.due
+        
+        // Xử lý đặc biệt cho Again rating
+        if (rating == Rating.AGAIN) {
+            // Thêm thông tin về khoảng thời gian chính xác (theo phút)
+            val minutesToAdd = 30.0 // Cố định 15 phút thay vì ngẫu nhiên
+            flashcard.due = now.plusMinutes(minutesToAdd.toLong())
+            logger.info("Again rating: Due again in $minutesToAdd minutes")
+            flashcard.lapses += 1
+        } else {
+            // Sử dụng thời gian chính xác thay vì làm tròn đến ngày
+            val intervalInDays = info.scheduledDays
+            val days = intervalInDays.toLong()
+            val hours = ((intervalInDays - days) * 24).toLong()
+            flashcard.due = now.plusDays(days).plusHours(hours)
+        }
+        
         flashcard.reps += 1
-        if (rating == Rating.AGAIN) flashcard.lapses += 1
         flashcard.updatedAt = now
 
         return flashcardRepository.save(flashcard)
@@ -110,14 +133,25 @@ class FSRSService @Autowired constructor(
 
     /**
      * Initialize a new flashcard with default FSRS values
+     * S_0(G) = w_{G-1} (Initial stability for rating G)
+     * D_0(G) = w_4 - (G-3) * w_5 (Initial difficulty for rating G)
+     * 
+     * For new cards:
+     * - Initial stability (G=3, Good): S_0(3) = w_2 = 2.4
+     * - Initial difficulty (G=3, Good): D_0(3) = w_4 = 4.93
      */
     @Transactional
     fun initializeFlashcard(flashcard: FlashcardEntity): FlashcardEntity {
         logger.info("Initializing new flashcard with FSRS")
-
-        // Set default values
-        flashcard.difficulty = 0.3  // Default difficulty
-        flashcard.stability = 0.5   // Default stability
+        
+        // S_0(G) = w_{G-1} for a new card rated as "Good" (G=3)
+        // Initial stability is w_2
+        flashcard.stability = w[2]
+        
+        // D_0(G) = w_4 - (G-3) * w_5 for a new card rated as "Good" (G=3)
+        // Initial difficulty is w_4
+        flashcard.difficulty = w[4]
+        
         flashcard.state = State.NEW.value
         flashcard.elapsedDays = 0.0
         flashcard.scheduledDays = 1.0
@@ -155,8 +189,10 @@ class FSRSService @Autowired constructor(
         // Calculate next interval
         val interval = calculateInterval(newStability, rating, newState)
 
-        // Calculate new due date
-        val due = now.plusDays(interval.toLong())
+        // Calculate new due date with precise time (not just days)
+        val days = interval.toLong()
+        val hours = ((interval - days) * 24).toLong()
+        val due = now.plusDays(days).plusHours(hours)
 
         return SchedulingInfo(
             due = due,
@@ -174,42 +210,62 @@ class FSRSService @Autowired constructor(
      * Calculate interval based on stability and state
      */
     private fun calculateInterval(stability: Double, rating: Rating, state: State): Double {
-        return when {
-            state == State.NEW || state == State.LEARNING || state == State.RELEARNING -> {
-                when (rating) {
-                    Rating.AGAIN -> 0.0  // Same day
-                    Rating.HARD -> 1.0   // Next day
-                    Rating.GOOD -> 3.0   // Three days
-                    Rating.EASY -> 7.0   // One week
-                }
+        // Sử dụng công thức FSRS cho tất cả các trạng thái
+        val interval = nextInterval(stability)
+        logger.info("FSRS calculation - Base interval calculated from stability $stability: $interval days")
+        
+        val finalInterval = when (rating) {
+            Rating.AGAIN -> 0.0  // Same day (handled separately in processReview)
+            Rating.HARD -> max(1.0, interval * 0.7).also { 
+                logger.info("HARD rating - Reducing interval by 30%: $interval days -> $it days") 
             }
-            else -> {
-                // For review state, use FSRS interval calculation
-                val interval = nextInterval(stability)
-                when (rating) {
-                    Rating.AGAIN -> 0.0  // Same day
-                    Rating.HARD -> max(1.0, interval * 0.5)  // Half the interval
-                    Rating.GOOD -> max(1.0, interval)        // Normal interval
-                    Rating.EASY -> max(1.0, interval * 1.5)  // 1.5x the interval
-                }
+            Rating.GOOD -> max(1.0, interval).also { 
+                logger.info("GOOD rating - Using normal interval: $it days") 
+            }
+            Rating.EASY -> max(1.0, interval * 1.3).also { 
+                logger.info("EASY rating - Increasing interval by 30%: $interval days -> $it days")
             }
         }.coerceAtMost(maximumInterval)
+        
+        logger.info("Final interval after adjustments: $finalInterval days")
+        return finalInterval
     }
 
     /**
      * Calculates the next review interval based on stability
+     * I(r,S) = 9 * S * (1/r - 1)
      */
     private fun nextInterval(stability: Double): Double {
-        val interval = stability * 9.0 * (1.0 / requestRetention - 1.0)
-        return min(interval, maximumInterval)
+        val requestRetentionFactor = 1.0 / requestRetention - 1.0
+        logger.info("Request retention: $requestRetention, factor: $requestRetentionFactor")
+        
+        val interval = 9.0 * stability * requestRetentionFactor
+        logger.info("FSRS formula: 9.0 * $stability * $requestRetentionFactor = $interval")
+        
+        val cappedInterval = min(interval, maximumInterval)
+        if (cappedInterval < interval) {
+            logger.info("Interval capped to maximum: $maximumInterval days")
+        }
+        
+        return cappedInterval
     }
 
     /**
      * Updates the difficulty score based on the rating
+     * D'(D,G) = w_7 * D_0(3) + (1-w_7) * (D - w_6 * (G-3))
      */
     private fun updateDifficulty(oldDifficulty: Double, rating: Rating): Double {
-        val newDifficulty = oldDifficulty - w[15] * (rating.value - 3) + w[16]
-        return max(min(newDifficulty, 1.0), 0.1)  // Clamp between 0.1 and 1.0
+        // Initial difficulty for "Good" (G=3): D_0(3) = w_4
+        val initialDifficulty = w[4]
+        
+        // Calculate new difficulty: D' = D - w_6 * (G-3)
+        val difficultyChange = oldDifficulty - w[6] * (rating.value - 3)
+        
+        // Apply mean reversion: D' = w_7 * D_0(3) + (1-w_7) * D'
+        val newDifficulty = w[7] * initialDifficulty + (1 - w[7]) * difficultyChange
+        
+        // Clamp difficulty between 1 and 10
+        return max(min(newDifficulty, 10.0), 1.0)
     }
 
     /**
@@ -217,19 +273,39 @@ class FSRSService @Autowired constructor(
      */
     private fun updateStability(oldStability: Double, difficulty: Double, rating: Rating, retrievability: Double): Double {
         return when (rating) {
-            Rating.AGAIN -> oldStability * w[0]  // Again - significant decrease
-            Rating.HARD -> oldStability * (w[1] + w[2] * (1 - retrievability) * difficulty)  // Hard
-            Rating.GOOD -> oldStability * (w[3] + w[4] * (1 - retrievability) * difficulty)  // Good
-            Rating.EASY -> oldStability * (w[5] + w[6] * (1 - retrievability) * difficulty)  // Easy - significant increase
+            Rating.AGAIN -> {
+                // Stability after forgetting (post-lapse stability):
+                // S_f'(D,S,R) = w_11 * D^(-w_12) * ((S+1)^w_13 - 1) * e^(w_14 * (1-R))
+                val forgettingStability = w[11] * Math.pow(difficulty, -w[12]) * 
+                                        (Math.pow(oldStability + 1, w[13]) - 1) * 
+                                        Math.exp(w[14] * (1 - retrievability))
+                forgettingStability.coerceAtLeast(0.1) // Ensure minimum stability
+            }
+            else -> {
+                // Stability after successful review:
+                // S_r'(D,S,R,G) = S * (e^w_8 * (11-D) * S^(-w_9) * (e^(w_10*(1-R))-1) * w_15(if G=2) * w_16(if G=4) + 1)
+                val hardMultiplier = if (rating == Rating.HARD) w[15] else 1.0
+                val easyMultiplier = if (rating == Rating.EASY) w[16] else 1.0
+                
+                // Implementing the exact formula from the FSRS v4 document
+                val stabilityIncrease = Math.exp(w[8]) * (11.0 - difficulty) * 
+                                       Math.pow(oldStability, -w[9]) * 
+                                       (Math.exp(w[10] * (1.0 - retrievability)) - 1.0) * 
+                                       hardMultiplier * easyMultiplier
+                
+                val newStability = oldStability * (stabilityIncrease + 1.0)
+                newStability.coerceAtLeast(0.1) // Ensure minimum stability
+            }
         }
     }
 
     /**
      * Calculates the retrievability score based on spacing effect
-     * R = e^(-t/S) where t is time elapsed and S is stability
+     * R(t,S) = (1 + t/(9*S))^(-1)
      */
     private fun calculateRetrievability(stability: Double, elapsedDays: Double): Double {
-        return exp(-elapsedDays / stability.coerceAtLeast(1.0))
+        val safeStability = stability.coerceAtLeast(0.1)  // Avoid division by zero
+        return Math.pow(1.0 + elapsedDays / (9.0 * safeStability), -1.0)
     }
 
     /**
@@ -238,15 +314,15 @@ class FSRSService @Autowired constructor(
     private fun determineState(oldState: State, rating: Rating): State {
         return when {
             rating == Rating.AGAIN -> State.RELEARNING  // Any "Again" rating goes to relearning
-            oldState == State.NEW || oldState == State.RELEARNING ->
-                if (rating.value >= 3) State.REVIEW else State.LEARNING  // New/relearning -> review/learning
+            oldState == State.NEW || oldState == State.LEARNING || oldState == State.RELEARNING -> {
+                if (rating.value >= 3) State.REVIEW else State.LEARNING  // Move to review if Good/Easy
+            }
             else -> State.REVIEW  // Stay in review
         }
     }
 
     /**
      * Simulate and get all possible scheduling outcomes for a card
-     * Similar to the Parameters.Repeat method in Go-FSRS
      */
     fun simulateReview(card: FlashcardEntity): Map<Rating, SchedulingInfo> {
         val now = LocalDateTime.now()

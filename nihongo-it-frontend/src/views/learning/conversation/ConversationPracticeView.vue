@@ -60,10 +60,6 @@
         <!-- Conversation Practice Section -->
         <v-card-text class="py-4" style="position: relative; overflow: visible; min-height: 60vh;">
           <div class="d-flex mb-4">
-            <v-chip color="primary" label class="mr-3">
-              <v-icon start>mdi-account</v-icon>
-              Bạn
-            </v-chip>
             <v-chip color="info" label>
               <v-icon start>mdi-robot</v-icon>
               Nihongo IT
@@ -206,7 +202,12 @@
                 <!-- Avatar for User -->
                 <div v-if="line.speaker === 'user'" class="avatar-container ml-2">
                   <v-avatar size="36" color="primary">
-                    <v-icon color="white">mdi-account</v-icon>
+                    <v-img
+                      v-if="userProfilePicture"
+                      :src="userProfilePicture"
+                      alt="Ảnh đại diện của bạn"
+                    ></v-img>
+                    <span v-else class="text-subtitle-2 text-white">{{ avatarInitials }}</span>
                   </v-avatar>
                 </div>
               </div>
@@ -233,6 +234,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
+import { useAuthStore } from '@/stores'
 
 // Define types
 interface ConversationLine {
@@ -255,6 +257,7 @@ interface Conversation {
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const authStore = useAuthStore()
 
 // State
 const loading = ref(false)
@@ -287,6 +290,17 @@ const isConversationCompleted = computed(() => {
   const userLines = conversation.value?.dialogue.filter(line => line.speaker === 'user') || [];
   return userLines.length > 0 &&
     userLines.every((_, index) => lineCompletionStatus.value[getUserLineIndex(index)]);
+})
+
+// Computed cho thông tin user
+const userProfilePicture = computed(() => authStore.user?.profilePicture || null)
+const avatarInitials = computed(() => {
+  if (!authStore.user?.fullName) return 'U'
+  return authStore.user.fullName
+    .split(' ')
+    .map(name => name.charAt(0))
+    .join('')
+    .toUpperCase()
 })
 
 // Methods
@@ -487,10 +501,6 @@ const processRecording = async (index: number) => {
       lineCompletionStatus.value[index] = true;
     }
 
-    toast.success('Đã phân tích phát âm', {
-      position: 'top',
-      duration: 2000
-    });
   } catch (err) {
     console.error('Error processing recording:', err);
     toast.error('Không thể phân tích bản ghi âm', {

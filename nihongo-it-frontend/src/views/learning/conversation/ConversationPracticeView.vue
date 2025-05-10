@@ -58,7 +58,7 @@
         <v-divider></v-divider>
 
         <!-- Conversation Practice Section -->
-        <v-card-text class="py-4">
+        <v-card-text class="py-4" style="position: relative; overflow: visible; min-height: 60vh;">
           <div class="d-flex mb-4">
             <v-chip color="primary" label class="mr-3">
               <v-icon start>mdi-account</v-icon>
@@ -77,6 +77,7 @@
                 v-if="visibleLineIndices.includes(i)"
                 class="message-row mb-2"
                 :class="line.speaker === 'user' ? 'justify-end' : 'justify-start'"
+                :data-index="i"
               >
                 <!-- Avatar for Native Speaker -->
                 <div v-if="line.speaker !== 'user'" class="avatar-container mr-2">
@@ -226,7 +227,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 
@@ -501,6 +502,28 @@ const isLineVisible = (index: number) => {
   return visibleLineIndices.value.includes(index);
 }
 
+// Scroll tới tin nhắn mới nhất
+const scrollToLatestMessage = () => {
+  // Đợi DOM cập nhật
+  setTimeout(() => {
+    // Lấy dòng hội thoại mới nhất
+    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+    if (lastVisibleIndex === undefined) return;
+
+    const lastMessageElement = document.querySelector(`.message-row[data-index="${lastVisibleIndex}"]`);
+    if (lastMessageElement) {
+      // Lấy vị trí của phần tử so với cửa sổ
+      const rect = lastMessageElement.getBoundingClientRect();
+      // Cuộn đến vị trí của phần tử mới nhất
+      window.scrollTo({
+        top: window.scrollY + rect.top - 200, // Hiển thị phần tử với khoảng cách 200px từ đầu trang
+        behavior: 'smooth'
+      });
+      console.log("Scrolled to latest message:", lastVisibleIndex);
+    }
+  }, 200);
+}
+
 // Bắt đầu hiệu ứng typing cho dòng tiếp theo
 const startTypingNextLine = () => {
   if (!conversation.value) return;
@@ -524,9 +547,7 @@ const startTypingNextLine = () => {
     typeTextEffect(nextLine.japanese);
 
     // Scroll xuống dòng mới nhất
-    setTimeout(() => {
-      scrollToLatestMessage();
-    }, 100);
+    scrollToLatestMessage();
   }
 }
 
@@ -557,14 +578,6 @@ const typeTextEffect = (text: string) => {
   }
 }
 
-// Scroll tới tin nhắn mới nhất
-const scrollToLatestMessage = () => {
-  const chatContainer = document.querySelector('.chat-container');
-  if (chatContainer) {
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-  }
-}
-
 // Cập nhật hàm markAsComplete để hiển thị dòng tiếp theo
 const markAsComplete = (index: number) => {
   lineCompletionStatus.value[index] = true;
@@ -575,6 +588,8 @@ const markAsComplete = (index: number) => {
     // Hiển thị dòng tiếp theo sau khi người dùng hoàn thành
     setTimeout(() => {
       startTypingNextLine();
+      // Đảm bảo cuộn xuống sau khi hiển thị dòng mới
+      scrollToLatestMessage();
     }, 1000);
   }
 
@@ -670,6 +685,12 @@ onMounted(() => {
 
     loading.value = false;
   }, 1000);
+
+  // Thêm watcher để tự động cuộn xuống khi có dòng mới
+  watch(visibleLineIndices, () => {
+    console.log("Visible lines changed, scrolling to bottom");
+    scrollToLatestMessage();
+  }, { deep: true });
 })
 
 onUnmounted(() => {
@@ -717,6 +738,10 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     padding: 4px 0;
+    min-height: 50vh;
+    position: relative;
+    overflow: visible;
+    margin-bottom: 16px;
   }
 
   .message-row {

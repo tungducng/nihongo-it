@@ -275,7 +275,8 @@ const visibleLineIndices = ref<number[]>([0]); // Ban đầu chỉ hiển thị 
 const isTyping = ref(true); // Bắt đầu với hiệu ứng typing
 const typedText = ref('');
 const currentTypeIndex = ref(0);
-const typeSpeed = 80; // ms per character - Đã tăng từ 50 lên 80ms
+const typeSpeed = ref(60); // ms per character - tốc độ typing có thể điều chỉnh
+const typingVariation = ref(15); // Thêm biến đổi ngẫu nhiên cho tốc độ typing để tự nhiên hơn
 
 // Computed
 const isConversationCompleted = computed(() => {
@@ -502,7 +503,7 @@ const isLineVisible = (index: number) => {
   return visibleLineIndices.value.includes(index);
 }
 
-// Scroll tới tin nhắn mới nhất
+// Scroll tới tin nhắn mới nhất với hiệu ứng mượt hơn
 const scrollToLatestMessage = () => {
   // Đợi DOM cập nhật
   setTimeout(() => {
@@ -514,14 +515,39 @@ const scrollToLatestMessage = () => {
     if (lastMessageElement) {
       // Lấy vị trí của phần tử so với cửa sổ
       const rect = lastMessageElement.getBoundingClientRect();
-      // Cuộn đến vị trí của phần tử mới nhất
-      window.scrollTo({
-        top: window.scrollY + rect.top - 200, // Hiển thị phần tử với khoảng cách 200px từ đầu trang
-        behavior: 'smooth'
-      });
-      console.log("Scrolled to latest message:", lastVisibleIndex);
+      const targetPosition = window.scrollY + rect.top - 150;
+
+      // Sử dụng animation để cuộn mượt hơn
+      const startPosition = window.scrollY;
+      const distance = targetPosition - startPosition;
+      const duration = 800; // ms
+      let startTime: number;
+
+      // Hàm animation cuộn
+      function animateScroll(timestamp: number) {
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing function để cuộn mượt hơn (easeInOutQuad)
+        const easeInOutQuad = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        const easedProgress = easeInOutQuad(progress);
+
+        window.scrollTo({
+          top: startPosition + distance * easedProgress,
+          behavior: 'auto' // Sử dụng 'auto' vì chúng ta đang tự xử lý animation
+        });
+
+        if (elapsed < duration) {
+          requestAnimationFrame(animateScroll);
+        }
+      }
+
+      // Bắt đầu animation
+      requestAnimationFrame(animateScroll);
+      console.log("Smooth scrolling to latest message:", lastVisibleIndex);
     }
-  }, 200);
+  }, 100);
 }
 
 // Bắt đầu hiệu ứng typing cho dòng tiếp theo
@@ -551,13 +577,22 @@ const startTypingNextLine = () => {
   }
 }
 
-// Hiệu ứng typing cho văn bản
+// Hiệu ứng typing cải tiến cho văn bản
 const typeTextEffect = (text: string) => {
-  console.log("Typing effect running", currentTypeIndex.value, text);
   if (currentTypeIndex.value < text.length) {
     typedText.value = text.substring(0, currentTypeIndex.value + 1);
     currentTypeIndex.value++;
-    setTimeout(() => typeTextEffect(text), typeSpeed);
+
+    // Thêm biến đổi ngẫu nhiên cho tốc độ typing để tự nhiên hơn
+    const randomVariation = Math.random() * typingVariation.value * 2 - typingVariation.value;
+    const adjustedSpeed = Math.max(20, typeSpeed.value + randomVariation);
+
+    // Nếu gặp dấu câu, dừng lâu hơn một chút
+    const currentChar = text[currentTypeIndex.value - 1];
+    const pauseChars = ['。', '、', '!', '?', '！', '？', '…', '.', ','];
+    const extraPause = pauseChars.includes(currentChar) ? 250 : 0;
+
+    setTimeout(() => typeTextEffect(text), adjustedSpeed + extraPause);
   } else {
     console.log("Typing effect completed");
     isTyping.value = false;
@@ -572,8 +607,6 @@ const typeTextEffect = (text: string) => {
           startTypingNextLine();
         }, 1000);
       }
-      // Nếu là dòng của người dùng, không tự động chuyển sang dòng tiếp theo
-      // Người dùng phải ghi âm để tiếp tục
     }
   }
 }
@@ -725,13 +758,25 @@ onUnmounted(() => {
   }
 
   .typing-cursor {
-    animation: blink 1s infinite;
+    animation: blink 0.7s infinite;
     font-weight: bold;
+    display: inline-block;
+    vertical-align: middle;
+    transform-origin: bottom;
+    animation-name: blink, bounce;
+    animation-duration: 0.7s, 3s;
+    animation-iteration-count: infinite, infinite;
+    animation-timing-function: step-end, ease-in-out;
   }
 
   @keyframes blink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
+  }
+
+  @keyframes bounce {
+    0%, 20%, 40%, 60%, 80%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-2px); }
   }
 
   .chat-container {
@@ -749,14 +794,34 @@ onUnmounted(() => {
     align-items: flex-start;
     width: 100%;
     margin-bottom: 8px;
+    animation: fadeInUp 0.5s ease-out forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .message-container {
     position: relative;
     border-radius: 18px;
-    transition: all 0.3s ease;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     min-width: 270px;
+    transform-origin: bottom center;
+    animation: messageScale 0.3s ease-out forwards;
+
+    &:hover {
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+    }
 
     &.user-message {
       background-color: #E3F2FD; // Màu xanh nhạt cho tin nhắn người dùng
@@ -773,6 +838,7 @@ onUnmounted(() => {
     &.completed-message {
       border-left-width: 3px;
       border-left-style: solid;
+      animation: pulse 1s ease-in-out;
     }
 
     &.score-excellent {
@@ -793,6 +859,29 @@ onUnmounted(() => {
 
     &.score-poor {
       border-left-color: #F44336; // error
+    }
+
+    @keyframes messageScale {
+      from {
+        transform: scale(0.95);
+        opacity: 0.8;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 6px rgba(76, 175, 80, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(76, 175, 80, 0);
+      }
     }
   }
 

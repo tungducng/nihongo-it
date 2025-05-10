@@ -58,6 +58,13 @@ interface ReviewLogRepository : JpaRepository<ReviewLogEntity, UUID> {
         startDate: LocalDateTime
     ): List<ReviewLogEntity>
     
+    // Find reviews by user ID and date range (between two timestamps)
+    fun findByUserIdAndReviewTimestampBetween(
+        userId: UUID,
+        startTimestamp: LocalDateTime,
+        endTimestamp: LocalDateTime
+    ): List<ReviewLogEntity>
+    
     // Find most recent review by user ID
     fun findFirstByUserIdOrderByReviewTimestampDesc(userId: UUID): ReviewLogEntity?
     

@@ -31,7 +31,8 @@ class FlashcardService(
     private val userRepository: UserRepository,
     private val vocabularyRepository: VocabularyRepository,
     private val fsrsService: FSRSService,
-    private val userAuthUtil: UserAuthUtil
+    private val userAuthUtil: UserAuthUtil,
+    private val userService: UserService
 ) {
     private val logger = LoggerFactory.getLogger(FlashcardService::class.java)
     
@@ -134,6 +135,8 @@ class FlashcardService(
         
         // Save review log
         reviewLogRepository.save(reviewLog)
+
+        userService.updateUserStreak(userId)
         
         val result = ResponseDto(
             status = ResponseType.OK,

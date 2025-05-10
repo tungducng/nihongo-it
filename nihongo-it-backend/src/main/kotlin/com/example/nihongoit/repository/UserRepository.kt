@@ -40,4 +40,5 @@ interface UserRepository : JpaRepository<UserEntity, UUID> {
     fun countByCreatedAtAfter(sinceDate: LocalDateTime): Long
     fun countByLastLoginAfter(sinceDate: LocalDateTime): Long
     fun findTop10ByOrderByLastLoginDesc(): List<UserEntity>
+    fun findByIsActiveTrue(): List<UserEntity>
 } 

@@ -249,6 +249,57 @@ class UserService @Autowired constructor(
     }
 
     /**
+     * Update user streak count when they complete a study session
+     * This should be called whenever a user completes a review session
+     */
+    @Transactional
+    fun updateUserStreak(userId: UUID) {
+        val user = getUserById(userId)
+        val now = LocalDateTime.now()
+        val today = now.toLocalDate()
+        val yesterday = today.minusDays(1)
+        
+        // Get most recent review log (besides the current one)
+        val previousReview = reviewLogRepository.findTopByUserIdOrderByReviewTimestampDesc(userId)
+        
+        val updatedUser = if (previousReview != null) {
+            val previousReviewDate = previousReview.reviewTimestamp.toLocalDate()
+            
+            when {
+                // If last review was today, don't change the streak
+                previousReviewDate == today -> {
+                    user
+                }
+                // If last review was yesterday, increment the streak
+                previousReviewDate == yesterday -> {
+                    user.copy(
+                        streakCount = user.streakCount + 1,
+                        updatedAt = now
+                    )
+                }
+                // If the user missed a day or more, reset streak to 1
+                else -> {
+                    user.copy(
+                        streakCount = 1,
+                        updatedAt = now
+                    )
+                }
+            }
+        } else {
+            // First time user is reviewing, set streak to 1
+            user.copy(
+                streakCount = 1,
+                updatedAt = now
+            )
+        }
+        
+        if (updatedUser != user) {
+            userRepository.save(updatedUser)
+            logger.info("Updated streak count for user $userId: ${updatedUser.streakCount}")
+        }
+    }
+
+    /**
      * Get all users with pagination
      */
     fun getAllUsers(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<UserEntity> {

@@ -132,6 +132,25 @@ const routes = [
     name: 'flashcardStatistics',
     component: () => import('@/views/study/FlashcardStatsView.vue'),
     meta: { requiresAuth: true } // Statistics require authentication
+  },
+  // Admin routes
+  {
+    path: '/admin',
+    name: 'adminDashboard',
+    component: () => import('@/views/admin/DashboardView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/users',
+    name: 'adminUsers',
+    component: () => import('@/views/admin/UsersView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/users/:id',
+    name: 'adminUserDetail',
+    component: () => import('@/views/admin/UserDetailView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 
@@ -140,11 +159,66 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
+  // Combine authentication and admin role checks to avoid calling next() multiple times
   if (to.meta.requiresAuth) {
-    requireAuth(to, from, next);
+    // If authentication is required, check if user is logged in
+    if (!localStorage.getItem('auth_token')) {
+      return next({ name: 'login', query: { redirect: to.fullPath } });
+    }
+
+    try {
+      // Validate token with the server
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/v1/auth/current`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        }
+      });
+
+      if (!response.ok) {
+        // Token is invalid, clear it and redirect to login
+        localStorage.removeItem('auth_token');
+        return next({
+          name: 'login',
+          query: {
+            redirect: to.fullPath,
+            error: 'Your session has expired. Please log in again.'
+          }
+        });
+      }
+
+      // Parse API response data
+      const responseData = await response.json();
+
+      // If admin role is required, check user role from API response
+      if (to.meta.requiresAdmin) {
+        // Check if user has admin role based on API response
+        if (!responseData || !responseData.userInfo || responseData.userInfo.roleId !== 1) {
+          console.warn('Access denied: Admin role required');
+          return next({ name: 'home' });
+        }
+      }
+
+      // User is authenticated and has required role
+      return next();
+    } catch (error) {
+      console.error('Authentication error:', error);
+      // Error during validation - if network is down, let them proceed
+      if (!window.navigator.onLine) {
+        return next();
+      } else {
+        return next({
+          name: 'login',
+          query: {
+            redirect: to.fullPath,
+            error: 'Authentication error. Please try again.'
+          }
+        });
+      }
+    }
   } else {
-    next();
+    // No authentication required
+    return next();
   }
 });
 

@@ -18,6 +18,7 @@
     "@vueuse/core": "^13.1.0",
     "axios": "^1.6.2",
     "chart.js": "^4.4.9",
+    "date-fns": "^4.1.0",
     "kuroshiro": "^1.2.0",
     "kuroshiro-analyzer-kuromoji": "^1.1.0",
     "pinia": "^3.0.1",

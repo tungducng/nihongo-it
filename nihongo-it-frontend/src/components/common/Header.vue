@@ -141,6 +141,9 @@
             <v-list-item to="/account/settings" density="compact" prepend-icon="mdi-cog-outline">
               <v-list-item-title class="text-body-2">Cài đặt</v-list-item-title>
             </v-list-item>
+            <v-list-item v-if="isAdmin" to="/admin" density="compact" prepend-icon="mdi-shield-account">
+              <v-list-item-title class="text-body-2">Quản trị viên</v-list-item-title>
+            </v-list-item>
             <v-list-item @click="logout" density="compact" prepend-icon="mdi-logout">
               <v-list-item-title class="text-body-2">Đăng xuất</v-list-item-title>
             </v-list-item>
@@ -197,6 +200,10 @@ export default class AppHeader extends Vue {
 
   get avatarInitials(): string {
     return this.username.charAt(0).toUpperCase()
+  }
+
+  get isAdmin(): boolean {
+    return this.authStore.user?.roleId === 1
   }
 
   logout(): void {

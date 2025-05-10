@@ -23,19 +23,17 @@
           <v-btn icon @click="navigateBack" class="mr-1" size="small" color="secondary" variant="text">
             <v-icon>mdi-arrow-left</v-icon>
           </v-btn>
-          <span class="text-subtitle-2 font-weight-medium">Luyện hội thoại</span>
+          <span class="text-subtitle-1 font-weight-medium">Luyện hội thoại</span>
         </div>
 
-        <v-card class="mt-1" variant="flat">
-          <div class="d-flex flex-column flex-sm-row align-sm-center px-2 py-1">
-            <div class="conversation-info">
-              <div class="d-flex align-center">
-                <h2 class="text-body-1 font-weight-bold">{{ conversation.title }}</h2>
-                <v-chip :color="getJlptColor(conversation.jlptLevel)" size="x-small" density="compact" class="ml-2">
-                  {{ conversation.jlptLevel }}
-                </v-chip>
-              </div>
-              <div class="text-caption text-medium-emphasis">
+        <v-card class="" variant="flat">
+          <div class="d-flex align-center px-2 py-1">
+            <div class="conversation-info d-flex align-center">
+              <h2 class="text-body-1 font-weight-bold mb-0 mr-2">{{ conversation.title }}</h2>
+              <v-chip :color="getJlptColor(conversation.jlptLevel)" size="x-small" density="compact">
+                {{ conversation.jlptLevel }}
+              </v-chip>
+              <div class="text-caption text-medium-emphasis ml-3 d-none d-sm-block">
                 {{ conversation.description }}
               </div>
             </div>
@@ -235,6 +233,8 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToast } from 'vue-toast-notification'
 import { useAuthStore } from '@/stores'
+import axios, { AxiosError } from 'axios'
+import authService from '@/services/auth.service'
 
 // Define types
 interface ConversationLine {
@@ -350,12 +350,131 @@ const toggleSave = () => {
   });
 }
 
-const playAudio = (line: ConversationLine) => {
-  // Mock function, in a real app would play the audio from line.audioUrl
-  toast.info(`Đang phát âm thanh mẫu...`, {
-    position: 'top',
-    duration: 2000
-  });
+const playAudio = async (line: ConversationLine) => {
+  if (!line.japanese) return;
+
+  try {
+    // Verify authentication before proceeding
+    const authToken = authService.getToken()
+    if (!authToken) {
+      toast.error('Vui lòng đăng nhập để sử dụng tính năng đọc văn bản', {
+        position: 'top',
+        duration: 4000
+      })
+      // Redirect to login page after a short delay
+      setTimeout(() => {
+        router.push({
+          name: 'login',
+          query: { redirect: router.currentRoute.value.fullPath }
+        })
+      }, 1500)
+      return
+    }
+
+    // Text to speak
+    const textToSpeak = line.japanese;
+
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+    // First check if audio already exists
+    try {
+      const checkResponse = await axios.get(`${apiUrl}/api/v1/tts/check`, {
+        params: {
+          text: textToSpeak,
+          contentType: "conversation"
+        },
+        headers: {
+          'Authorization': `Bearer ${authToken}`
+        }
+      });
+
+      if (checkResponse.data.exists) {
+        // Audio exists, use it
+        console.log('Using existing conversation audio file');
+        toast.info('Đang phát âm thanh...', {
+          position: 'top',
+          duration: 2000
+        });
+
+        // Get the audio file
+        const response = await axios.get(`${apiUrl}/api/v1/tts/audio`, {
+          params: {
+            text: textToSpeak,
+            contentType: "conversation"
+          },
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          },
+          responseType: 'blob'
+        });
+
+        // Play the audio
+        const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+        };
+        await audio.play();
+        return;
+      }
+    } catch (error) {
+      console.log('Error checking for existing audio:', error);
+      // Continue with generating new audio if check fails
+    }
+
+    // No existing audio found, generate new audio
+    // Show loading indicator
+    toast.info('Đang tạo âm thanh...', {
+      position: 'top',
+      duration: 2000
+    })
+
+    // Set speed for conversation sentences
+    const speed = 1.0;
+
+    // Call the TTS API with Authorization header
+    const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
+      headers: {
+        'Content-Type': 'text/plain; charset=UTF-8',
+        'Accept-Language': 'ja-JP',
+        'X-Speech-Speed': speed.toString(),
+        'X-Content-Language': 'ja',
+        'X-Content-Type': 'conversation',
+        'X-Save-Audio': 'true', // Tell backend to save this audio
+        'Authorization': `Bearer ${authToken}`,
+        'Accept': 'audio/mpeg'
+      },
+      responseType: 'arraybuffer'
+    })
+
+    // Convert response to blob and create audio URL
+    const audioBlob = new Blob([response.data], { type: 'audio/mpeg' })
+    const audioUrl = URL.createObjectURL(audioBlob)
+
+    // Play the audio
+    const audio = new Audio(audioUrl)
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl)
+    }
+    await audio.play()
+  } catch (error) {
+    console.error('Error generating or playing TTS audio:', error)
+
+    // Special handling for 401 errors
+    if (error instanceof AxiosError && error.response?.status === 401) {
+      toast.error('Dịch vụ TTS yêu cầu xác thực. Vui lòng đăng nhập lại khi có thể.', {
+        position: 'top',
+        duration: 3000
+      })
+    } else {
+      toast.error(error instanceof Error ? error.message : 'Không thể tạo giọng nói', {
+        position: 'top',
+        duration: 3000
+      })
+    }
+  }
 }
 
 const isUserLine = (line: ConversationLine): boolean => {

@@ -386,7 +386,7 @@ const playAudio = async () => {
       const checkResponse = await axios.get(`${apiUrl}/api/v1/tts/check`, {
         params: {
           text: textToSpeak,
-          isExample: false
+          contentType: 'vocabulary'
         },
         headers: {
           'Authorization': `Bearer ${authToken}`
@@ -405,7 +405,7 @@ const playAudio = async () => {
         const response = await axios.get(`${apiUrl}/api/v1/tts/audio`, {
           params: {
             text: textToSpeak,
-            isExample: false
+            contentType: 'vocabulary'
           },
           headers: {
             'Authorization': `Bearer ${authToken}`
@@ -445,7 +445,7 @@ const playAudio = async () => {
         'Accept-Language': 'ja-JP',
         'X-Speech-Speed': speed.toString(),
         'X-Content-Language': 'ja',
-        'X-Content-Is-Example': 'false',
+        'X-Content-Type': 'vocabulary',
         'X-Save-Audio': 'true', // Tell backend to save this audio
         'Authorization': `Bearer ${authToken}`,
         'Accept': 'audio/mpeg'
@@ -518,7 +518,7 @@ const playExampleAudio = async () => {
       const checkResponse = await axios.get(`${apiUrl}/api/v1/tts/check`, {
         params: {
           text: textToSpeak,
-          isExample: true
+          contentType: 'example'
         },
         headers: {
           'Authorization': `Bearer ${authToken}`
@@ -537,7 +537,7 @@ const playExampleAudio = async () => {
         const response = await axios.get(`${apiUrl}/api/v1/tts/audio`, {
           params: {
             text: textToSpeak,
-            isExample: true
+            contentType: 'example'
           },
           headers: {
             'Authorization': `Bearer ${authToken}`
@@ -577,7 +577,7 @@ const playExampleAudio = async () => {
         'Accept-Language': 'ja-JP',
         'X-Speech-Speed': speed.toString(),
         'X-Content-Language': 'ja',
-        'X-Content-Is-Example': 'true',
+        'X-Content-Type': 'example',
         'X-Save-Audio': 'true', // Tell backend to save this audio
         'Authorization': `Bearer ${authToken}`,
         'Accept': 'audio/mpeg'

@@ -52,9 +52,12 @@ src/main/resources/application-*.yml
 src/main/resources/samples/
 *.mp3
 *.wav
-src/main/resources/examples/
+src/main/resources/example/
 *.mp3
 *.wav
 src/main/resources/vocabulary/
+*.mp3
+*.wav
+src/main/resources/conversation/
 *.mp3
 *.wav

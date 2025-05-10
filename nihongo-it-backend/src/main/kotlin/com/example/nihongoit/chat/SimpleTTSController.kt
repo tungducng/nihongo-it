@@ -19,15 +19,22 @@ class TTSController(
     private val openAiAudioSpeechModel: OpenAiAudioSpeechModel,
 ) {
     private val logger = LoggerFactory.getLogger(TTSController::class.java)
+    
+    // Định nghĩa các loại nội dung hợp lệ
+    private val validContentTypes = setOf("vocabulary", "example", "conversation")
+    private val defaultContentType = "vocabulary"
 
     @PostMapping("/generate")
     fun generateSpeech(
         @RequestBody text: String,
         @RequestHeader(value = "X-Speech-Speed", required = false, defaultValue = "1.0") speedStr: String,
-        @RequestHeader(value = "X-Content-Is-Example", required = false, defaultValue = "false") isExample: Boolean,
+        @RequestHeader(value = "X-Content-Type", required = false, defaultValue = "vocabulary") contentType: String,
         @RequestHeader(value = "X-Content-Language", required = false, defaultValue = "ja") language: String,
         @RequestHeader(value = "X-Save-Audio", required = false, defaultValue = "false") saveAudio: Boolean
     ): ResponseEntity<ByteArray> {
+        // Validate content type
+        val validatedContentType = if (contentType in validContentTypes) contentType else defaultContentType
+        
         // Parse speed parameter
         val speed = try {
             speedStr.toFloat().coerceIn(0.25f, 4.0f) // Ensure speed is within OpenAI's allowed range
@@ -39,21 +46,32 @@ class TTSController(
         // It cannot be directly used with the SpeechPrompt or OpenAiAudioSpeechModel
         // Instead, we'll incorporate Japanese language handling directly in the prompt
         
-        // Add Japanese language hints based on content type
-//        val japaneseText = if (isExample) {
-//            """
-//            # 日本語の例文を発音してください。
-//            # 自然な抑揚で、明確に発音してください。
+        // Add Japanese language hints based on content type - commented out for now
+//        val japaneseText = when (validatedContentType) {
+//            "example", "conversation" -> {
+//                """
+//                # 日本語の例文や会話を発音してください。
+//                # 自然な抑揚で、明確に発音してください。
 //
-//            $text
-//            """.trimIndent()
-//        } else {
-//            """
-//            # 日本語の単語を発音してください。
-//            # ゆっくりと、明確に発音してください。
+//                $text
+//                """.trimIndent()
+//            }
+//            "grammar" -> {
+//                """
+//                # 日本語の文法例を発音してください。
+//                # 教育的な、明確な発音でお願いします。
 //
-//            $text
-//            """.trimIndent()
+//                $text
+//                """.trimIndent() 
+//            }
+//            else -> {
+//                """
+//                # 日本語の単語を発音してください。
+//                # ゆっくりと、明確に発音してください。
+//
+//                $text
+//                """.trimIndent()
+//            }
 //        }
 
         val options = OpenAiAudioSpeechOptions.builder()
@@ -76,27 +94,24 @@ class TTSController(
 
         // Save the audio file if requested
         if (saveAudio) {
-            saveGeneratedAudio(text, response.result.output, isExample)
+            saveGeneratedAudio(text, response.result.output, validatedContentType)
         }
 
         return ResponseEntity.ok()
             .contentType(MediaType("audio", "mpeg"))
             .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=speech.mp3")
             .header("X-Content-Language", language)
+            .header("X-Content-Type", validatedContentType)
             .body(response.result.output)
     }
     
     /**
-     * Saves the generated audio to the appropriate directory
+     * Saves the generated audio to the appropriate directory based on content type
      */
-    private fun saveGeneratedAudio(text: String, audioData: ByteArray, isExample: Boolean) {
+    private fun saveGeneratedAudio(text: String, audioData: ByteArray, contentType: String) {
         try {
-            // Determine the appropriate directory based on whether it's an example or vocabulary
-            val directoryPath = if (isExample) {
-                Paths.get("src", "main", "resources", "examples")
-            } else {
-                Paths.get("src", "main", "resources", "vocabulary")
-            }
+            // Determine the appropriate directory based on content type
+            val directoryPath = Paths.get("src", "main", "resources", contentType)
             
             // Create directory if it doesn't exist
             if (!Files.exists(directoryPath)) {
@@ -122,13 +137,12 @@ class TTSController(
     @GetMapping("/check")
     fun checkAudioExists(
         @RequestParam text: String,
-        @RequestParam(required = false, defaultValue = "false") isExample: Boolean
+        @RequestParam(required = false, defaultValue = "vocabulary") contentType: String
     ): ResponseEntity<Map<String, Boolean>> {
-        val directoryPath = if (isExample) {
-            Paths.get("src", "main", "resources", "examples")
-        } else {
-            Paths.get("src", "main", "resources", "vocabulary")
-        }
+        // Validate content type
+        val validatedContentType = if (contentType in validContentTypes) contentType else defaultContentType
+        
+        val directoryPath = Paths.get("src", "main", "resources", validatedContentType)
         
         // Use exact text as filename
         val audioFile = directoryPath.resolve("$text.mp3")
@@ -144,13 +158,12 @@ class TTSController(
     @GetMapping("/audio")
     fun getAudio(
         @RequestParam text: String,
-        @RequestParam(required = false, defaultValue = "false") isExample: Boolean
+        @RequestParam(required = false, defaultValue = "vocabulary") contentType: String
     ): ResponseEntity<ByteArray> {
-        val directoryPath = if (isExample) {
-            Paths.get("src", "main", "resources", "examples")
-        } else {
-            Paths.get("src", "main", "resources", "vocabulary")
-        }
+        // Validate content type
+        val validatedContentType = if (contentType in validContentTypes) contentType else defaultContentType
+        
+        val directoryPath = Paths.get("src", "main", "resources", validatedContentType)
         
         // Use exact text as filename
         val audioFile = directoryPath.resolve("$text.mp3")

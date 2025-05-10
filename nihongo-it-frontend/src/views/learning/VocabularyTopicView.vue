@@ -677,7 +677,7 @@ async function playAudio(item: VocabularyItem, isExample = false) {
           'Accept-Language': 'ja-JP',
           'X-Speech-Speed': speed.toString(),
           'X-Content-Language': 'ja',
-          'X-Content-Is-Example': isExample.toString(),
+          'X-Content-Type': isExample ? 'example' : 'vocabulary',
           'Authorization': `Bearer ${authToken}`,
           'Accept': 'audio/mpeg'
         },

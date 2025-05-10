@@ -742,7 +742,7 @@ export default class VocabularyView extends Vue {
             'Accept-Language': 'ja-JP',
             'X-Speech-Speed': speed.toString(),
             'X-Content-Language': 'ja',
-            'X-Content-Is-Example': isExampleSentence.toString(),
+            'X-Content-Type': isExampleSentence ? 'example' : 'vocabulary',
             'Authorization': `Bearer ${authToken}`,
             'Accept': 'audio/mpeg'
           },

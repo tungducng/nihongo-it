@@ -465,8 +465,21 @@ const processRecording = async (index: number) => {
     const randomScore = Math.floor(Math.random() * 51) + 50;
     pronunciationScores.value[index] = randomScore;
 
-    // Automatically mark as complete regardless of score
-    markAsComplete(index);
+    // Chỉ đánh dấu hoàn thành nếu là dòng cuối cùng đang hiển thị
+    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+    console.log("Processing recording:", {
+      index,
+      lastVisibleIndex,
+      isLastVisible: index === lastVisibleIndex,
+      visibleIndices: [...visibleLineIndices.value]
+    });
+
+    if (index === lastVisibleIndex) {
+      markAsComplete(index);
+    } else {
+      // Nếu không phải dòng cuối cùng, chỉ cập nhật trạng thái hoàn thành
+      lineCompletionStatus.value[index] = true;
+    }
 
     toast.success('Đã phân tích phát âm', {
       position: 'top',
@@ -556,10 +569,14 @@ const scrollToLatestMessage = () => {
 const markAsComplete = (index: number) => {
   lineCompletionStatus.value[index] = true;
 
-  // Hiển thị dòng tiếp theo sau khi người dùng hoàn thành
-  setTimeout(() => {
-    startTypingNextLine();
-  }, 1000);
+  // Chỉ hiển thị dòng tiếp theo nếu đây là dòng cuối cùng đang hiển thị
+  const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+  if (index === lastVisibleIndex) {
+    // Hiển thị dòng tiếp theo sau khi người dùng hoàn thành
+    setTimeout(() => {
+      startTypingNextLine();
+    }, 1000);
+  }
 
   // Check if the conversation is now completed
   if (isConversationCompleted.value) {

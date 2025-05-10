@@ -282,10 +282,10 @@ const vocabFlashcardMap = ref<Map<string, any>>(new Map())
 
 // Tab configuration
 const tabs = [
-  { name: 'Mới học', activeColor: '#6366F1', state: 0 }, // New
-  { name: 'Mới ôn', activeColor: '#F97316', state: 1 }, // Learning
-  { name: 'Gần nhớ', activeColor: '#22C55E', state: 2 }, // Review
-  { name: 'Đã nhớ', activeColor: '#3B82F6', state: 3 } // Relearning/Mature
+  { name: 'Thẻ mới', activeColor: '#6366F1', state: 0 }, // New
+  { name: 'Đang học', activeColor: '#F97316', state: 1 }, // Learning
+  { name: 'Ôn tập', activeColor: '#22C55E', state: 2 }, // Review
+  { name: 'Học lại', activeColor: '#3B82F6', state: 3 } // Relearning
 ]
 
 const activeTabIndex = ref(0)

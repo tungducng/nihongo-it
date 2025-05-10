@@ -112,17 +112,17 @@ class FSRSService @Autowired constructor(
         
         // Xử lý đặc biệt cho Again rating
         if (rating == Rating.AGAIN) {
-            // Thêm thông tin về khoảng thời gian chính xác (theo phút)
-            val minutesToAdd = 30.0 // Cố định 15 phút thay vì ngẫu nhiên
+            // Áp dụng quy tắc FSRS thực sự cho Again
+            // Thay vì sử dụng thời gian cố định, chúng ta sẽ thực hiện theo FSRS
+            // Thông thường sẽ lên lịch cho ngày hiện tại (hoặc 30-60 phút sau)
+            val minutesToAdd = 30.0 // 30 phút là hợp lý cho relearning
             flashcard.due = now.plusMinutes(minutesToAdd.toLong())
-            logger.info("Again rating: Due again in $minutesToAdd minutes")
+            logger.info("AGAIN rating: Calculated new learning interval. Due again in $minutesToAdd minutes")
             flashcard.lapses += 1
         } else {
             // Sử dụng thời gian chính xác thay vì làm tròn đến ngày
-            val intervalInDays = info.scheduledDays
-            val days = intervalInDays.toLong()
-            val hours = ((intervalInDays - days) * 24).toLong()
-            flashcard.due = now.plusDays(days).plusHours(hours)
+            flashcard.due = info.due
+            logger.info("Normal scheduling: Due at ${flashcard.due}")
         }
         
         flashcard.reps += 1
@@ -216,14 +216,17 @@ class FSRSService @Autowired constructor(
         
         val finalInterval = when (rating) {
             Rating.AGAIN -> 0.0  // Same day (handled separately in processReview)
-            Rating.HARD -> max(1.0, interval * 0.7).also { 
-                logger.info("HARD rating - Reducing interval by 30%: $interval days -> $it days") 
+            Rating.HARD -> {
+                // Không sử dụng w15 ở đây, vì đã được áp dụng trong updateStability
+                max(1.0, interval)
             }
-            Rating.GOOD -> max(1.0, interval).also { 
-                logger.info("GOOD rating - Using normal interval: $it days") 
+            Rating.GOOD -> {
+                logger.info("GOOD rating - Using normal interval: $interval days")
+                max(1.0, interval)
             }
-            Rating.EASY -> max(1.0, interval * 1.3).also { 
-                logger.info("EASY rating - Increasing interval by 30%: $interval days -> $it days")
+            Rating.EASY -> {
+                // Không sử dụng w16 ở đây, vì đã được áp dụng trong updateStability
+                max(1.0, interval)
             }
         }.coerceAtMost(maximumInterval)
         
@@ -279,21 +282,43 @@ class FSRSService @Autowired constructor(
                 val forgettingStability = w[11] * Math.pow(difficulty, -w[12]) * 
                                         (Math.pow(oldStability + 1, w[13]) - 1) * 
                                         Math.exp(w[14] * (1 - retrievability))
+                
+                logger.info("AGAIN rating: Calculating post-lapse stability using formula S_f'")
+                logger.info("Formula components: w11=${w[11]}, D^(-w12)=${Math.pow(difficulty, -w[12])}")
+                logger.info("Formula components: (S+1)^w13-1=${Math.pow(oldStability + 1, w[13]) - 1}")
+                logger.info("Formula components: e^(w14*(1-R))=${Math.exp(w[14] * (1 - retrievability))}")
+                logger.info("Old stability: $oldStability, New stability: $forgettingStability")
+                
                 forgettingStability.coerceAtLeast(0.1) // Ensure minimum stability
             }
             else -> {
                 // Stability after successful review:
                 // S_r'(D,S,R,G) = S * (e^w_8 * (11-D) * S^(-w_9) * (e^(w_10*(1-R))-1) * w_15(if G=2) * w_16(if G=4) + 1)
+                
+                // Tính toán các thành phần của công thức
+                val factor1 = Math.exp(w[8]) // e^w_8
+                val factor2 = 11.0 - difficulty // (11-D)
+                val factor3 = Math.pow(oldStability, -w[9]) // S^(-w_9)
+                val factor4 = Math.exp(w[10] * (1.0 - retrievability)) - 1.0 // (e^(w_10*(1-R))-1)
+                
+                // Áp dụng hệ số đặc biệt cho HARD và EASY
                 val hardMultiplier = if (rating == Rating.HARD) w[15] else 1.0
                 val easyMultiplier = if (rating == Rating.EASY) w[16] else 1.0
                 
-                // Implementing the exact formula from the FSRS v4 document
-                val stabilityIncrease = Math.exp(w[8]) * (11.0 - difficulty) * 
-                                       Math.pow(oldStability, -w[9]) * 
-                                       (Math.exp(w[10] * (1.0 - retrievability)) - 1.0) * 
-                                       hardMultiplier * easyMultiplier
-                
+                val stabilityIncrease = factor1 * factor2 * factor3 * factor4 * hardMultiplier * easyMultiplier
                 val newStability = oldStability * (stabilityIncrease + 1.0)
+                
+                logger.info("${rating.name} rating: Calculating success stability using formula S_r'")
+                logger.info("Formula components: e^w8=${factor1}, (11-D)=${factor2}")
+                logger.info("Formula components: S^(-w9)=${factor3}, e^(w10*(1-R))-1=${factor4}")
+                if (rating == Rating.HARD) {
+                    logger.info("Applying HARD multiplier w15=${w[15]}")
+                } else if (rating == Rating.EASY) {
+                    logger.info("Applying EASY multiplier w16=${w[16]}")
+                }
+                logger.info("Stability increase factor: $stabilityIncrease")
+                logger.info("Old stability: $oldStability, New stability: $newStability")
+                
                 newStability.coerceAtLeast(0.1) // Ensure minimum stability
             }
         }

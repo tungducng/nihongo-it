@@ -208,19 +208,19 @@
             <div class="d-flex flex-wrap justify-center mt-4 mb-2">
               <div class="legend-item mx-3 d-flex align-center">
                 <div class="legend-color" style="background-color: #6366F1;"></div>
-                <span class="legend-text">mới học ({{ vocabStats.newCount }} từ)</span>
+                <span class="legend-text">thẻ mới ({{ vocabStats.newCount }} từ)</span>
               </div>
               <div class="legend-item mx-3 d-flex align-center">
                 <div class="legend-color" style="background-color: #F97316;"></div>
-                <span class="legend-text">mới ôn ({{ vocabStats.learningCount }} từ)</span>
+                <span class="legend-text">đang học ({{ vocabStats.learningCount }} từ)</span>
               </div>
               <div class="legend-item mx-3 d-flex align-center">
                 <div class="legend-color" style="background-color: #22C55E;"></div>
-                <span class="legend-text">gần nhớ ({{ vocabStats.reviewCount }} từ)</span>
+                <span class="legend-text">ôn tập ({{ vocabStats.reviewCount }} từ)</span>
               </div>
               <div class="legend-item mx-3 d-flex align-center">
                 <div class="legend-color" style="background-color: #3B82F6;"></div>
-                <span class="legend-text">đã nhớ ({{ vocabStats.matureCount }} từ)</span>
+                <span class="legend-text">học lại ({{ vocabStats.matureCount }} từ)</span>
               </div>
             </div>
           </template>
@@ -704,14 +704,14 @@ const initVocabChart = () => {
   vocabChart = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: ['Mới học', 'Mới ôn', 'Gần nhớ', 'Đã nhớ'],
+      labels: ['Thẻ mới', 'Đang học', 'Ôn tập', 'Học lại'],
       datasets: [{
         data: [newCount, learningCount, reviewCount, matureCount],
         backgroundColor: [
-          '#6366F1', // Mới học - Indigo
-          '#F97316', // Mới ôn - Orange
-          '#22C55E', // Gần nhớ - Green
-          '#3B82F6'  // Đã nhớ - Blue
+          '#6366F1', // Thẻ mới - Indigo
+          '#F97316', // Đang học - Orange
+          '#22C55E', // Ôn tập - Green
+          '#3B82F6'  // Học lại - Blue
         ],
         borderWidth: 1,
         borderColor: '#fff'

@@ -990,10 +990,10 @@ async def analyze_audio_features(user_y, sr, sample_y, sentence, transcription):
                     "clarity": 0.15
                 }
             },
-            "userPitchData": user_pitch_data,
+            "userPitchData": [],
             "samplePitchData": sample_pitch_data,
             # Add formant data for visualization
-            "userFormantData": f1_values if f1_values and len(f1_values) > 0 else [],
+            "userFormantData": [],
             "sampleFormantData": sample_f1_values if sample_f1_values and len(sample_f1_values) > 0 else []
         }
 

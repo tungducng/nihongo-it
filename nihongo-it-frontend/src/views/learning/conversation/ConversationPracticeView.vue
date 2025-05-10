@@ -109,6 +109,9 @@
                         <span v-if="isTyping && i === visibleLineIndices[visibleLineIndices.length - 1]">
                           {{ typedText }}<span class="typing-cursor">|</span>
                         </span>
+                        <span v-else-if="line.speaker === 'user' && lineCompletionStatus[i] && lineAnalysisResults[i]">
+                          <span v-html="formatJapaneseWithHighlights(line.japanese, lineAnalysisResults[i])"></span>
+                        </span>
                         <span v-else>{{ line.japanese }}</span>
                       </div>
                       <!-- Audio Button for all messages -->
@@ -253,6 +256,23 @@ interface Conversation {
   dialogue: ConversationLine[];
 }
 
+interface WordAnalysis {
+  text: string;
+  isCorrect: boolean;
+  suggestion?: string;
+}
+
+interface SpeechAnalysisResult {
+  score: number;
+  feedback?: string;
+  intonation?: string;
+  clarity?: string;
+  rhythm?: string;
+  transcription?: string;
+  words?: WordAnalysis[];
+  personalizedFeedback?: string;
+}
+
 // Router
 const route = useRoute()
 const router = useRouter()
@@ -270,6 +290,7 @@ const recordedAudioUrls = ref<(string | null)[]>([])
 const recordedAudioBlobs = ref<(Blob | null)[]>([])
 const pronunciationScores = ref<number[]>([])
 const lineCompletionStatus = ref<boolean[]>([])
+const lineAnalysisResults = ref<(SpeechAnalysisResult | null)[]>([])
 const mediaRecorder = ref<MediaRecorder | null>(null)
 const audioChunks = ref<Blob[]>([])
 const isSilent = ref(false)
@@ -741,13 +762,25 @@ const processRecording = async (index: number) => {
 
     // Process response
     if (response.data) {
-      const analysis = response.data;
+      const analysis = response.data as SpeechAnalysisResult;
       pronunciationScores.value[index] = Math.round(analysis.score);
+      lineAnalysisResults.value[index] = analysis;
+
+      // Log detailed analysis for debugging
+      console.log('Speech analysis response full data:', JSON.stringify(analysis, null, 2));
+      logSpeechAnalysisResult(analysis);
 
       // Chỉ đánh dấu hoàn thành nếu là dòng cuối cùng đang hiển thị
       const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+      console.log("Processing recording:", {
+        index,
+        lastVisibleIndex,
+        isLastVisible: index === lastVisibleIndex,
+        visibleIndices: [...visibleLineIndices.value],
+        score: pronunciationScores.value[index]
+      });
 
-      if (index === lastVisibleIndex && pronunciationScores.value[index] >= 50) {
+      if (index === lastVisibleIndex) {
         markAsComplete(index);
       } else {
         // Nếu không phải dòng cuối cùng, chỉ cập nhật trạng thái hoàn thành
@@ -758,7 +791,8 @@ const processRecording = async (index: number) => {
     console.error('Error processing recording:', err);
 
     // Sử dụng điểm ngẫu nhiên nếu API không hoạt động
-    pronunciationScores.value[index] = 0;
+    const randomScore = Math.floor(Math.random() * 51) + 50;
+    pronunciationScores.value[index] = randomScore;
 
     toast.warning('Đang sử dụng điểm mẫu do lỗi phân tích phát âm', {
       position: 'top',
@@ -1017,6 +1051,156 @@ const navigateBack = () => {
   });
 }
 
+// Hàm định dạng văn bản tiếng Nhật với các từ được tô màu
+const formatJapaneseWithHighlights = (text: string, analysis: SpeechAnalysisResult): string => {
+  console.log("Formatting text with analysis:", JSON.stringify(analysis, null, 2));
+
+  if (!analysis) {
+    return text;
+  }
+
+  // Cách 1: Dựa trên danh sách words từ API
+  if (analysis.words && analysis.words.length > 0) {
+    // Tạo bản sao của chuỗi gốc
+    let formattedText = text;
+
+    // Bắt đầu với việc dò tìm các từ đúng
+    const correctWords: string[] = [];
+    analysis.words.forEach(word => {
+      if (word.isCorrect) {
+        correctWords.push(word.text);
+      }
+    });
+
+    console.log("Correct words:", correctWords);
+
+    // Tìm và tô màu tất cả các phần đúng
+    if (correctWords.length > 0) {
+      // Sắp xếp từ dài đến ngắn để tránh trùng lặp khi thay thế
+      correctWords.sort((a, b) => b.length - a.length);
+
+      correctWords.forEach(word => {
+        try {
+          // Chuyển đổi các chữ cái đặc biệt sang mã regexp
+          const escapedWord = escapeRegExp(word);
+          // Tạo regex với cờ u để hỗ trợ Unicode
+          const regex = new RegExp(escapedWord, 'gu');
+          // Tô màu xanh các từ đúng
+          formattedText = formattedText.replace(regex, `<span style="color: #4CAF50; font-weight: bold;">${word}</span>`);
+          console.log(`Applied regex for word: ${word}, escapedWord: ${escapedWord}`);
+        } catch (e) {
+          console.error(`Error replacing word ${word}:`, e);
+        }
+      });
+
+      return formattedText;
+    }
+  }
+
+  // Cách 2: Sử dụng transcription để tìm các phần phát âm được
+  if (analysis.transcription) {
+    console.log("Using transcription for highlighting:", analysis.transcription);
+
+    // Thực hiện phân tích từng ký tự trong transcription và highlight
+    // vào văn bản gốc nếu tìm thấy ký tự trùng khớp
+    const transcribedChars = analysis.transcription
+      .replace(/\s+/g, '') // Loại bỏ khoảng trắng
+      .split('');
+
+    console.log("Transcribed chars:", transcribedChars);
+
+    if (transcribedChars.length > 0) {
+      let formattedText = '';
+      const originalChars = text.split('');
+
+      // Map mỗi ký tự trong văn bản gốc
+      originalChars.forEach(char => {
+        if (transcribedChars.includes(char)) {
+          // Ký tự này đã được phát âm
+          formattedText += `<span style="color: #4CAF50; font-weight: bold;">${char}</span>`;
+        } else {
+          // Ký tự này không được phát âm hoặc phát âm sai
+          formattedText += char;
+        }
+      });
+
+      return formattedText;
+    }
+  }
+
+  // Phương pháp dự phòng: nếu không có dữ liệu chi tiết, dùng điểm số để quyết định
+  // Nếu điểm cao (>70), tô xanh toàn bộ, nếu không thì không tô
+  if (analysis.score > 70) {
+    return `<span style="color: #4CAF50; font-weight: bold;">${text}</span>`;
+  }
+
+  return text;
+}
+
+// Thêm hàm mới để debug dữ liệu từ API
+const logSpeechAnalysisResult = (result: SpeechAnalysisResult | null) => {
+  if (!result) {
+    console.log("No analysis result available");
+    return;
+  }
+
+  console.log("Speech Analysis Score:", result.score);
+  console.log("Transcription:", result.transcription);
+
+  if (result.words && result.words.length > 0) {
+    console.log("Words analysis:");
+    result.words.forEach((word, index) => {
+      console.log(`  Word ${index+1}: ${word.text} - ${word.isCorrect ? 'Correct' : 'Incorrect'}`);
+      if (word.suggestion) console.log(`    Suggestion: ${word.suggestion}`);
+    });
+  } else {
+    console.log("No word-level analysis available");
+  }
+}
+
+// Hàm escape RegExp để tránh lỗi khi tìm kiếm các ký tự đặc biệt
+const escapeRegExp = (string: string): string => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// Thêm một mock API result để test chức năng tô màu
+const testHighlightFunction = () => {
+  // Mock API response based on your example
+  const mockResult: SpeechAnalysisResult = {
+    score: 24,
+    feedback: "Cần cải thiện phát âm nhiều hơn.",
+    intonation: "Ngữ điệu xuất sắc",
+    clarity: "Cần điều chỉnh vị trí lưỡi khi phát âm",
+    rhythm: "Không áp dụng",
+    transcription: "ご に ち",
+    words: [
+      {
+        text: "こんにちは",
+        isCorrect: false,
+        suggestion: "Thiếu âm. Cần phát âm rõ 'こんにちは'."
+      },
+      {
+        text: "に",
+        isCorrect: true,
+        suggestion: ""
+      },
+      {
+        text: "ち",
+        isCorrect: true,
+        suggestion: ""
+      }
+    ],
+    personalizedFeedback: "Hãy tiếp tục cố gắng!"
+  };
+
+  // Hiện thị kết quả test
+  console.log("Test highlight function:");
+  const originalText = "こんにちは、はじめまして。";
+  const highlighted = formatJapaneseWithHighlights(originalText, mockResult);
+  console.log("Original:", originalText);
+  console.log("Highlighted:", highlighted);
+}
+
 // Lifecycle hooks
 onMounted(() => {
   loading.value = true;
@@ -1079,6 +1263,7 @@ onMounted(() => {
     recordedAudioBlobs.value = new Array(conversation.value.dialogue.length).fill(null);
     pronunciationScores.value = new Array(conversation.value.dialogue.length).fill(0);
     lineCompletionStatus.value = new Array(conversation.value.dialogue.length).fill(false);
+    lineAnalysisResults.value = new Array(conversation.value.dialogue.length).fill(null);
 
     // Đặt lại visibleLineIndices
     visibleLineIndices.value = [0];
@@ -1107,6 +1292,11 @@ onMounted(() => {
     console.log("Visible lines changed, scrolling to bottom");
     scrollToLatestMessage();
   }, { deep: true });
+
+  // Thêm vào cuối onMounted để test chức năng tô màu
+  setTimeout(() => {
+    testHighlightFunction();
+  }, 2000);
 })
 
 onUnmounted(() => {
@@ -1140,6 +1330,14 @@ onUnmounted(() => {
     font-family: 'Noto Sans JP', sans-serif;
     will-change: contents;
     transform: translateZ(0);
+
+    // Style for the highlighted text (can be overridden by inline styles)
+    :deep(span) {
+      &[style*="color: #4CAF50"] {
+        font-weight: 600;
+        text-shadow: 0 0 1px rgba(76, 175, 80, 0.3);
+      }
+    }
   }
 
   .typing-cursor {

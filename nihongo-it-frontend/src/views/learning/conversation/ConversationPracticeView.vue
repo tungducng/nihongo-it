@@ -72,133 +72,141 @@
 
           <!-- Chat Messages Container -->
           <div class="chat-container">
-            <div
-              v-for="(line, index) in conversation.dialogue"
-              :key="index"
-              class="message-row mb-2"
-              :class="line.speaker === 'user' ? 'justify-end' : 'justify-start'"
-            >
-              <!-- Avatar for Native Speaker -->
-              <div v-if="line.speaker !== 'user'" class="avatar-container mr-2">
-                <v-avatar size="36" color="info">
-                  <v-icon color="white">mdi-account-tie</v-icon>
-                </v-avatar>
-              </div>
-
-              <!-- Message Bubble -->
+            <template v-for="(line, i) in conversation.dialogue" :key="i">
               <div
-                class="message-container"
-                :class="{
-                  'user-message': line.speaker === 'user',
-                  'native-message': line.speaker !== 'user',
-                  'completed-message': lineCompletionStatus[index] && line.speaker === 'user',
-                  'score-excellent': lineCompletionStatus[index] && pronunciationScores[index] >= 90,
-                  'score-very-good': lineCompletionStatus[index] && pronunciationScores[index] >= 80 && pronunciationScores[index] < 90,
-                  'score-good': lineCompletionStatus[index] && pronunciationScores[index] >= 70 && pronunciationScores[index] < 80,
-                  'score-fair': lineCompletionStatus[index] && pronunciationScores[index] >= 60 && pronunciationScores[index] < 70,
-                  'score-poor': lineCompletionStatus[index] && pronunciationScores[index] > 0 && pronunciationScores[index] < 60
-                }"
-                :style="{
-                  maxWidth: '80%',
-                  minWidth: '270px'
-                }"
+                v-if="visibleLineIndices.includes(i)"
+                class="message-row mb-2"
+                :class="line.speaker === 'user' ? 'justify-end' : 'justify-start'"
               >
-                <!-- Message Content -->
-                <div class="message-content pa-2">
-                  <div class="d-flex justify-space-between align-center mb-0">
-                    <div class="japanese-text text-subtitle-1 font-weight-medium">{{ line.japanese }}</div>
-                    <!-- Audio Button for all messages -->
-                    <v-btn
-                      icon
-                      density="comfortable"
-                      size="x-small"
-                      @click="playAudio(line)"
-                      color="info"
-                      variant="text"
-                      title="Nghe phát âm mẫu"
-                    >
-                      <v-icon size="small">mdi-volume-high</v-icon>
-                    </v-btn>
-                  </div>
-                  <div class="text-body-2 text-medium-emphasis">{{ line.meaning }}</div>
+                <!-- Avatar for Native Speaker -->
+                <div v-if="line.speaker !== 'user'" class="avatar-container mr-2">
+                  <v-avatar size="36" color="info">
+                    <v-icon color="white">mdi-account-tie</v-icon>
+                  </v-avatar>
                 </div>
 
-                <!-- User Controls section below message - sửa lại để các nút nằm cùng hàng -->
-                <div v-if="isUserLine(line)" class="user-controls mt-0">
-                  <!-- Row of controls -->
-                  <div class="d-flex align-center flex-wrap">
-                    <!-- Recording Controls (always visible) -->
-                    <div class="d-flex gap-2">
+                <!-- Message Bubble -->
+                <div
+                  class="message-container"
+                  :class="{
+                    'user-message': line.speaker === 'user',
+                    'native-message': line.speaker !== 'user',
+                    'completed-message': lineCompletionStatus[i] && line.speaker === 'user',
+                    'score-excellent': lineCompletionStatus[i] && pronunciationScores[i] >= 90,
+                    'score-very-good': lineCompletionStatus[i] && pronunciationScores[i] >= 80 && pronunciationScores[i] < 90,
+                    'score-good': lineCompletionStatus[i] && pronunciationScores[i] >= 70 && pronunciationScores[i] < 80,
+                    'score-fair': lineCompletionStatus[i] && pronunciationScores[i] >= 60 && pronunciationScores[i] < 70,
+                    'score-poor': lineCompletionStatus[i] && pronunciationScores[i] > 0 && pronunciationScores[i] < 60
+                  }"
+                  :style="{
+                    maxWidth: '80%',
+                    minWidth: '270px'
+                  }"
+                >
+                  <!-- Message Content -->
+                  <div class="message-content pa-2">
+                    <div class="d-flex justify-space-between align-center mb-0">
+                      <div class="japanese-text text-subtitle-1 font-weight-medium">
+                        <!-- Show typing effect for latest message (both user and native) -->
+                        <span v-if="isTyping && i === visibleLineIndices[visibleLineIndices.length - 1]">
+                          {{ typedText }}<span class="typing-cursor">|</span>
+                        </span>
+                        <span v-else>{{ line.japanese }}</span>
+                      </div>
+                      <!-- Audio Button for all messages -->
                       <v-btn
-                        size="small"
-                        color="error"
+                        icon
+                        density="comfortable"
+                        size="x-small"
+                        @click="playAudio(line)"
+                        color="info"
                         variant="text"
-                        :disabled="isRecording && activeLineIndex !== index"
-                        @click="startRecording(index)"
-                        :loading="isProcessing && activeLineIndex === index"
+                        title="Nghe phát âm mẫu"
                       >
-                        <v-icon size="small" class="mr-1">mdi-microphone</v-icon>
-                        <span v-if="!(isRecording && activeLineIndex === index)" class="d-none d-sm-inline">Ghi âm</span>
-                      </v-btn>
-
-                      <v-btn
-                        v-if="isRecording && activeLineIndex === index"
-                        size="small"
-                        color="primary"
-                        variant="text"
-                        @click="stopRecording"
-                      >
-                        <v-icon size="small" class="mr-1">mdi-stop</v-icon>
-                        <span class="d-none d-sm-inline">Dừng</span>
-                      </v-btn>
-
-                      <v-btn
-                        v-if="recordedAudioUrls[index] && !(isRecording && activeLineIndex === index)"
-                        size="small"
-                        color="secondary"
-                        variant="text"
-                        :disabled="isRecording"
-                        @click="playRecordedAudio(index)"
-                      >
-                        <v-icon size="small" class="mr-1">mdi-play</v-icon>
-                        <span class="d-none d-sm-inline">Nghe lại</span>
+                        <v-icon size="small">mdi-volume-high</v-icon>
                       </v-btn>
                     </div>
+                    <div class="text-body-2 text-medium-emphasis">
+                      <!-- Also apply typing effect to the meaning -->
+                      <span v-if="isTyping && i === visibleLineIndices[visibleLineIndices.length - 1]">
+                        {{ isTyping && typedText.length > 0 ? line.meaning : '' }}
+                      </span>
+                      <span v-else>{{ line.meaning }}</span>
+                    </div>
+                  </div>
 
-                    <v-spacer></v-spacer>
+                  <!-- User Controls section below message -->
+                  <div v-if="isUserLine(line)" class="user-controls mt-0">
+                    <!-- Row of controls -->
+                    <div class="d-flex align-center flex-wrap">
+                      <!-- Recording Controls (always visible) -->
+                      <div class="d-flex gap-2">
+                        <v-btn
+                          size="small"
+                          color="error"
+                          variant="text"
+                          :disabled="isRecording && activeLineIndex !== i"
+                          @click="startRecording(i)"
+                          :loading="isProcessing && activeLineIndex === i"
+                        >
+                          <v-icon size="small" class="mr-1">mdi-microphone</v-icon>
+                          <span v-if="!(isRecording && activeLineIndex === i)" class="d-none d-sm-inline">Ghi âm</span>
+                        </v-btn>
 
-                    <!-- Score display inline with controls -->
-                    <div v-if="pronunciationScores[index] > 0" class="d-flex align-center">
-                      <v-tooltip location="top">
-                        <template v-slot:activator="{ props }">
-                          <v-chip
-                            v-bind="props"
-                            :color="getScoreColor(pronunciationScores[index])"
-                            size="small"
-                            class="mr-2"
-                          >
-                            {{ pronunciationScores[index] }}
-                          </v-chip>
-                        </template>
-                        {{ getVietnameseFeedback(pronunciationScores[index]) }}
-                      </v-tooltip>
+                        <v-btn
+                          v-if="isRecording && activeLineIndex === i"
+                          size="small"
+                          color="primary"
+                          variant="text"
+                          @click="stopRecording"
+                        >
+                          <v-icon size="small" class="mr-1">mdi-stop</v-icon>
+                          <span class="d-none d-sm-inline">Dừng</span>
+                        </v-btn>
+
+                        <v-btn
+                          v-if="recordedAudioUrls[i] && !(isRecording && activeLineIndex === i)"
+                          size="small"
+                          color="secondary"
+                          variant="text"
+                          :disabled="isRecording"
+                          @click="playRecordedAudio(i)"
+                        >
+                          <v-icon size="small" class="mr-1">mdi-play</v-icon>
+                          <span class="d-none d-sm-inline">Nghe lại</span>
+                        </v-btn>
+                      </div>
+
+                      <v-spacer></v-spacer>
+
+                      <!-- Score display inline with controls -->
+                      <div v-if="pronunciationScores[i] > 0" class="d-flex align-center">
+                        <v-tooltip location="top">
+                          <template v-slot:activator="{ props }">
+                            <v-chip
+                              v-bind="props"
+                              :color="getScoreColor(pronunciationScores[i])"
+                              size="small"
+                              class="mr-2"
+                            >
+                              {{ pronunciationScores[i] }}
+                            </v-chip>
+                          </template>
+                          {{ getVietnameseFeedback(pronunciationScores[i]) }}
+                        </v-tooltip>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <!-- Completed Status -->
-                <!-- <div class="completion-status" v-if="lineCompletionStatus[index] && isUserLine(line)">
-                  <v-icon color="success">mdi-check-circle</v-icon>
-                </div> -->
+                <!-- Avatar for User -->
+                <div v-if="line.speaker === 'user'" class="avatar-container ml-2">
+                  <v-avatar size="36" color="primary">
+                    <v-icon color="white">mdi-account</v-icon>
+                  </v-avatar>
+                </div>
               </div>
-
-              <!-- Avatar for User -->
-              <div v-if="line.speaker === 'user'" class="avatar-container ml-2">
-                <v-avatar size="36" color="primary">
-                  <v-icon color="white">mdi-account</v-icon>
-                </v-avatar>
-              </div>
-            </div>
+            </template>
           </div>
 
           <!-- Completion Message -->
@@ -260,6 +268,13 @@ const audioChunks = ref<Blob[]>([])
 
 // Audio stream
 let audioStream: MediaStream | null = null
+
+// Thêm refs và computed mới để quản lý hiệu ứng typing và hiển thị từng dòng
+const visibleLineIndices = ref<number[]>([0]); // Ban đầu chỉ hiển thị dòng đầu tiên
+const isTyping = ref(true); // Bắt đầu với hiệu ứng typing
+const typedText = ref('');
+const currentTypeIndex = ref(0);
+const typeSpeed = 80; // ms per character - Đã tăng từ 50 lên 80ms
 
 // Computed
 const isConversationCompleted = computed(() => {
@@ -450,10 +465,8 @@ const processRecording = async (index: number) => {
     const randomScore = Math.floor(Math.random() * 51) + 50;
     pronunciationScores.value[index] = randomScore;
 
-    // Automatically mark as complete if score is high enough
-    if (randomScore >= 60) {
-      markAsComplete(index);
-    }
+    // Automatically mark as complete regardless of score
+    markAsComplete(index);
 
     toast.success('Đã phân tích phát âm', {
       position: 'top',
@@ -470,19 +483,83 @@ const processRecording = async (index: number) => {
   }
 }
 
+// Hàm kiểm tra xem dòng có được hiển thị không
+const isLineVisible = (index: number) => {
+  return visibleLineIndices.value.includes(index);
+}
+
+// Bắt đầu hiệu ứng typing cho dòng tiếp theo
+const startTypingNextLine = () => {
+  if (!conversation.value) return;
+
+  const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+  const nextIndex = lastVisibleIndex + 1;
+
+  // Kiểm tra xem có dòng tiếp theo không
+  if (nextIndex < conversation.value.dialogue.length) {
+    const nextLine = conversation.value.dialogue[nextIndex];
+
+    // Thêm dòng vào danh sách hiển thị
+    visibleLineIndices.value.push(nextIndex);
+
+    // Áp dụng hiệu ứng typing cho tất cả các dòng (cả native và user)
+    isTyping.value = true;
+    typedText.value = '';
+    currentTypeIndex.value = 0;
+
+    // Bắt đầu hiệu ứng typing
+    typeTextEffect(nextLine.japanese);
+
+    // Scroll xuống dòng mới nhất
+    setTimeout(() => {
+      scrollToLatestMessage();
+    }, 100);
+  }
+}
+
+// Hiệu ứng typing cho văn bản
+const typeTextEffect = (text: string) => {
+  console.log("Typing effect running", currentTypeIndex.value, text);
+  if (currentTypeIndex.value < text.length) {
+    typedText.value = text.substring(0, currentTypeIndex.value + 1);
+    currentTypeIndex.value++;
+    setTimeout(() => typeTextEffect(text), typeSpeed);
+  } else {
+    console.log("Typing effect completed");
+    isTyping.value = false;
+
+    // Chỉ tự động hiển thị dòng tiếp theo nếu dòng hiện tại là người bản xứ
+    const lastIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+    if (conversation.value && lastIndex < conversation.value.dialogue.length) {
+      const currentLine = conversation.value.dialogue[lastIndex];
+      if (currentLine.speaker !== 'user') {
+        // Nếu dòng hiện tại là người bản xứ, hiển thị dòng tiếp theo
+        setTimeout(() => {
+          startTypingNextLine();
+        }, 1000);
+      }
+      // Nếu là dòng của người dùng, không tự động chuyển sang dòng tiếp theo
+      // Người dùng phải ghi âm để tiếp tục
+    }
+  }
+}
+
+// Scroll tới tin nhắn mới nhất
+const scrollToLatestMessage = () => {
+  const chatContainer = document.querySelector('.chat-container');
+  if (chatContainer) {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+}
+
+// Cập nhật hàm markAsComplete để hiển thị dòng tiếp theo
 const markAsComplete = (index: number) => {
   lineCompletionStatus.value[index] = true;
 
-  // Check if next line is a user line to unlock
-  if (conversation.value) {
-    const nextUserLineIndex = getNextUserLineIndex(index);
-    if (nextUserLineIndex > 0) {
-      toast.info('Đã mở khóa câu tiếp theo', {
-        position: 'top',
-        duration: 2000
-      });
-    }
-  }
+  // Hiển thị dòng tiếp theo sau khi người dùng hoàn thành
+  setTimeout(() => {
+    startTypingNextLine();
+  }, 1000);
 
   // Check if the conversation is now completed
   if (isConversationCompleted.value) {
@@ -491,19 +568,6 @@ const markAsComplete = (index: number) => {
       duration: 3000
     });
   }
-}
-
-const getNextUserLineIndex = (currentIndex: number): number => {
-  if (!conversation.value) return -1;
-
-  // Find the next user line after the current index
-  for (let i = currentIndex + 1; i < conversation.value.dialogue.length; i++) {
-    if (conversation.value.dialogue[i].speaker === 'user') {
-      return i;
-    }
-  }
-
-  return -1;
 }
 
 const navigateBack = () => {
@@ -575,6 +639,18 @@ onMounted(() => {
     pronunciationScores.value = new Array(conversation.value.dialogue.length).fill(0);
     lineCompletionStatus.value = new Array(conversation.value.dialogue.length).fill(false);
 
+    // Đặt lại visibleLineIndices
+    visibleLineIndices.value = [0];
+    isTyping.value = true;
+    typedText.value = '';
+    currentTypeIndex.value = 0;
+
+    // Bắt đầu hiệu ứng typing cho tin nhắn đầu tiên
+    if (conversation.value && conversation.value.dialogue.length > 0) {
+      console.log("Starting typing effect for first message");
+      typeTextEffect(conversation.value.dialogue[0].japanese);
+    }
+
     loading.value = false;
   }, 1000);
 })
@@ -608,6 +684,16 @@ onUnmounted(() => {
 
   .japanese-text {
     font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  .typing-cursor {
+    animation: blink 1s infinite;
+    font-weight: bold;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
   }
 
   .chat-container {

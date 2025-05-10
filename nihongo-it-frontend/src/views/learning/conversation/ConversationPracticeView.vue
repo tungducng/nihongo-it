@@ -274,7 +274,8 @@ const mediaRecorder = ref<MediaRecorder | null>(null)
 const audioChunks = ref<Blob[]>([])
 const isSilent = ref(false)
 const silenceTimeout = ref<number | null>(null)
-const silenceDetectionDuration = 3000 // 3 giây im lặng sẽ tự động hủy
+const silenceDetectionDuration = 3000 //  giây im lặng sau khi nói sẽ tự động gửi
+const hasSpoken = ref(false) // Biến để theo dõi xem người dùng đã nói gì chưa
 
 // Audio stream
 let audioStream: MediaStream | null = null
@@ -512,6 +513,7 @@ const startRecording = async (index: number) => {
     audioChunks.value = [];
     activeLineIndex.value = index;
     isSilent.value = false;
+    hasSpoken.value = false; // Reset biến theo dõi trạng thái nói
 
     audioStream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -533,8 +535,8 @@ const startRecording = async (index: number) => {
       mediaRecorder.value.onstop = () => {
         const audioBlob = new Blob(audioChunks.value, { type: 'audio/wav' });
 
-        // Kiểm tra nếu dừng do im lặng
-        if (isSilent.value) {
+        // Chỉ hiện thông báo cảnh báo khi chưa nói gì mà bị dừng do im lặng
+        if (isSilent.value && !hasSpoken.value) {
           toast.warning('Không phát hiện giọng nói, vui lòng thử lại', {
             position: 'top',
             duration: 2000
@@ -586,6 +588,8 @@ const setupSilenceDetection = (stream: MediaStream) => {
     const dataArray = new Uint8Array(bufferLength);
 
     let silenceStart: number | null = null;
+    const silenceThreshold = 20; // Ngưỡng im lặng
+    const speechThreshold = 20; // Ngưỡng để xác định đã nói (cao hơn ngưỡng im lặng)
 
     const checkSilence = () => {
       if (!isRecording.value) return;
@@ -599,18 +603,35 @@ const setupSilenceDetection = (stream: MediaStream) => {
       }
       const average = sum / bufferLength;
 
-      // Xác định ngưỡng im lặng (có thể điều chỉnh giá trị này)
-      const silenceThreshold = 10;
+      // Debug log (có thể bỏ sau khi đã cài đặt thành công)
+      // console.log('Audio level:', average);
+
+      // Kiểm tra xem người dùng đã nói hay chưa
+      if (average > speechThreshold && !hasSpoken.value) {
+        hasSpoken.value = true;
+        console.log('Speech detected');
+      }
 
       if (average < silenceThreshold) {
         // Âm thanh im lặng
         if (silenceStart === null) {
           silenceStart = Date.now();
-        } else if (Date.now() - silenceStart > silenceDetectionDuration) {
-          // Im lặng đủ lâu, tự động dừng
-          isSilent.value = true;
-          stopRecording();
-          return;
+        } else {
+          const silenceDuration = Date.now() - silenceStart;
+
+          if (!hasSpoken.value && silenceDuration > 3000) {
+            // Chưa nói gì và im lặng quá 3 giây -> hủy ghi âm
+            console.log('No speech detected, canceling recording');
+            isSilent.value = true;
+            stopRecording();
+            return;
+          } else if (hasSpoken.value && silenceDuration > silenceDetectionDuration) {
+            // Đã nói và im lặng quá 3 giây -> tự động kết thúc và gửi đi
+            console.log('Silence after speech detected, auto-submitting');
+            isSilent.value = true;
+            stopRecording();
+            return;
+          }
         }
       } else {
         // Có âm thanh, đặt lại thời gian bắt đầu im lặng

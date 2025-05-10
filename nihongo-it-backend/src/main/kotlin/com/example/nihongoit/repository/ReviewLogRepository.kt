@@ -5,8 +5,9 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.UUID
+import java.util.*
 
 @Repository
 interface ReviewLogRepository : JpaRepository<ReviewLogEntity, UUID> {
@@ -44,4 +45,47 @@ interface ReviewLogRepository : JpaRepository<ReviewLogEntity, UUID> {
         @Param("userId") userId: UUID,
         @Param("since") since: LocalDateTime
     ): Map<String, Any>
+
+    // Find reviews for a specific flashcard
+    fun findByFlashcard_FlashcardId(flashcardId: UUID): List<ReviewLogEntity>
+    
+    // Find reviews by user ID ordered by timestamp
+    fun findByUserIdOrderByReviewTimestampDesc(userId: UUID): List<ReviewLogEntity>
+    
+    // Find reviews by user ID and date range
+    fun findByUserIdAndReviewTimestampAfterOrderByReviewTimestampDesc(
+        userId: UUID, 
+        startDate: LocalDateTime
+    ): List<ReviewLogEntity>
+    
+    // Find most recent review by user ID
+    fun findFirstByUserIdOrderByReviewTimestampDesc(userId: UUID): ReviewLogEntity?
+    
+    // Count reviews by user ID and date range
+    fun countByUserIdAndReviewTimestampAfter(userId: UUID, startDate: LocalDateTime): Int
+    
+    // Find reviews after a specific date
+    fun findByReviewTimestampAfter(startDate: LocalDateTime): List<ReviewLogEntity>
+    
+    // Count reviews by day for a user
+    @Query("SELECT CAST(r.reviewTimestamp as date) as reviewDate, COUNT(r) " +
+           "FROM ReviewLogEntity r " +
+           "WHERE r.userId = :userId AND r.reviewTimestamp > :startDate " +
+           "GROUP BY CAST(r.reviewTimestamp as date) " +
+           "ORDER BY reviewDate DESC")
+    fun countReviewsByDayForUser(
+        @Param("userId") userId: UUID,
+        @Param("startDate") startDate: LocalDateTime
+    ): List<Array<Any>>
+    
+    // Count correct reviews by day for a user (rating >= 3)
+    @Query("SELECT CAST(r.reviewTimestamp as date) as reviewDate, COUNT(r) " +
+           "FROM ReviewLogEntity r " +
+           "WHERE r.userId = :userId AND r.reviewTimestamp > :startDate AND r.rating >= 3 " +
+           "GROUP BY CAST(r.reviewTimestamp as date) " +
+           "ORDER BY reviewDate DESC")
+    fun countCorrectReviewsByDayForUser(
+        @Param("userId") userId: UUID,
+        @Param("startDate") startDate: LocalDateTime
+    ): List<Array<Any>>
 } 

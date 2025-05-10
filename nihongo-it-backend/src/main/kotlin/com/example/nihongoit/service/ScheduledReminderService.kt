@@ -32,7 +32,7 @@ class ScheduledReminderService @Autowired constructor(
      * Scheduled task that runs every 10 seconds to check for users who need flashcard review reminders
      * Note: This is a testing frequency; change to a longer interval for production use
      */
-    @Scheduled(fixedDelay = 1 * 60 * 1000) // Run every 10 seconds
+    @Scheduled(fixedDelay = 3 * 60 * 1000) // Run every 10 seconds
     @Transactional
     fun checkAndSendFlashcardReminders() {
         try {

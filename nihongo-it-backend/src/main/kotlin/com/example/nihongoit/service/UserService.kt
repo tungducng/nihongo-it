@@ -4,6 +4,7 @@ import com.example.nihongoit.controller.UpdatePreferencesRequest
 import com.example.nihongoit.entity.UserEntity
 import com.example.nihongoit.exception.BusinessException
 import com.example.nihongoit.repository.UserRepository
+import com.example.nihongoit.repository.ReviewLogRepository
 import jakarta.persistence.EntityNotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,7 +17,8 @@ import java.util.UUID
 
 @Service
 class UserService @Autowired constructor(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val reviewLogRepository: ReviewLogRepository
 ) {
     private val logger = LoggerFactory.getLogger(UserService::class.java)
     
@@ -102,7 +104,7 @@ class UserService @Autowired constructor(
     /**
      * Get user by IDi
      */
-    private fun getUserById(userId: UUID): UserEntity {
+    fun getUserById(userId: UUID): UserEntity {
         return userRepository.findById(userId)
             .orElseThrow { BusinessException("User not found with ID: $userId") }
     }
@@ -156,5 +158,100 @@ class UserService @Autowired constructor(
         
         // Ensure we always return a list, even if empty
         return activities as List<Map<String, Any>>
+    }
+
+    /**
+     * Get top performing users by retention rate
+     */
+    fun getTopPerformingUsers(limit: Int): List<UserEntity> {
+        // Find users with the highest retention rates
+        val thirtyDaysAgo = LocalDateTime.now().minusDays(30)
+        
+        // This is a simplified approach - in a real implementation, you would likely 
+        // want to query the database directly for this information
+        val allUsers = userRepository.findAll()
+        
+        val userStats = allUsers.map { user ->
+            // Get review data for each user
+            val reviews = reviewLogRepository.findByUserIdAndReviewTimestampAfterOrderByReviewTimestampDesc(
+                user.userId!!, thirtyDaysAgo
+            )
+            
+            // Skip users with no reviews
+            if (reviews.isEmpty()) {
+                return@map Pair(user, 0.0)
+            }
+            
+            // Calculate retention rate
+            val correctReviews = reviews.count { it.rating >= 3 }
+            val retentionRate = (correctReviews.toDouble() / reviews.size) * 100
+            
+            Pair(user, retentionRate)
+        }
+        
+        // Filter out users with no reviews, then sort by retention rate and limit
+        return userStats
+            .filter { it.second > 0 }
+            .sortedByDescending { it.second }
+            .take(limit)
+            .map { it.first }
+    }
+    
+    /**
+     * Get most active users by number of reviews
+     */
+    fun getMostActiveUsers(limit: Int): List<UserEntity> {
+        val thirtyDaysAgo = LocalDateTime.now().minusDays(30)
+        
+        // This is a simplified approach - in a real implementation, you would likely 
+        // want to query the database directly for this information
+        val allUsers = userRepository.findAll()
+        
+        val userStats = allUsers.map { user ->
+            // Count reviews for each user
+            val reviewCount = reviewLogRepository.countByUserIdAndReviewTimestampAfter(
+                user.userId!!, thirtyDaysAgo
+            )
+            
+            Pair(user, reviewCount)
+        }
+        
+        // Sort by review count and limit
+        return userStats
+            .filter { it.second > 0 }
+            .sortedByDescending { it.second }
+            .take(limit)
+            .map { it.first }
+    }
+    
+    /**
+     * Get count of users by current level
+     */
+    fun getUserCountByCurrentLevel(): Map<out Any, Int> {
+        val allUsers = userRepository.findAll()
+        
+        // Group users by current level
+        return allUsers
+            .groupBy { it.currentLevel ?: "Not specified" }
+            .mapValues { it.value.size }
+    }
+    
+    /**
+     * Get count of users by JLPT goal
+     */
+    fun getUserCountByJlptGoal(): Map<out Any, Int> {
+        val allUsers = userRepository.findAll()
+        
+        // Group users by JLPT goal
+        return allUsers
+            .groupBy { it.jlptGoal ?: "Not specified" }
+            .mapValues { it.value.size }
+    }
+
+    /**
+     * Get all users with pagination
+     */
+    fun getAllUsers(pageable: org.springframework.data.domain.Pageable): org.springframework.data.domain.Page<UserEntity> {
+        return userRepository.findAll(pageable)
     }
 } 

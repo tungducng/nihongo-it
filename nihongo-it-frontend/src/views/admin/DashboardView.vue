@@ -105,6 +105,42 @@
       </v-row>
 
       <v-row>
+        <v-col cols="12">
+          <v-card class="mb-4" elevation="2">
+            <v-card-title class="stats-title px-4 py-3 success-gradient-light">
+              <v-icon class="mr-2">mdi-chart-bar</v-icon>
+              Thống kê học viên
+            </v-card-title>
+            <v-card-text class="pa-4 text-center">
+              <p class="text-body-1 mb-4">
+                Xem thống kê chi tiết về tiến độ học tập của học viên, bao gồm thẻ ghi nhớ, tỷ lệ ghi nhớ,
+                phân bố theo cấp độ JLPT và nhiều thông tin khác.
+              </p>
+              <v-btn
+                size="large"
+                color="success"
+                variant="elevated"
+                class="mr-2"
+                prepend-icon="mdi-chart-areaspline"
+                to="/admin/statistics"
+              >
+                Xem thống kê tổng quan
+              </v-btn>
+              <v-btn
+                size="large"
+                color="primary"
+                variant="tonal"
+                prepend-icon="mdi-account-multiple-check"
+                to="/admin/statistics/users"
+              >
+                Thống kê theo học viên
+              </v-btn>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <v-row>
         <v-col cols="12" md="6">
           <v-card class="mb-4 stat-card" elevation="2">
             <v-card-title class="stats-title px-4 py-3 primary-gradient-light">

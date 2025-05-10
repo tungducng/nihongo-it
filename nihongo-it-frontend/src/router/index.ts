@@ -169,6 +169,25 @@ const routes = [
     name: 'adminVocabulary',
     component: () => import('@/views/admin/VocabularyManagementView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  // Admin Statistics routes
+  {
+    path: '/admin/statistics',
+    name: 'adminStatistics',
+    component: () => import('@/views/admin/StatisticsOverviewView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/statistics/users',
+    name: 'adminUserStatistics',
+    component: () => import('@/views/admin/UserStatisticsView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/statistics/users/:id',
+    name: 'adminUserStatisticsDetail',
+    component: () => import('@/views/admin/UserStatisticsDetailView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 

@@ -22,6 +22,7 @@ import java.nio.file.AccessDeniedException
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import java.util.*
+import java.time.format.DateTimeFormatter
 
 @Service
 class FlashcardService(
@@ -551,5 +552,196 @@ class FlashcardService(
     fun getFlashcardsStudiedCount(afterDate: LocalDateTime): Int {
         // Count distinct flashcards that have been reviewed
         return reviewLogRepository.countDistinctFlashcardIdByReviewTimestampAfter(afterDate).toInt()
+    }
+    
+    /**
+     * Get flashcard statistics for a specific user
+     */
+    fun getUserFlashcardStatistics(userId: UUID): Map<String, Any> {
+        logger.info("Getting flashcard statistics for user: $userId")
+        
+        val allFlashcards = flashcardRepository.findByUser_UserId(userId)
+        if (allFlashcards.isEmpty()) {
+            // Return empty stats when user has no flashcards
+            return mapOf(
+                "summary" to mapOf(
+                    "totalCards" to 0,
+                    "dueCardsNow" to 0,
+                    "reviewsLast30Days" to 0,
+                    "currentStreak" to 0,
+                    "overallRetentionRate" to 0
+                ),
+                "cardsByState" to mapOf<String, Int>(),
+                "cardsByJlptLevel" to mapOf<String, Int>(),
+                "dailyReviews" to mapOf<String, Int>(),
+                "retentionRateByDay" to mapOf<String, Double>(),
+                "memoryStrengthDistribution" to mapOf(
+                    "weak" to 0,
+                    "medium" to 0,
+                    "strong" to 0
+                ),
+                "cardsDueByDay" to mapOf<String, Int>()
+            )
+        }
+        
+        val now = LocalDateTime.now()
+        val thirtyDaysAgo = now.minusDays(30)
+        
+        // Calculate due cards
+        val dueCardsNow = flashcardRepository.findDueCards(userId, now).size
+        
+        // Collect review logs
+        val recentReviews = reviewLogRepository.findByUserIdAndReviewTimestampAfterOrderByReviewTimestampDesc(
+            userId, thirtyDaysAgo
+        )
+        
+        // Calculate retention rate
+        val correctReviews = recentReviews.count { it.rating >= 3 }
+        val overallRetentionRate = if (recentReviews.isNotEmpty()) {
+            (correctReviews.toDouble() / recentReviews.size) * 100
+        } else {
+            0.0
+        }
+        
+        // Group by state
+        val cardsByState = allFlashcards.groupBy { 
+            FSRSService.State.entries.find { s -> s.value == it.state }?.name?.lowercase() ?: "new"
+        }.mapValues { it.value.size }
+        
+        // Group by JLPT level
+        val cardsByJlptLevel = allFlashcards
+            .mapNotNull { it.vocabulary?.jlptLevel }
+            .groupBy { it }
+            .mapValues { it.value.size }
+        
+        // Calculate due cards by day for next 30 days
+        val cardsDueByDay = (0..29).associate { day ->
+            val dueDate = now.plusDays(day.toLong()).toLocalDate()
+            val dateStr = dueDate.toString()
+            
+            val count = allFlashcards.count { 
+                it.due.toLocalDate() == dueDate 
+            }
+            
+            dateStr to count
+        }
+        
+        // Group reviews by date
+        val dailyReviews = recentReviews
+            .groupBy { it.reviewTimestamp.toLocalDate().toString() }
+            .mapValues { it.value.size }
+        
+        // Calculate retention rate by day
+        val retentionRateByDay = recentReviews
+            .groupBy { it.reviewTimestamp.toLocalDate().toString() }
+            .mapValues { entry ->
+                val dayReviews = entry.value
+                val dayCorrect = dayReviews.count { it.rating >= 3 }
+                (dayCorrect.toDouble() / dayReviews.size) * 100
+            }
+        
+        // Calculate memory strength distribution
+        val memoryStrengthDistribution = mapOf(
+            "weak" to allFlashcards.count { it.stability < 1.0 },
+            "medium" to allFlashcards.count { it.stability >= 1.0 && it.stability < 10.0 },
+            "strong" to allFlashcards.count { it.stability >= 10.0 }
+        )
+        
+        // Calculate current streak
+        var currentStreak = 0
+        var yesterday = LocalDateTime.now().toLocalDate().minusDays(1)
+        
+        // Check for reviews on consecutive days
+        val reviewsByDate = recentReviews
+            .groupBy { it.reviewTimestamp.toLocalDate() }
+        
+        while (reviewsByDate.containsKey(yesterday)) {
+            currentStreak++
+            yesterday = yesterday.minusDays(1)
+        }
+        
+        return mapOf(
+            "summary" to mapOf(
+                "totalCards" to allFlashcards.size,
+                "dueCardsNow" to dueCardsNow,
+                "reviewsLast30Days" to recentReviews.size,
+                "currentStreak" to currentStreak,
+                "overallRetentionRate" to overallRetentionRate
+            ),
+            "cardsByState" to cardsByState,
+            "cardsByJlptLevel" to cardsByJlptLevel,
+            "dailyReviews" to dailyReviews,
+            "retentionRateByDay" to retentionRateByDay,
+            "memoryStrengthDistribution" to memoryStrengthDistribution,
+            "cardsDueByDay" to cardsDueByDay,
+            "reviewTrend" to calculateReviewTrend(recentReviews),
+            "averageRating" to if (recentReviews.isNotEmpty()) recentReviews.map { it.rating }.average() else 0.0
+        )
+    }
+    
+    /**
+     * Get the last review date for a user
+     */
+    fun getLastReviewDate(userId: UUID): LocalDateTime? {
+        return reviewLogRepository.findFirstByUserIdOrderByReviewTimestampDesc(userId)
+            ?.reviewTimestamp
+    }
+    
+    /**
+     * Get review history for a user
+     */
+    fun getUserReviewHistory(userId: UUID, days: Int): List<Map<String, Any>> {
+        val startDate = LocalDateTime.now().minusDays(days.toLong())
+        val reviews = reviewLogRepository.findByUserIdAndReviewTimestampAfterOrderByReviewTimestampDesc(
+            userId, startDate
+        )
+        
+        return reviews.map { review ->
+            val map = mutableMapOf<String, Any>(
+                ("reviewId" to review.reviewLogId) as Pair<String, Any>,
+                ("flashcardId" to review.flashcard.flashcardId) as Pair<String, Any>,
+                "rating" to review.rating,
+                "elapsedDays" to review.elapsedDays,
+                "scheduledDays" to review.scheduledDays,
+                "state" to review.state,
+                "timestamp" to review.reviewTimestamp.format(DateTimeFormatter.ISO_DATE_TIME)
+            )
+            
+            // Handle nullable vocabulary separately
+            review.flashcard.vocabulary?.let { vocab ->
+                map["vocabulary"] = mapOf(
+                    "vocabId" to vocab.vocabId,
+                    "term" to vocab.term,
+                    "meaning" to vocab.meaning,
+                    "jlptLevel" to vocab.jlptLevel
+                )
+            } ?: run {
+                map["vocabulary"] = emptyMap<String, Any>()
+            }
+            
+            map
+        }
+    }
+    
+    /**
+     * Get total count of all flashcards in the system
+     */
+    fun getTotalFlashcardsCount(): Int {
+        return flashcardRepository.count().toInt()
+    }
+    
+    /**
+     * Get average retention rate across all users
+     */
+    fun getAverageRetentionRate(): Double {
+        val thirtyDaysAgo = LocalDateTime.now().minusDays(30)
+        val recentReviews = reviewLogRepository.findByReviewTimestampAfter(thirtyDaysAgo)
+        
+        if (recentReviews.isEmpty()) {
+            return 0.0
+        }
+        
+        val correctReviews = recentReviews.count { it.rating >= 3 }
+        return (correctReviews.toDouble() / recentReviews.size) * 100
     }
 }

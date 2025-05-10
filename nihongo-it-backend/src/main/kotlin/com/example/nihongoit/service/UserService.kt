@@ -106,4 +106,55 @@ class UserService @Autowired constructor(
         return userRepository.findById(userId)
             .orElseThrow { BusinessException("User not found with ID: $userId") }
     }
+
+    // Dashboard statistics methods
+    
+    /**
+     * Get total number of users in the system
+     */
+    fun getUserCount(): Int {
+        return userRepository.count().toInt()
+    }
+    
+    /**
+     * Get number of new users registered since the given date
+     */
+    fun getNewUserCount(sinceDate: LocalDateTime): Int {
+        return userRepository.countByCreatedAtAfter(sinceDate).toInt()
+    }
+    
+    /**
+     * Get number of active users who logged in since the given date
+     */
+    fun getActiveUserCount(sinceDate: LocalDateTime): Int {
+        return userRepository.countByLastLoginAfter(sinceDate).toInt()
+    }
+    
+    /**
+     * Get recent user activities for the dashboard
+     */
+    fun getRecentUserActivities(limit: Int): List<Map<String, Any>> {
+        // This is a placeholder implementation. 
+        // In a real application, you would retrieve this data from an activity log table
+        val recentUsersWithActivity = userRepository.findTop10ByOrderByLastLoginDesc()
+        
+        val activities = recentUsersWithActivity.mapIndexedNotNull { index, user ->
+            if (index < limit && user.lastLogin != null) {
+                val action = when {
+                    user.lastLogin!!.isAfter(LocalDateTime.now().minusHours(1)) -> "Đã đăng nhập"
+                    user.createdAt.isAfter(LocalDateTime.now().minusDays(1)) -> "Đã tạo tài khoản mới"
+                    else -> "Đã truy cập hệ thống"
+                }
+                
+                mapOf(
+                    "user" to user.email,
+                    "action" to action,
+                    "timestamp" to user.lastLogin
+                )
+            } else null
+        }
+        
+        // Ensure we always return a list, even if empty
+        return activities as List<Map<String, Any>>
+    }
 } 

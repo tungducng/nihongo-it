@@ -537,4 +537,19 @@ class FlashcardService(
 
         )
     }
+    
+    /**
+     * Get count of flashcards created after a specific time
+     */
+    fun getFlashcardsCreatedCount(afterDate: LocalDateTime): Int {
+        return flashcardRepository.countByCreatedAtAfter(afterDate).toInt()
+    }
+    
+    /**
+     * Get count of flashcards studied (reviewed) after a specific time
+     */
+    fun getFlashcardsStudiedCount(afterDate: LocalDateTime): Int {
+        // Count distinct flashcards that have been reviewed
+        return reviewLogRepository.countDistinctFlashcardIdByReviewTimestampAfter(afterDate).toInt()
+    }
 }

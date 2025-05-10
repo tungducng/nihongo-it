@@ -77,7 +77,37 @@ export interface UserListResponse {
   currentPage: number;
 }
 
+export interface DashboardStats {
+  userCount: number;
+  vocabularyCount: number;
+  categoryCount: number;
+  topicCount: number;
+  newUsers: number;
+  activeUsers: number;
+  searchesToday: number;
+  flashcardsCreatedToday: number;
+  flashcardsStudiedToday: number;
+  recentActivities: {
+    user: string;
+    action: string;
+    timestamp: string;
+  }[];
+}
+
 class AdminService {
+  /**
+   * Get dashboard statistics
+   */
+  async getDashboardStats(): Promise<DashboardStats> {
+    try {
+      const response = await apiClient.get('/api/admin/dashboard/stats');
+      return response.data.data;
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      throw error;
+    }
+  }
+
   /**
    * Get all users with pagination and optional search
    */

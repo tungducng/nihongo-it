@@ -38,5 +38,7 @@ interface FlashcardRepository : JpaRepository<FlashcardEntity, UUID> {
     
     @Query("SELECT f FROM FlashcardEntity f WHERE f.user.userId = :userId AND f.lapses >= 5")
     fun findLeechCards(@Param("userId") userId: UUID): List<FlashcardEntity>
+    
+    fun countByCreatedAtAfter(createdAt: LocalDateTime): Long
 }
 

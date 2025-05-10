@@ -9,16 +9,23 @@
           color="primary"
           variant="tonal"
           prepend-icon="mdi-refresh"
-          @click="refreshData"
+          @click="fetchDashboardData"
           density="comfortable"
           class="refresh-btn"
+          :loading="loading"
         >
           Làm mới dữ liệu
         </v-btn>
       </div>
     </div>
 
-    <div class="dashboard-content">
+    <v-row v-if="loading && !stats.userCount">
+      <v-col cols="12" md="6" lg="3" v-for="i in 4" :key="i">
+        <v-skeleton-loader type="card" class="mb-4"></v-skeleton-loader>
+      </v-col>
+    </v-row>
+
+    <div v-else class="dashboard-content">
       <v-row>
         <v-col cols="12" md="6" lg="3">
           <v-card class="mb-4 dashboard-card" elevation="2">
@@ -178,6 +185,23 @@
           </v-card>
         </v-col>
       </v-row>
+
+      <v-snackbar
+        v-model="showError"
+        color="error"
+        timeout="3000"
+      >
+        {{ errorMessage }}
+        <template v-slot:actions>
+          <v-btn
+            color="white"
+            variant="text"
+            @click="showError = false"
+          >
+            Đóng
+          </v-btn>
+        </template>
+      </v-snackbar>
     </div>
   </v-container>
 </template>
@@ -186,63 +210,127 @@
 import { ref, onMounted } from 'vue';
 import { format } from 'date-fns';
 import { useToast } from 'vue-toast-notification';
+import adminService from '@/services/admin.service';
+import type { DashboardStats } from '@/services/admin.service';
 
 const $toast = useToast();
+const loading = ref(false);
+const showError = ref(false);
+const errorMessage = ref('');
 
-// Mock data for development - would be replaced with API calls
+// Khởi tạo dữ liệu thống kê mặc định
 const stats = ref({
-  userCount: 152,
-  vocabularyCount: 1895,
-  categoryCount: 7,
-  topicCount: 35,
-  newUsers: 12,
-  activeUsers: 98,
-  searches: 254,
-  flashcardsCreated: 76,
-  flashcardsStudied: 189
+  userCount: 0,
+  vocabularyCount: 0,
+  categoryCount: 0,
+  topicCount: 0,
+  newUsers: 0,
+  activeUsers: 0,
+  searches: 0,
+  flashcardsCreated: 0,
+  flashcardsStudied: 0
 });
 
-const recentActivity = ref([
-  {
-    user: 'john.doe@example.com',
-    action: 'Đã đăng nhập',
-    timestamp: new Date(Date.now() - 5 * 60000)
-  },
-  {
-    user: 'alice.smith@example.com',
-    action: 'Đã tạo 5 flashcard mới',
-    timestamp: new Date(Date.now() - 25 * 60000)
-  },
-  {
-    user: 'bob.johnson@example.com',
-    action: 'Đã hoàn thành bài học từ vựng N4',
-    timestamp: new Date(Date.now() - 2 * 3600000)
-  },
-  {
-    user: 'sarah.williams@example.com',
-    action: 'Đã tạo tài khoản mới',
-    timestamp: new Date(Date.now() - 5 * 3600000)
-  }
-]);
-
-const formatDate = (date: Date) => {
-  return format(date, 'HH:mm dd/MM');
-};
-
-function refreshData() {
-  // Simulate refresh with loading
-  $toast.info('Đang cập nhật dữ liệu...');
-
-  // In a real app, this would be an API call to fetch fresh data
-  setTimeout(() => {
-    $toast.success('Dữ liệu đã được cập nhật');
-  }, 1000);
+// Khởi tạo dữ liệu hoạt động mặc định
+interface ActivityItem {
+  user: string;
+  action: string;
+  timestamp: Date;
 }
 
-onMounted(() => {
-  // Fetch dashboard statistics from API
-  // Replace with actual API calls when backend is ready
-  console.log('Dashboard mounted, fetching stats...');
+const recentActivity = ref<ActivityItem[]>([]);
+
+const formatDate = (date: Date) => {
+  return format(new Date(date), 'HH:mm dd/MM');
+};
+
+async function fetchDashboardData() {
+  loading.value = true;
+  try {
+    const data = await adminService.getDashboardStats();
+
+    // Cập nhật thống kê
+    stats.value = {
+      userCount: data.userCount || 0,
+      vocabularyCount: data.vocabularyCount || 0,
+      categoryCount: data.categoryCount || 0,
+      topicCount: data.topicCount || 0,
+      newUsers: data.newUsers || 0,
+      activeUsers: data.activeUsers || 0,
+      searches: data.searchesToday || 0,
+      flashcardsCreated: data.flashcardsCreatedToday || 0,
+      flashcardsStudied: data.flashcardsStudiedToday || 0
+    };
+
+    // Cập nhật hoạt động gần đây
+    if (data.recentActivities && Array.isArray(data.recentActivities)) {
+      recentActivity.value = data.recentActivities.map((activity) => ({
+        user: activity.user,
+        action: activity.action,
+        timestamp: new Date(activity.timestamp)
+      }));
+    }
+
+    $toast.success('Dữ liệu dashboard đã được cập nhật');
+  } catch (error) {
+    console.error('Lỗi khi tải dữ liệu dashboard:', error);
+    errorMessage.value = 'Không thể tải dữ liệu dashboard. Vui lòng thử lại sau.';
+    showError.value = true;
+
+    // Nếu API chưa được triển khai, tải dữ liệu mẫu
+    loadSampleData();
+    $toast.warning('Đang sử dụng dữ liệu mẫu do API chưa sẵn sàng');
+  } finally {
+    loading.value = false;
+  }
+}
+
+// Fallback để tải dữ liệu mẫu trong trường hợp API chưa được triển khai
+function loadSampleData() {
+  stats.value = {
+    userCount: 152,
+    vocabularyCount: 1895,
+    categoryCount: 7,
+    topicCount: 35,
+    newUsers: 12,
+    activeUsers: 98,
+    searches: 254,
+    flashcardsCreated: 76,
+    flashcardsStudied: 189
+  };
+
+  recentActivity.value = [
+    {
+      user: 'john.doe@example.com',
+      action: 'Đã đăng nhập',
+      timestamp: new Date(Date.now() - 5 * 60000)
+    },
+    {
+      user: 'alice.smith@example.com',
+      action: 'Đã tạo 5 flashcard mới',
+      timestamp: new Date(Date.now() - 25 * 60000)
+    },
+    {
+      user: 'bob.johnson@example.com',
+      action: 'Đã hoàn thành bài học từ vựng N4',
+      timestamp: new Date(Date.now() - 2 * 3600000)
+    },
+    {
+      user: 'sarah.williams@example.com',
+      action: 'Đã tạo tài khoản mới',
+      timestamp: new Date(Date.now() - 5 * 3600000)
+    }
+  ];
+}
+
+onMounted(async () => {
+  try {
+    await fetchDashboardData();
+  } catch (error) {
+    console.error('Không thể kết nối tới API dashboard, đang tải dữ liệu mẫu:', error);
+    loadSampleData();
+    $toast.warning('Đang sử dụng dữ liệu mẫu');
+  }
 });
 </script>
 

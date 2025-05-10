@@ -154,4 +154,11 @@ class CategoryService(
         val topics = topicRepository.findAll().sortedBy { it.displayOrder }
         return topics.map { it.toDTO() }
     }
+
+    /**
+     * Get total count of categories
+     */
+    fun getCategoryCount(): Int {
+        return categoryRepository.count().toInt()
+    }
 }

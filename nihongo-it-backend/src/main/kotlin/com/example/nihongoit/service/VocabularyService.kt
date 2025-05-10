@@ -434,4 +434,11 @@ class VocabularyService(
             isSaved = isSaved,
         )
     }
+
+    /**
+     * Get total count of vocabulary entries
+     */
+    fun getVocabularyCount(): Int {
+        return vocabularyRepository.count().toInt()
+    }
 }

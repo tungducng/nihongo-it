@@ -143,4 +143,11 @@ class TopicService(
         )
         return topics.map { it.toDTO() }
     }
+
+    /**
+     * Get total count of topics
+     */
+    fun getTopicCount(): Int {
+        return topicRepository.count().toInt()
+    }
 }

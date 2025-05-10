@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import java.time.LocalDateTime
 import java.util.UUID
 import java.util.Optional
 
@@ -34,4 +35,9 @@ interface UserRepository : JpaRepository<UserEntity, UUID> {
     
     // Find users by role (for admin management)
     fun findByRoleRoleId(roleId: Int, pageable: Pageable): Page<UserEntity>
+    
+    // Statistics methods for dashboard
+    fun countByCreatedAtAfter(sinceDate: LocalDateTime): Long
+    fun countByLastLoginAfter(sinceDate: LocalDateTime): Long
+    fun findTop10ByOrderByLastLoginDesc(): List<UserEntity>
 } 

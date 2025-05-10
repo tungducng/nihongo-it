@@ -101,6 +101,30 @@ class CategoryService(
     }
 
     @Transactional(readOnly = true)
+    fun searchCategoriesWithMeaning(nameQuery: String?, meaningQuery: String?): List<CategoryDTO> {
+        return when {
+            // If both name and meaning are provided
+            !nameQuery.isNullOrBlank() && !meaningQuery.isNullOrBlank() -> {
+                categoryRepository.findByNameContainingIgnoreCaseOrMeaningContainingIgnoreCase(
+                    nameQuery, meaningQuery
+                ).map { it.toDTO() }
+            }
+            // If only name is provided
+            !nameQuery.isNullOrBlank() -> {
+                categoryRepository.findByNameContainingIgnoreCase(nameQuery).map { it.toDTO() }
+            }
+            // If only meaning is provided
+            !meaningQuery.isNullOrBlank() -> {
+                categoryRepository.findByMeaningContainingIgnoreCase(meaningQuery).map { it.toDTO() }
+            }
+            // If neither is provided, return all categories
+            else -> {
+                getAllCategories()
+            }
+        }
+    }
+
+    @Transactional(readOnly = true)
     fun getTopicsForCategory(categoryId: UUID): List<TopicDTO> {
         val category = categoryRepository.findById(categoryId)
             .orElseThrow { BusinessException("Category not found with ID: $categoryId") }

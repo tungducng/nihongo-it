@@ -9,6 +9,10 @@ import java.util.UUID
 interface CategoryRepository : JpaRepository<CategoryEntity, UUID> {
     fun findByNameContainingIgnoreCase(name: String): List<CategoryEntity>
     
+    fun findByMeaningContainingIgnoreCase(meaning: String): List<CategoryEntity>
+    
+    fun findByNameContainingIgnoreCaseOrMeaningContainingIgnoreCase(name: String, meaning: String): List<CategoryEntity>
+    
     fun findAllByOrderByDisplayOrderAsc(): List<CategoryEntity>
     
     fun existsByName(name: String): Boolean

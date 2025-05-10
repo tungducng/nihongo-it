@@ -597,35 +597,74 @@ const processRecording = async (index: number) => {
   isProcessing.value = true;
 
   try {
-    // Demo: Simulate API call to analyze pronunciation
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // For demo purposes, generate a random score between 50 and 100
-    const randomScore = Math.floor(Math.random() * 51) + 50;
-    pronunciationScores.value[index] = randomScore;
-
-    // Chỉ đánh dấu hoàn thành nếu là dòng cuối cùng đang hiển thị
-    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
-    console.log("Processing recording:", {
-      index,
-      lastVisibleIndex,
-      isLastVisible: index === lastVisibleIndex,
-      visibleIndices: [...visibleLineIndices.value]
-    });
-
-    if (index === lastVisibleIndex) {
-      markAsComplete(index);
-    } else {
-      // Nếu không phải dòng cuối cùng, chỉ cập nhật trạng thái hoàn thành
-      lineCompletionStatus.value[index] = true;
+    // Verify authentication before proceeding
+    const authToken = authService.getToken()
+    if (!authToken) {
+      toast.error('Vui lòng đăng nhập để sử dụng tính năng phân tích phát âm', {
+        position: 'top',
+        duration: 4000
+      })
+      isProcessing.value = false;
+      return;
     }
 
+    // Create FormData and append the audio blob
+    const formData = new FormData()
+    if (!recordedAudioBlobs.value[index]) {
+      throw new Error('Không tìm thấy bản ghi âm')
+    }
+
+    formData.append('file', recordedAudioBlobs.value[index], 'recording.wav')
+
+    if (conversation.value?.dialogue[index]?.japanese) {
+      const referenceText = conversation.value.dialogue[index].japanese;
+      formData.append('reference_text', referenceText);
+      formData.append('sample_id', `conversation_${index}`); // Use a unique ID for this conversation line
+    }
+
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
+
+    // Send to speech analysis API
+    const response = await axios.post(`${apiUrl}/api/v1/speech/analyze-audio-enhanced`, formData, {
+      headers: {
+        'Authorization': `Bearer ${authToken}`
+      }
+    })
+
+    // Process response
+    if (response.data) {
+      const analysis = response.data;
+      pronunciationScores.value[index] = Math.round(analysis.score);
+
+      // Chỉ đánh dấu hoàn thành nếu là dòng cuối cùng đang hiển thị
+      const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+
+      if (index === lastVisibleIndex && pronunciationScores.value[index] >= 50) {
+        markAsComplete(index);
+      } else {
+        // Nếu không phải dòng cuối cùng, chỉ cập nhật trạng thái hoàn thành
+        lineCompletionStatus.value[index] = true;
+      }
+    }
   } catch (err) {
     console.error('Error processing recording:', err);
-    toast.error('Không thể phân tích bản ghi âm', {
+
+    // Sử dụng điểm ngẫu nhiên nếu API không hoạt động
+    pronunciationScores.value[index] = 0;
+
+    toast.warning('Đang sử dụng điểm mẫu do lỗi phân tích phát âm', {
       position: 'top',
       duration: 3000
     });
+
+    // Vẫn cập nhật trạng thái hoàn thành
+    // const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+    // if (index === lastVisibleIndex) {
+    //   markAsComplete(index);
+    // } else {
+    //   lineCompletionStatus.value[index] = true;
+    // }
   } finally {
     isProcessing.value = false;
   }

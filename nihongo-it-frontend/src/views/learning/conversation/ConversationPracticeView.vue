@@ -272,6 +272,9 @@ const pronunciationScores = ref<number[]>([])
 const lineCompletionStatus = ref<boolean[]>([])
 const mediaRecorder = ref<MediaRecorder | null>(null)
 const audioChunks = ref<Blob[]>([])
+const isSilent = ref(false)
+const silenceTimeout = ref<number | null>(null)
+const silenceDetectionDuration = 3000 // 3 giây im lặng sẽ tự động hủy
 
 // Audio stream
 let audioStream: MediaStream | null = null
@@ -508,6 +511,7 @@ const startRecording = async (index: number) => {
     // Reset recording state
     audioChunks.value = [];
     activeLineIndex.value = index;
+    isSilent.value = false;
 
     audioStream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -528,6 +532,16 @@ const startRecording = async (index: number) => {
 
       mediaRecorder.value.onstop = () => {
         const audioBlob = new Blob(audioChunks.value, { type: 'audio/wav' });
+
+        // Kiểm tra nếu dừng do im lặng
+        if (isSilent.value) {
+          toast.warning('Không phát hiện giọng nói, vui lòng thử lại', {
+            position: 'top',
+            duration: 2000
+          });
+          return;
+        }
+
         recordedAudioBlobs.value[index] = audioBlob;
         recordedAudioUrls.value[index] = URL.createObjectURL(audioBlob);
         processRecording(index);
@@ -539,6 +553,9 @@ const startRecording = async (index: number) => {
         position: 'top',
         duration: 2000
       });
+
+      // Thiết lập phát hiện âm thanh im lặng
+      setupSilenceDetection(audioStream);
     }
   } catch (err) {
     console.error('Error starting recording:', err);
@@ -549,7 +566,76 @@ const startRecording = async (index: number) => {
   }
 }
 
+// Hàm thiết lập phát hiện âm thanh im lặng
+const setupSilenceDetection = (stream: MediaStream) => {
+  try {
+    // Tạo audio context
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+    // Tạo audio source từ stream
+    const source = audioContext.createMediaStreamSource(stream);
+
+    // Tạo analyzer node để phân tích âm thanh
+    const analyzer = audioContext.createAnalyser();
+    analyzer.fftSize = 256;
+    analyzer.smoothingTimeConstant = 0.8;
+    source.connect(analyzer);
+
+    // Bắt đầu theo dõi mức độ âm thanh
+    const bufferLength = analyzer.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    let silenceStart: number | null = null;
+
+    const checkSilence = () => {
+      if (!isRecording.value) return;
+
+      analyzer.getByteFrequencyData(dataArray);
+
+      // Tính mức độ âm thanh trung bình
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sum += dataArray[i];
+      }
+      const average = sum / bufferLength;
+
+      // Xác định ngưỡng im lặng (có thể điều chỉnh giá trị này)
+      const silenceThreshold = 10;
+
+      if (average < silenceThreshold) {
+        // Âm thanh im lặng
+        if (silenceStart === null) {
+          silenceStart = Date.now();
+        } else if (Date.now() - silenceStart > silenceDetectionDuration) {
+          // Im lặng đủ lâu, tự động dừng
+          isSilent.value = true;
+          stopRecording();
+          return;
+        }
+      } else {
+        // Có âm thanh, đặt lại thời gian bắt đầu im lặng
+        silenceStart = null;
+      }
+
+      // Tiếp tục kiểm tra
+      silenceTimeout.value = window.setTimeout(checkSilence, 100);
+    };
+
+    // Bắt đầu kiểm tra im lặng
+    checkSilence();
+  } catch (err) {
+    console.error('Error setting up silence detection:', err);
+    // Tiếp tục ghi âm ngay cả khi không thể thiết lập phát hiện im lặng
+  }
+}
+
 const stopRecording = () => {
+  // Xóa timeout phát hiện im lặng
+  if (silenceTimeout.value !== null) {
+    clearTimeout(silenceTimeout.value);
+    silenceTimeout.value = null;
+  }
+
   if (mediaRecorder.value && isRecording.value) {
     mediaRecorder.value.stop();
     isRecording.value = false;

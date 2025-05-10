@@ -214,15 +214,27 @@ class VocabularyService(
         val currentUserId = userAuthUtil.getCurrentUserId()
 
         val result: Page<VocabularyEntity> = when {
+            // Kết hợp tìm kiếm theo cả topicId và jlptLevel nếu cả hai đều được cung cấp
+            filter.topicId != null && filter.jlptLevel != null -> {
+                vocabularyRepository.findByTopic_TopicIdAndJlptLevel(filter.topicId, filter.jlptLevel, pageable)
+            }
+            // Tìm kiếm theo keyword
             filter.keyword != null -> {
                 vocabularyRepository.searchVocabulary(filter.keyword, pageable)
             }
+            // Tìm kiếm theo jlptLevel
             filter.jlptLevel != null -> {
                 vocabularyRepository.findByJlptLevel(filter.jlptLevel, pageable)
             }
+            // Tìm kiếm theo topicId
+            filter.topicId != null -> {
+                vocabularyRepository.findByTopic_TopicId(filter.topicId, pageable)
+            }
+            // Tìm kiếm theo topicName
             filter.topicName != null -> {
                 vocabularyRepository.findByTopicName(filter.topicName, pageable)
             }
+            // Lấy tất cả
             else -> {
                 vocabularyRepository.findAll(pageable)
             }
@@ -339,6 +351,48 @@ class VocabularyService(
         }
 
         // Create a response with pagination information
+        return PagedVocabularyResponseDto(
+            content = content,
+            page = result.number,
+            size = result.size,
+            totalElements = result.totalElements,
+            totalPages = result.totalPages,
+            lastPage = result.isLast,
+        )
+    }
+
+    @Transactional(readOnly = true)
+    fun filterVocabularyByTopicId(filter: VocabularyFilterRequestDto): PagedVocabularyResponseDto {
+        val pageable = PageRequest.of(filter.page, filter.size)
+        val currentUserId = userAuthUtil.getCurrentUserId()
+
+        if (filter.topicId == null) {
+            throw BusinessException("Topic ID is required")
+        }
+
+        // Kiểm tra topic tồn tại
+        val topic = topicRepository.findById(filter.topicId)
+            .orElseThrow { BusinessException("Topic not found with ID: ${filter.topicId}") }
+
+        // Tìm vocabulary theo topic ID kết hợp với keyword nếu có
+        val result = if (filter.keyword != null) {
+            // Tìm theo topic ID và keyword
+            vocabularyRepository.findByTopic_TopicIdAndTermContainingIgnoreCaseOrTopic_TopicIdAndMeaningContainingIgnoreCase(
+                filter.topicId, filter.keyword, filter.topicId, filter.keyword, pageable
+            )
+        } else {
+            // Chỉ tìm theo topic ID
+            vocabularyRepository.findByTopic_TopicId(filter.topicId, pageable)
+        }
+
+        val content = result.content.map { vocabulary ->
+            val isSaved = currentUserId?.let { userId ->
+                vocabulary.savedByUsers.any { it.userId == userId }
+            } ?: false
+
+            mapToResponse(vocabulary, isSaved)
+        }
+
         return PagedVocabularyResponseDto(
             content = content,
             page = result.number,

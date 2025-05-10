@@ -62,4 +62,25 @@ interface VocabularyRepository : JpaRepository<VocabularyEntity, UUID> {
         @Param("keyword") keyword: String,
         pageable: Pageable
     ): Page<VocabularyEntity>
+
+    // Find by topic ID
+    @Query("SELECT v FROM VocabularyEntity v WHERE v.topic.topicId = :topicId")
+    fun findByTopic_TopicId(@Param("topicId") topicId: UUID, pageable: Pageable): Page<VocabularyEntity>
+
+    // Find by topic ID and keyword in term or meaning
+    fun findByTopic_TopicIdAndTermContainingIgnoreCaseOrTopic_TopicIdAndMeaningContainingIgnoreCase(
+        @Param("topicId1") topicId1: UUID, 
+        @Param("term") term: String,
+        @Param("topicId2") topicId2: UUID, 
+        @Param("meaning") meaning: String,
+        pageable: Pageable
+    ): Page<VocabularyEntity>
+
+    // Find by topic ID and JLPT level
+    @Query("SELECT v FROM VocabularyEntity v WHERE v.topic.topicId = :topicId AND v.jlptLevel = :level")
+    fun findByTopic_TopicIdAndJlptLevel(
+        @Param("topicId") topicId: UUID, 
+        @Param("level") level: JlptLevel, 
+        pageable: Pageable
+    ): Page<VocabularyEntity>
 } 

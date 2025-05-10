@@ -163,6 +163,12 @@ const routes = [
     name: 'adminTopics',
     component: () => import('@/views/admin/TopicManagementView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/vocabulary',
+    name: 'adminVocabulary',
+    component: () => import('@/views/admin/VocabularyManagementView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 

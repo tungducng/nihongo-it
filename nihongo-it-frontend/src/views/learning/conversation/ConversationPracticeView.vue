@@ -65,8 +65,8 @@
               Bạn
             </v-chip>
             <v-chip color="info" label>
-              <v-icon start>mdi-account-tie</v-icon>
-              Người bản xứ
+              <v-icon start>mdi-robot</v-icon>
+              Nihongo IT
             </v-chip>
           </div>
 
@@ -82,10 +82,10 @@
                 ]"
                 :data-index="i"
               >
-                <!-- Avatar for Native Speaker -->
+                <!-- Avatar for Nihongo IT -->
                 <div v-if="line.speaker !== 'user'" class="avatar-container mr-2">
                   <v-avatar size="36" color="info">
-                    <v-icon color="white">mdi-account-tie</v-icon>
+                    <v-icon color="white">mdi-robot</v-icon>
                   </v-avatar>
                 </div>
 
@@ -94,7 +94,7 @@
                   class="message-container"
                   :class="{
                     'user-message': line.speaker === 'user',
-                    'native-message': line.speaker !== 'user',
+                    'bot-message': line.speaker !== 'user',
                     'completed-message': lineCompletionStatus[i] && line.speaker === 'user',
                     'score-excellent': lineCompletionStatus[i] && pronunciationScores[i] >= 90,
                     'score-very-good': lineCompletionStatus[i] && pronunciationScores[i] >= 80 && pronunciationScores[i] < 90,
@@ -236,7 +236,7 @@ import { useToast } from 'vue-toast-notification'
 
 // Define types
 interface ConversationLine {
-  speaker: 'user' | 'native';
+  speaker: 'user' | 'bot';
   japanese: string;
   meaning: string;
   audioUrl?: string;
@@ -601,12 +601,12 @@ const typeTextEffect = (text: string) => {
 
     const currentLine = conversation.value.dialogue[lastVisibleIndex];
 
-    // Chỉ hiển thị mờ dòng tiếp theo nếu là dòng của người bản xứ
+    // Chỉ hiển thị mờ dòng tiếp theo nếu là dòng của Nihongo IT
     const nextIndex = lastVisibleIndex + 1;
     if (conversation.value && nextIndex < conversation.value.dialogue.length) {
       const nextLine = conversation.value.dialogue[nextIndex];
 
-      // Hiển thị mờ dòng tiếp theo nếu là của người bản xứ
+      // Hiển thị mờ dòng tiếp theo nếu là của Nihongo IT
       if (nextLine.speaker !== 'user' && !dimmedLineIndices.value.includes(nextIndex) && !visibleLineIndices.value.includes(nextIndex)) {
         requestAnimationFrame(() => {
           dimmedLineIndices.value.push(nextIndex);
@@ -614,7 +614,7 @@ const typeTextEffect = (text: string) => {
       }
     }
 
-    // Chỉ tự động hiển thị dòng tiếp theo nếu là dòng đầu tiên của người bản xứ
+    // Chỉ tự động hiển thị dòng tiếp theo nếu là dòng đầu tiên của Nihongo IT
     if (currentLine.speaker !== 'user' && lastVisibleIndex === 0) {
       setTimeout(() => {
         startTypingNextLine();
@@ -675,10 +675,10 @@ const markAsComplete = (index: number) => {
         dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextIndex);
         visibleLineIndices.value.push(nextIndex);
 
-        // Kiểm tra dòng tiếp theo sau dòng của người bản xứ
+        // Kiểm tra dòng tiếp theo sau dòng của Nihongo IT
         if (conversation.value && nextIndex + 1 < conversation.value.dialogue.length) {
           const lineAfterNext = conversation.value.dialogue[nextIndex + 1];
-          // Nếu dòng sau đó là của người bản xứ, thêm vào danh sách hiển thị mờ
+          // Nếu dòng sau đó là của Nihongo IT, thêm vào danh sách hiển thị mờ
           if (lineAfterNext.speaker !== 'user') {
             dimmedLineIndices.value.push(nextIndex + 1);
           }
@@ -687,7 +687,7 @@ const markAsComplete = (index: number) => {
         // Cuộn xuống dòng mới nhất - không cần đợi animation kết thúc
         scrollToLatestMessage();
 
-        // Sau khi hiển thị dòng người bản xứ, tiếp tục hiển thị dòng người dùng kế tiếp (nếu có)
+        // Sau khi hiển thị dòng Nihongo IT, tiếp tục hiển thị dòng người dùng kế tiếp (nếu có)
         const nextUserIndex = nextIndex + 1;
         if (conversation.value && nextUserIndex < conversation.value.dialogue.length &&
             conversation.value.dialogue[nextUserIndex].speaker === 'user') {
@@ -757,7 +757,7 @@ onMounted(() => {
       isSaved: false,
       dialogue: [
         {
-          speaker: 'native',
+          speaker: 'bot',
           japanese: 'こんにちは、はじめまして。',
           meaning: 'Xin chào, rất vui được gặp bạn.'
         },
@@ -767,7 +767,7 @@ onMounted(() => {
           meaning: 'Xin chào, rất vui được gặp bạn.'
         },
         {
-          speaker: 'native',
+          speaker: 'bot',
           japanese: 'お名前は何ですか？',
           meaning: 'Tên bạn là gì?'
         },
@@ -777,7 +777,7 @@ onMounted(() => {
           meaning: 'Tên tôi là ___.'
         },
         {
-          speaker: 'native',
+          speaker: 'bot',
           japanese: 'どうぞよろしくお願いします。',
           meaning: 'Rất hân hạnh được gặp bạn.'
         },
@@ -787,7 +787,7 @@ onMounted(() => {
           meaning: 'Rất hân hạnh được gặp bạn.'
         },
         {
-          speaker: 'native',
+          speaker: 'bot',
           japanese: 'ご出身はどちらですか？',
           meaning: 'Bạn đến từ đâu?'
         },
@@ -812,7 +812,7 @@ onMounted(() => {
     typedText.value = '';
     currentTypeIndex.value = 0;
 
-    // Kiểm tra xem dòng thứ 2 có phải của người bản xứ không để hiển thị mờ
+    // Kiểm tra xem dòng thứ 2 có phải của Nihongo IT không để hiển thị mờ
     if (conversation.value.dialogue.length > 1 && conversation.value.dialogue[1].speaker !== 'user') {
       dimmedLineIndices.value.push(1);
       console.log("Initially showing dimmed next line: 1");
@@ -966,8 +966,8 @@ onUnmounted(() => {
       align-self: flex-end;
     }
 
-    &.native-message {
-      background-color: #F5F5F5; // Màu xám nhạt cho tin nhắn người bản xứ
+    &.bot-message {
+      background-color: #E8F5E9; // Màu xanh lá nhạt cho tin nhắn của Nihongo IT
       border-top-left-radius: 4px;
       align-self: flex-start;
     }

@@ -521,21 +521,24 @@ const scrollToLatestMessage = () => {
       const rect = lastMessageElement.getBoundingClientRect();
       const targetPosition = window.scrollY + rect.top - 150;
 
-      // Sử dụng animation để cuộn mượt hơn
+      // Giảm thiểu giật lag bằng cách sử dụng biến delta nhỏ cho mỗi frame
       const startPosition = window.scrollY;
       const distance = targetPosition - startPosition;
-      const duration = 800; // ms
-      let startTime: number;
 
-      // Hàm animation cuộn
+      // Chỉ cuộn khi khoảng cách đủ lớn để tránh cuộn không cần thiết
+      if (Math.abs(distance) < 20) return;
+
+      const duration = Math.min(Math.abs(distance), 600); // Thời gian tối đa là 600ms, ngắn hơn cho khoảng cách nhỏ
+      let startTime: number | null = null;
+
+      // Hàm animation cuộn với easing function mượt mà hơn
       function animateScroll(timestamp: number) {
         if (!startTime) startTime = timestamp;
         const elapsed = timestamp - startTime;
         const progress = Math.min(elapsed / duration, 1);
 
-        // Easing function để cuộn mượt hơn (easeInOutQuad)
-        const easeInOutQuad = (t: number) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-        const easedProgress = easeInOutQuad(progress);
+        // Easing function cải tiến (easeOutQuint)
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
 
         window.scrollTo({
           top: startPosition + distance * easedProgress,
@@ -547,11 +550,77 @@ const scrollToLatestMessage = () => {
         }
       }
 
-      // Bắt đầu animation
+      // Bắt đầu animation với requestAnimationFrame để đồng bộ với refresh rate màn hình
       requestAnimationFrame(animateScroll);
-      console.log("Smooth scrolling to latest message:", lastVisibleIndex);
     }
-  }, 100);
+  }, 50); // Giảm thời gian chờ từ 100ms xuống 50ms
+}
+
+// Hiệu ứng typing cải tiến cho văn bản
+const typeTextEffect = (text: string) => {
+  // Sử dụng requestAnimationFrame để đồng bộ với refresh rate màn hình
+  if (!text || text.length === 0) {
+    isTyping.value = false;
+    return;
+  }
+
+  if (currentTypeIndex.value < text.length) {
+    // Sử dụng RAF để đồng bộ với refresh rate của màn hình
+    requestAnimationFrame(() => {
+      typedText.value = text.substring(0, currentTypeIndex.value + 1);
+      currentTypeIndex.value++;
+
+      // Xác định thời gian chờ cho ký tự tiếp theo
+      const currentChar = text[currentTypeIndex.value - 1];
+      const pauseChars = ['。', '、', '!', '?', '！', '？', '…', '.', ','];
+
+      // Tăng độ biến thiên cho tốc độ typing để tự nhiên hơn
+      const randomVariation = Math.random() * typingVariation.value * 2 - typingVariation.value;
+      let delay = Math.max(20, typeSpeed.value + randomVariation);
+
+      // Thêm thời gian dừng cho dấu câu hoặc khoảng trắng
+      if (pauseChars.includes(currentChar)) {
+        delay += 250; // Dừng lâu hơn sau dấu câu
+      } else if (currentChar === ' ') {
+        delay += 40; // Dừng nhẹ cho khoảng trắng
+      }
+
+      // Giảm thời gian trễ nếu là ký tự cuối để tránh chờ quá lâu
+      if (currentTypeIndex.value === text.length - 1) {
+        delay = Math.min(delay, 60);
+      }
+
+      setTimeout(() => typeTextEffect(text), delay);
+    });
+  } else {
+    isTyping.value = false;
+
+    // Lấy dòng hiện tại đang typing
+    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+    if (!conversation.value || lastVisibleIndex >= conversation.value.dialogue.length) return;
+
+    const currentLine = conversation.value.dialogue[lastVisibleIndex];
+
+    // Chỉ hiển thị mờ dòng tiếp theo nếu là dòng của người bản xứ
+    const nextIndex = lastVisibleIndex + 1;
+    if (conversation.value && nextIndex < conversation.value.dialogue.length) {
+      const nextLine = conversation.value.dialogue[nextIndex];
+
+      // Hiển thị mờ dòng tiếp theo nếu là của người bản xứ
+      if (nextLine.speaker !== 'user' && !dimmedLineIndices.value.includes(nextIndex) && !visibleLineIndices.value.includes(nextIndex)) {
+        requestAnimationFrame(() => {
+          dimmedLineIndices.value.push(nextIndex);
+        });
+      }
+    }
+
+    // Chỉ tự động hiển thị dòng tiếp theo nếu là dòng đầu tiên của người bản xứ
+    if (currentLine.speaker !== 'user' && lastVisibleIndex === 0) {
+      setTimeout(() => {
+        startTypingNextLine();
+      }, 800); // Giảm xuống 800ms thay vì 1000ms
+    }
+  }
 }
 
 // Bắt đầu hiệu ứng typing cho dòng tiếp theo
@@ -566,74 +635,26 @@ const startTypingNextLine = () => {
     const nextLine = conversation.value.dialogue[nextIndex];
 
     // Nếu dòng tiếp theo đang hiển thị mờ, xóa khỏi danh sách hiển thị mờ
-    if (dimmedLineIndices.value.includes(nextIndex)) {
-      dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextIndex);
-    }
-
-    // Thêm dòng vào danh sách hiển thị
-    visibleLineIndices.value.push(nextIndex);
-
-    // Áp dụng hiệu ứng typing cho tất cả các dòng (cả native và user)
-    isTyping.value = true;
-    typedText.value = '';
-    currentTypeIndex.value = 0;
-
-    // Bắt đầu hiệu ứng typing
-    typeTextEffect(nextLine.japanese);
-
-    // Scroll xuống dòng mới nhất
-    scrollToLatestMessage();
-  }
-}
-
-// Hiệu ứng typing cải tiến cho văn bản
-const typeTextEffect = (text: string) => {
-  if (currentTypeIndex.value < text.length) {
-    typedText.value = text.substring(0, currentTypeIndex.value + 1);
-    currentTypeIndex.value++;
-
-    // Thêm biến đổi ngẫu nhiên cho tốc độ typing để tự nhiên hơn
-    const randomVariation = Math.random() * typingVariation.value * 2 - typingVariation.value;
-    const adjustedSpeed = Math.max(20, typeSpeed.value + randomVariation);
-
-    // Nếu gặp dấu câu, dừng lâu hơn một chút
-    const currentChar = text[currentTypeIndex.value - 1];
-    const pauseChars = ['。', '、', '!', '?', '！', '？', '…', '.', ','];
-    const extraPause = pauseChars.includes(currentChar) ? 250 : 0;
-
-    setTimeout(() => typeTextEffect(text), adjustedSpeed + extraPause);
-  } else {
-    console.log("Typing effect completed");
-    isTyping.value = false;
-
-    // Lấy dòng hiện tại đang typing
-    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
-    if (!conversation.value || lastVisibleIndex >= conversation.value.dialogue.length) return;
-
-    const currentLine = conversation.value.dialogue[lastVisibleIndex];
-
-    // Chỉ hiển thị mờ dòng tiếp theo nếu là dòng của người bản xứ
-    const nextIndex = lastVisibleIndex + 1;
-    if (conversation.value && nextIndex < conversation.value.dialogue.length) {
-      const nextLine = conversation.value.dialogue[nextIndex];
-
-      // Chỉ hiển thị mờ dòng tiếp theo nếu là của người bản xứ
-      if (nextLine.speaker !== 'user' && !dimmedLineIndices.value.includes(nextIndex) && !visibleLineIndices.value.includes(nextIndex)) {
-        dimmedLineIndices.value.push(nextIndex);
-        console.log("Showing dimmed next line:", nextIndex);
+    requestAnimationFrame(() => {
+      if (dimmedLineIndices.value.includes(nextIndex)) {
+        dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextIndex);
       }
-    }
 
-    // Chỉ tự động hiển thị dòng tiếp theo nếu:
-    // 1. Dòng hiện tại là người bản xứ ở lần đầu (index 0)
-    // 2. KHÔNG tự động hiển thị dòng tiếp theo nếu là dòng người bản xứ khác (>0)
-    // 3. Dòng hiện tại KHÔNG phải là người dùng (người dùng phải ghi âm để tiếp tục)
-    if (currentLine.speaker !== 'user' && lastVisibleIndex === 0) {
-      // Chỉ hiệu ứng typing cho dòng đầu tiên của người bản xứ
+      // Thêm dòng vào danh sách hiển thị
+      visibleLineIndices.value.push(nextIndex);
+
+      // Áp dụng hiệu ứng typing
+      isTyping.value = true;
+      typedText.value = '';
+      currentTypeIndex.value = 0;
+
+      // Đảm bảo tất cả thay đổi DOM đã được áp dụng trước khi bắt đầu typing
       setTimeout(() => {
-        startTypingNextLine();
-      }, 1000);
-    }
+        typeTextEffect(nextLine.japanese);
+        // Cuộn sau khi bắt đầu hiệu ứng typing nhưng không chờ hoàn thành
+        scrollToLatestMessage();
+      }, 50);
+    });
   }
 }
 
@@ -646,56 +667,64 @@ const markAsComplete = (index: number) => {
   if (index === lastVisibleIndex) {
     // Nếu dòng tiếp theo đã hiển thị mờ, cần bỏ khỏi danh sách dimmedLineIndices và thêm vào visible
     const nextIndex = index + 1;
-    if (dimmedLineIndices.value.includes(nextIndex)) {
-      // Xóa khỏi danh sách mờ và thêm vào danh sách hiển thị đầy đủ
-      dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextIndex);
-      visibleLineIndices.value.push(nextIndex);
 
-      // Kiểm tra dòng tiếp theo sau dòng của người bản xứ
-      if (conversation.value && nextIndex + 1 < conversation.value.dialogue.length) {
-        const lineAfterNext = conversation.value.dialogue[nextIndex + 1];
-        // Nếu dòng sau đó là của người bản xứ, thêm vào danh sách hiển thị mờ
-        if (lineAfterNext.speaker !== 'user') {
-          dimmedLineIndices.value.push(nextIndex + 1);
+    // Sử dụng requestAnimationFrame để tránh blocking main thread
+    requestAnimationFrame(() => {
+      if (dimmedLineIndices.value.includes(nextIndex)) {
+        // Xóa khỏi danh sách mờ và thêm vào danh sách hiển thị đầy đủ
+        dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextIndex);
+        visibleLineIndices.value.push(nextIndex);
+
+        // Kiểm tra dòng tiếp theo sau dòng của người bản xứ
+        if (conversation.value && nextIndex + 1 < conversation.value.dialogue.length) {
+          const lineAfterNext = conversation.value.dialogue[nextIndex + 1];
+          // Nếu dòng sau đó là của người bản xứ, thêm vào danh sách hiển thị mờ
+          if (lineAfterNext.speaker !== 'user') {
+            dimmedLineIndices.value.push(nextIndex + 1);
+          }
         }
-      }
 
-      // Cuộn xuống dòng mới nhất và không cần hiệu ứng typing cho dòng người bản xứ
-      scrollToLatestMessage();
-
-      // Sau khi hiển thị dòng người bản xứ, tiếp tục hiển thị dòng người dùng kế tiếp (nếu có)
-      const nextUserIndex = nextIndex + 1;
-      if (conversation.value && nextUserIndex < conversation.value.dialogue.length &&
-          conversation.value.dialogue[nextUserIndex].speaker === 'user') {
-        setTimeout(() => {
-          // Bỏ dòng người dùng khỏi danh sách dimmed (nếu có) và thêm vào visible
-          if (dimmedLineIndices.value.includes(nextUserIndex)) {
-            dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextUserIndex);
-          }
-          visibleLineIndices.value.push(nextUserIndex);
-
-          // Áp dụng hiệu ứng typing cho dòng người dùng
-          isTyping.value = true;
-          typedText.value = '';
-          currentTypeIndex.value = 0;
-
-          // Kiểm tra lại conversation.value trước khi sử dụng
-          if (conversation.value) {
-            typeTextEffect(conversation.value.dialogue[nextUserIndex].japanese);
-          }
-
-          // Cuộn xuống dòng mới nhất
-          scrollToLatestMessage();
-        }, 1000);
-      }
-    } else {
-      // Nếu không có dòng mờ kế tiếp, tiếp tục hiển thị dòng tiếp theo như thông thường
-      setTimeout(() => {
-        startTypingNextLine();
-        // Đảm bảo cuộn xuống sau khi hiển thị dòng mới
+        // Cuộn xuống dòng mới nhất - không cần đợi animation kết thúc
         scrollToLatestMessage();
-      }, 1000);
-    }
+
+        // Sau khi hiển thị dòng người bản xứ, tiếp tục hiển thị dòng người dùng kế tiếp (nếu có)
+        const nextUserIndex = nextIndex + 1;
+        if (conversation.value && nextUserIndex < conversation.value.dialogue.length &&
+            conversation.value.dialogue[nextUserIndex].speaker === 'user') {
+
+          // Giảm thời gian chờ để cải thiện trải nghiệm
+          setTimeout(() => {
+            requestAnimationFrame(() => {
+              // Bỏ dòng người dùng khỏi danh sách dimmed (nếu có) và thêm vào visible
+              if (dimmedLineIndices.value.includes(nextUserIndex)) {
+                dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextUserIndex);
+              }
+              visibleLineIndices.value.push(nextUserIndex);
+
+              // Áp dụng hiệu ứng typing cho dòng người dùng
+              isTyping.value = true;
+              typedText.value = '';
+              currentTypeIndex.value = 0;
+
+              // Kiểm tra lại conversation.value trước khi sử dụng
+              if (conversation.value) {
+                typeTextEffect(conversation.value.dialogue[nextUserIndex].japanese);
+              }
+
+              // Cuộn xuống dòng mới nhất sau một khoảng thời gian nhỏ
+              setTimeout(() => scrollToLatestMessage(), 50);
+            });
+          }, 700); // Giảm từ 1000ms xuống 700ms
+        }
+      } else {
+        // Nếu không có dòng mờ kế tiếp, tiếp tục hiển thị dòng tiếp theo như thông thường
+        setTimeout(() => {
+          startTypingNextLine();
+          // Đảm bảo cuộn xuống sau khi hiển thị dòng mới
+          scrollToLatestMessage();
+        }, 700); // Giảm từ 1000ms xuống 700ms
+      }
+    });
   }
 
   // Check if the conversation is now completed
@@ -834,28 +863,27 @@ onUnmounted(() => {
 
   .japanese-text {
     font-family: 'Noto Sans JP', sans-serif;
+    will-change: contents;
+    transform: translateZ(0);
   }
 
   .typing-cursor {
-    animation: blink 0.7s infinite;
-    font-weight: bold;
     display: inline-block;
     vertical-align: middle;
     transform-origin: bottom;
-    animation-name: blink, bounce;
-    animation-duration: 0.7s, 3s;
-    animation-iteration-count: infinite, infinite;
-    animation-timing-function: step-end, ease-in-out;
+    will-change: opacity, transform;
+    animation: cursorBlink 0.7s step-end infinite,
+               cursorBounce 3s ease-in-out infinite;
   }
 
-  @keyframes blink {
+  @keyframes cursorBlink {
     0%, 100% { opacity: 1; }
     50% { opacity: 0; }
   }
 
-  @keyframes bounce {
-    0%, 20%, 40%, 60%, 80%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-2px); }
+  @keyframes cursorBounce {
+    0%, 20%, 40%, 60%, 80%, 100% { transform: translateY(0) translateZ(0); }
+    50% { transform: translateY(-2px) translateZ(0); }
   }
 
   .chat-container {
@@ -866,6 +894,7 @@ onUnmounted(() => {
     position: relative;
     overflow: visible;
     margin-bottom: 16px;
+    contain: layout style;
   }
 
   .message-row {
@@ -873,13 +902,16 @@ onUnmounted(() => {
     align-items: flex-start;
     width: 100%;
     margin-bottom: 8px;
-    animation: fadeInUp 0.5s ease-out forwards;
+    animation: fadeInUp 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
     opacity: 0;
+    will-change: transform, opacity;
+    transform: translateZ(0);
 
     &.dimmed-line {
       opacity: 0.6;
       filter: blur(0.5px);
       pointer-events: none;
+      animation: fadeInDimmed 0.5s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 
       .message-container {
         opacity: 0.6;
@@ -893,26 +925,39 @@ onUnmounted(() => {
   @keyframes fadeInUp {
     from {
       opacity: 0;
-      transform: translateY(20px);
+      transform: translate3d(0, 20px, 0);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes fadeInDimmed {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 15px, 0);
+    }
+    to {
+      opacity: 0.6;
+      transform: translate3d(0, 0, 0);
     }
   }
 
   .message-container {
     position: relative;
     border-radius: 18px;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     min-width: 270px;
     transform-origin: bottom center;
-    animation: messageScale 0.3s ease-out forwards;
+    animation: messageScale 0.25s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+    will-change: transform, opacity, box-shadow;
+    backface-visibility: hidden;
 
     &:hover {
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-      transform: translateY(-2px);
+      transform: translateY(-2px) translateZ(0);
     }
 
     &.user-message {
@@ -930,7 +975,7 @@ onUnmounted(() => {
     &.completed-message {
       border-left-width: 3px;
       border-left-style: solid;
-      animation: pulse 1s ease-in-out;
+      animation: pulse 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
     }
 
     &.score-excellent {
@@ -955,11 +1000,11 @@ onUnmounted(() => {
 
     @keyframes messageScale {
       from {
-        transform: scale(0.95);
+        transform: scale3d(0.98, 0.98, 1);
         opacity: 0.8;
       }
       to {
-        transform: scale(1);
+        transform: scale3d(1, 1, 1);
         opacity: 1;
       }
     }
@@ -980,6 +1025,8 @@ onUnmounted(() => {
   .message-content {
     position: relative;
     z-index: 0;
+    will-change: contents;
+    contain: content;
   }
 
   .user-controls {

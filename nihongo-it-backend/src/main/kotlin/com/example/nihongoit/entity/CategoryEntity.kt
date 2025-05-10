@@ -21,6 +21,9 @@ data class CategoryEntity(
     @Column(name = "display_order")
     val displayOrder: Int = 0,
 
+    @Column(name = "is_active")
+    val isActive: Boolean = true,
+
     @Column(name = "created_at")
     val createdAt: LocalDateTime? = LocalDateTime.now(),
     

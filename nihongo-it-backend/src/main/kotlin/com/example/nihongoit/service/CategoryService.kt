@@ -77,6 +77,21 @@ class CategoryService(
             name = request.name ?: category.name,
             meaning = request.meaning ?: category.meaning,
             displayOrder = request.displayOrder ?: category.displayOrder,
+            isActive = request.isActive ?: category.isActive,
+            updatedAt = LocalDateTime.now()
+        )
+
+        val savedCategory = categoryRepository.save(updatedCategory)
+        return savedCategory.toDTO()
+    }
+
+    @Transactional
+    fun toggleCategoryStatus(categoryId: UUID): CategoryDTO {
+        val category = categoryRepository.findById(categoryId)
+            .orElseThrow { BusinessException("Category not found with ID: $categoryId") }
+
+        val updatedCategory = category.copy(
+            isActive = !category.isActive,
             updatedAt = LocalDateTime.now()
         )
 

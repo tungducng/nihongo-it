@@ -18,6 +18,7 @@ data class CategoryDTO(
     val meaning: String? = null,
     val displayOrder: Int = 0,
     val topicCount: Int? = null,
+    val isActive: Boolean = true,
 
     @JsonProperty("createdAt")
     @JsonDeserialize(using = LocalDateTimeDeserializer::class)
@@ -40,6 +41,7 @@ fun CategoryEntity.toDTO(topicCount: Int? = null): CategoryDTO {
         meaning = this.meaning,
         displayOrder = this.displayOrder,
         topicCount = topicCount ?: this.topics.size,
+        isActive = this.isActive,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt
     )
@@ -50,7 +52,8 @@ data class CreateCategoryRequest(
     val name: String,
     val meaning: String,
     val description: String? = null,
-    val displayOrder: Int = 0
+    val displayOrder: Int = 0,
+    val isActive: Boolean = true
 )
 
 // Data class for updating an existing category
@@ -58,5 +61,6 @@ data class UpdateCategoryRequest(
     val name: String? = null,
     val meaning: String? = null,
     val description: String? = null,
-    val displayOrder: Int? = null
+    val displayOrder: Int? = null,
+    val isActive: Boolean? = null
 ) 

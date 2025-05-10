@@ -57,6 +57,7 @@
             <th class="text-left">Ý nghĩa (Tiếng Việt)</th>
             <th class="text-center">Thứ tự hiển thị</th>
             <th class="text-center">Số chủ đề</th>
+            <th class="text-center">Trạng thái</th>
             <th class="text-center">Ngày tạo</th>
             <th class="text-center">Thao tác</th>
           </tr>
@@ -70,6 +71,14 @@
               <v-chip size="small" color="info" variant="outlined" class="topic-chip">
                 {{ item.topicCount || 0 }}
               </v-chip>
+            </td>
+            <td class="text-center">
+              <v-chip
+                size="small"
+                :color="item.isActive ? 'success' : 'error'"
+                :text="item.isActive ? 'Đang hoạt động' : 'Đã vô hiệu'"
+                variant="outlined"
+              ></v-chip>
             </td>
             <td class="text-center">{{ formatDate(item.createdAt) }}</td>
             <td class="text-center">
@@ -88,17 +97,17 @@
                     </v-btn>
                   </template>
                 </v-tooltip>
-                <v-tooltip text="Xóa danh mục" location="top">
+                <v-tooltip :text="item.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'" location="top">
                   <template v-slot:activator="{ props }">
                     <v-btn
                       v-bind="props"
                       icon
                       size="small"
                       variant="text"
-                      color="error"
-                      @click="confirmDelete(item)"
+                      :color="item.isActive ? 'error' : 'success'"
+                      @click="confirmToggleStatus(item)"
                     >
-                      <v-icon>mdi-delete</v-icon>
+                      <v-icon>{{ item.isActive ? 'mdi-close-circle' : 'mdi-check-circle' }}</v-icon>
                     </v-btn>
                   </template>
                 </v-tooltip>
@@ -187,23 +196,41 @@
       </v-card>
     </v-dialog>
 
-    <!-- Delete confirmation dialog -->
-    <v-dialog v-model="deleteDialog" max-width="500px" persistent>
+    <!-- Status toggle confirmation dialog -->
+    <v-dialog v-model="statusDialog" max-width="500px" persistent>
       <v-card>
-        <v-card-title class="text-h5 bg-error text-white">Xóa danh mục</v-card-title>
+        <v-card-title class="text-h5" :class="statusItem?.isActive ? 'bg-error text-white' : 'bg-success text-white'">
+          {{ statusItem?.isActive ? 'Vô hiệu hóa danh mục' : 'Kích hoạt danh mục' }}
+        </v-card-title>
         <v-card-text class="pt-4">
-          <p class="text-body-1">Bạn có chắc chắn muốn xóa danh mục <strong>"{{ deleteItem?.name }}"</strong>?</p>
-          <div class="mt-2 text-red-darken-2">Hành động này không thể hoàn tác.</div>
-          <div v-if="deleteItem?.topicCount && deleteItem.topicCount > 0" class="mt-2 font-weight-bold bg-warning-lighten-5 pa-2 rounded">
+          <p class="text-body-1">
+            {{ statusItem?.isActive
+              ? `Bạn có chắc chắn muốn vô hiệu hóa danh mục "${statusItem?.name}"?`
+              : `Bạn có chắc chắn muốn kích hoạt lại danh mục "${statusItem?.name}"?`
+            }}
+          </p>
+          <div v-if="statusItem?.isActive" class="mt-2">
+            Danh mục vô hiệu hóa sẽ không hiển thị cho người dùng nhưng vẫn được lưu trong hệ thống.
+          </div>
+          <div v-else class="mt-2">
+            Kích hoạt lại danh mục sẽ cho phép người dùng xem và sử dụng danh mục này.
+          </div>
+          <div v-if="statusItem?.topicCount && statusItem.topicCount > 0" class="mt-2 font-weight-bold bg-warning-lighten-5 pa-2 rounded">
             <v-icon color="warning" class="mr-1">mdi-alert</v-icon>
-            Cảnh báo: Danh mục này chứa <strong>{{ deleteItem.topicCount }}</strong> chủ đề sẽ bị xóa theo.
+            Lưu ý: Danh mục này chứa <strong>{{ statusItem.topicCount }}</strong> chủ đề.
           </div>
         </v-card-text>
         <v-divider></v-divider>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="grey" variant="text" @click="deleteDialog = false">Hủy</v-btn>
-          <v-btn color="error" variant="elevated" @click="deleteCategory">Xóa</v-btn>
+          <v-btn color="grey" variant="text" @click="statusDialog = false">Hủy</v-btn>
+          <v-btn
+            :color="statusItem?.isActive ? 'error' : 'success'"
+            variant="elevated"
+            @click="toggleCategoryStatus"
+          >
+            {{ statusItem?.isActive ? 'Vô hiệu hóa' : 'Kích hoạt' }}
+          </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -232,19 +259,19 @@ const form = ref(null);
 
 // Dialog state
 const dialog = ref(false);
-const deleteDialog = ref(false);
+const statusDialog = ref(false);
 const editedIndex = ref(-1);
 const editedItem = ref<CreateCategoryRequest>({
   name: '',
   meaning: '',
   displayOrder: 0
 });
-const defaultItem = {
+const defaultItem: CreateCategoryRequest = {
   name: '',
   meaning: '',
   displayOrder: 0
 };
-const deleteItem = ref<Category | null>(null);
+const statusItem = ref<Category | null>(null);
 
 // Format dates with Vietnamese locale
 const formatDate = (dateString: string | undefined) => {
@@ -338,23 +365,27 @@ async function saveCategory() {
   }
 }
 
-function confirmDelete(item: Category) {
-  deleteItem.value = item;
-  deleteDialog.value = true;
+function confirmToggleStatus(item: Category) {
+  statusItem.value = item;
+  statusDialog.value = true;
 }
 
-async function deleteCategory() {
-  if (!deleteItem.value) return;
+async function toggleCategoryStatus() {
+  if (!statusItem.value) return;
 
   try {
-    await categoryService.adminDeleteCategory(deleteItem.value.categoryId);
-    $toast.success('Xóa danh mục thành công');
-    deleteDialog.value = false;
+    await categoryService.adminToggleCategoryStatus(statusItem.value.categoryId);
+    $toast.success(
+      statusItem.value.isActive
+        ? 'Đã vô hiệu hóa danh mục thành công'
+        : 'Đã kích hoạt danh mục thành công'
+    );
+    statusDialog.value = false;
     loadCategories();
   } catch (err: any) {
-    error.value = err.response?.data?.message || 'Không thể xóa danh mục';
-    $toast.error(error.value || 'Không thể xóa danh mục');
-    console.error('Lỗi khi xóa danh mục:', err);
+    error.value = err.response?.data?.message || 'Không thể thay đổi trạng thái danh mục';
+    $toast.error(error.value || 'Không thể thay đổi trạng thái danh mục');
+    console.error('Lỗi khi thay đổi trạng thái danh mục:', err);
   }
 }
 

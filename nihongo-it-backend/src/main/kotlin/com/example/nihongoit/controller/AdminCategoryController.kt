@@ -85,6 +85,17 @@ class AdminCategoryController(
         )
     }
 
+    @PatchMapping("/{categoryId}/toggle-status", produces = [MediaType.APPLICATION_JSON_VALUE])
+    @Operation(
+        summary = "Toggle category status",
+        description = "Activates or deactivates a category",
+        security = [SecurityRequirement(name = "bearerAuth")]
+    )
+    fun toggleCategoryStatus(@PathVariable categoryId: UUID): ResponseEntity<CategoryDTO> {
+        val updatedCategory = categoryService.toggleCategoryStatus(categoryId)
+        return ResponseEntity.ok(updatedCategory)
+    }
+
     @GetMapping("/search", produces = [MediaType.APPLICATION_JSON_VALUE])
     @Operation(
         summary = "Search categories",

@@ -7,6 +7,7 @@ export interface Category {
   meaning: string;
   displayOrder: number;
   topicCount?: number;
+  isActive: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -23,6 +24,7 @@ export interface UpdateCategoryRequest {
   meaning?: string;
   description?: string;
   displayOrder?: number;
+  isActive?: boolean;
 }
 
 export interface CategoryResponse {
@@ -63,6 +65,10 @@ const categoryService = {
 
   adminDeleteCategory(id: string): Promise<AxiosResponse<any>> {
     return api.delete(`/api/admin/categories/${id}`);
+  },
+
+  adminToggleCategoryStatus(id: string): Promise<AxiosResponse<Category>> {
+    return api.patch(`/api/admin/categories/${id}/toggle-status`);
   },
 
   adminSearchCategories(nameQuery?: string, meaningQuery?: string): Promise<AxiosResponse<Category[]>> {

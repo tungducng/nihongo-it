@@ -349,10 +349,10 @@ class UserService @Autowired constructor(
             val allUsers = userRepository.findAll()
             
             // Get review dates for all users
-            val userLastActiveDates = allUsers.associate { user ->
+            val userLastActiveDates = allUsers.associateWith { user ->
                 val lastReview = reviewLogRepository.findTopByUserIdOrderByReviewTimestampDesc(user.userId!!)
-                val lastActive = lastReview?.reviewTimestamp ?: user.updatedAt ?: user.lastLogin ?: user.createdAt
-                user to lastActive
+                val lastActive = lastReview?.reviewTimestamp ?: user.updatedAt
+                lastActive
             }
             
             // Sort based on the lastActive dates

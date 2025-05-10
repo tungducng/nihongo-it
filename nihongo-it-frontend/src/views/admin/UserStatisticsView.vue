@@ -151,7 +151,7 @@
           <template v-slot:item.streak="{ item }">
             <div class="d-flex align-center">
               <v-icon icon="mdi-fire" color="orange" class="mr-1"></v-icon>
-              {{ item.summary?.currentStreak || 0 }}
+              {{ item.currentStreak || 0 }}
             </div>
           </template>
 

@@ -402,20 +402,12 @@ class FlashcardService(
         val reviewsByDate = recentReviews
             .groupBy { it.reviewTimestamp.toLocalDate() }
         
-        var currentStreak = 0
-        var yesterday = LocalDateTime.now().toLocalDate().minusDays(1)
-        
-        while (reviewsByDate.containsKey(yesterday)) {
-            currentStreak++
-            yesterday = yesterday.minusDays(1)
-        }
-        
         val statistics = mapOf(
             "summary" to mapOf(
                 "totalCards" to totalCards,
                 "dueCardsNow" to dueCardsNow,
                 "reviewsLast30Days" to recentReviews.size,
-                "currentStreak" to currentStreak,
+                "currentStreak" to userService.getUserById(userId).streakCount,
                 "overallRetentionRate" to overallRetentionRate
             ),
             "cardsDueByDay" to cardsDueByDay,
@@ -564,6 +556,10 @@ class FlashcardService(
     fun getUserFlashcardStatistics(userId: UUID): Map<String, Any> {
         logger.info("Getting flashcard statistics for user: $userId")
         
+        // Get user to access streak count
+        val user = userRepository.findById(userId)
+            .orElseThrow { EntityNotFoundException("User not found with id: $userId") }
+        
         val allFlashcards = flashcardRepository.findByUser_UserId(userId)
         if (allFlashcards.isEmpty()) {
             // Return empty stats when user has no flashcards
@@ -572,7 +568,6 @@ class FlashcardService(
                     "totalCards" to 0,
                     "dueCardsNow" to 0,
                     "reviewsLast30Days" to 0,
-                    "currentStreak" to 0,
                     "overallRetentionRate" to 0
                 ),
                 "cardsByState" to mapOf<String, Int>(),
@@ -651,25 +646,12 @@ class FlashcardService(
             "strong" to allFlashcards.count { it.stability >= 10.0 }
         )
         
-        // Calculate current streak
-        var currentStreak = 0
-        var yesterday = LocalDateTime.now().toLocalDate().minusDays(1)
-        
-        // Check for reviews on consecutive days
-        val reviewsByDate = recentReviews
-            .groupBy { it.reviewTimestamp.toLocalDate() }
-        
-        while (reviewsByDate.containsKey(yesterday)) {
-            currentStreak++
-            yesterday = yesterday.minusDays(1)
-        }
-        
         return mapOf(
             "summary" to mapOf(
                 "totalCards" to allFlashcards.size,
                 "dueCardsNow" to dueCardsNow,
                 "reviewsLast30Days" to recentReviews.size,
-                "currentStreak" to currentStreak,
+                "currentStreak" to user.streakCount,
                 "overallRetentionRate" to overallRetentionRate
             ),
             "cardsByState" to cardsByState,
@@ -679,7 +661,7 @@ class FlashcardService(
             "memoryStrengthDistribution" to memoryStrengthDistribution,
             "cardsDueByDay" to cardsDueByDay,
             "reviewTrend" to calculateReviewTrend(recentReviews),
-            "averageRating" to if (recentReviews.isNotEmpty()) recentReviews.map { it.rating }.average() else 0.0
+            "averageRating" to if (recentReviews.isNotEmpty()) recentReviews.map { it.rating }.average() else 0.0,
         )
     }
     

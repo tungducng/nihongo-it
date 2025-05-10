@@ -62,7 +62,8 @@ class AdminStatisticsController(
                     "summary" to flashcardStats["summary"],
                     "cardsByState" to flashcardStats["cardsByState"],
                     "lastActive" to (lastReview?.format(dateTimeFormatter) ?: user.updatedAt?.format(dateTimeFormatter)),
-                    "progress" to calculateUserProgress(flashcardStats)
+                    "progress" to calculateUserProgress(flashcardStats),
+                    "currentStreak" to user.streakCount,
                 )
             }
             

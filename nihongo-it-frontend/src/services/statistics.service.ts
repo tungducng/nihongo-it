@@ -9,14 +9,15 @@ export interface UserStatistics {
   summary?: {
     totalCards?: number;
     dueCardsNow?: number;
-    reviewsLast30Days?: number;
     currentStreak?: number;
+    reviewsLast30Days?: number;
     overallRetentionRate?: number;
   };
   cardsByState?: Record<string, number>;
   lastActive?: string;
   progress?: number;
   retentionRate?: number;
+  currentStreak?: number;
 }
 
 export interface ReviewHistoryItem {

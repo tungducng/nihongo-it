@@ -72,6 +72,16 @@ export interface AdminStatisticsOverview {
 class StatisticsService {
   // Get statistics for all users (admin only)
   async getAllUserStatistics(page: number, size: number, sortBy: string, sortDir: string): Promise<{
+    result?: {
+      status: string;
+      message: string;
+    };
+    data?: {
+      users: UserStatistics[];
+      totalItems: number;
+      totalPages: number;
+      currentPage: number;
+    };
     users: UserStatistics[];
     totalItems: number;
     totalPages: number;
@@ -89,7 +99,7 @@ class StatisticsService {
           sortDir
         }
       });
-      return response.data.data;
+      return response.data; // Return the raw data that includes both result and data
     } catch (error) {
       console.error('Error fetching user statistics:', error);
       throw error;

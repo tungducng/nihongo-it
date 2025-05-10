@@ -88,4 +88,9 @@ interface ReviewLogRepository : JpaRepository<ReviewLogEntity, UUID> {
         @Param("userId") userId: UUID,
         @Param("startDate") startDate: LocalDateTime
     ): List<Array<Any>>
+
+    @Query(value = "SELECT COUNT(DISTINCT r.flashcard.id) FROM ReviewLogEntity r WHERE r.userId = :userId AND r.reviewTimestamp > :timestamp")
+    fun countDistinctFlashcardIdByUserIdAndReviewTimestampAfter(userId: UUID, timestamp: LocalDateTime): Int
+
+    fun findTopByUserIdOrderByReviewTimestampDesc(userId: UUID): ReviewLogEntity?
 } 

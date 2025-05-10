@@ -264,18 +264,35 @@ const fetchUserStatistics = async () => {
     // Convert page from 1-based to 0-based for backend
     const pageIndex = page.value - 1;
 
+    // Fallback to a known field if we get an error with lastActive
+    const currentSortBy = sortBy.value === 'totalCards' ? 'summary.totalCards' : sortBy.value;
+
     const response = await statisticsService.getAllUserStatistics(
       pageIndex,
       10, // Page size
-      sortBy.value === 'totalCards' ? 'summary.totalCards' : sortBy.value,
+      currentSortBy,
       sortDirection.value
     );
 
-    userStats.value = response.users;
-    totalItems.value = response.totalItems;
-    totalPages.value = response.totalPages;
+    // Handle the error response format from the backend
+    if (response.result && response.result.status === 'NG') {
+      console.error('Backend error:', response.result.message);
+      error.value = true;
+      // Fallback to userId sorting if there's an error with lastActive
+      if (sortBy.value === 'lastActive') {
+        sortBy.value = 'userId';
+        fetchUserStatistics();
+        return;
+      }
+    }
 
-    console.log('User statistics:', response);
+    // Use data field if present (new API format) or direct fields (old format)
+    const data = response.data || response;
+    userStats.value = data.users || [];
+    totalItems.value = data.totalItems || 0;
+    totalPages.value = data.totalPages || 0;
+
+    console.log('User statistics:', data);
   } catch (err) {
     console.error('Error fetching user statistics:', err);
     error.value = true;

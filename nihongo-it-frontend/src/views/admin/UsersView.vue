@@ -53,6 +53,15 @@
           </v-chip>
         </template>
 
+        <template v-slot:item.status="{ item }">
+          <v-chip
+            :color="item.isActive ? 'success' : 'error'"
+            size="small"
+            :text="item.isActive ? 'Active' : 'Inactive'"
+            variant="outlined"
+          ></v-chip>
+        </template>
+
         <template v-slot:item.lastLogin="{ item }">
           {{ formatDate(item.lastLogin) }}
         </template>
@@ -173,21 +182,7 @@
             ></v-select>
 
             <div v-if="dialog.isEdit">
-              <v-switch
-                v-model="dialog.user.isActive"
-                label="Account active"
-                color="success"
-                hide-details
-                class="mt-2"
-              ></v-switch>
-
-              <v-switch
-                v-model="dialog.user.isEmailVerified"
-                label="Email verified"
-                color="info"
-                hide-details
-                class="mt-2"
-              ></v-switch>
+              <!-- Removed the active switch, now handled only via action buttons -->
             </div>
           </v-form>
         </v-card-text>
@@ -332,6 +327,7 @@ const headers = ref([
   { title: 'Email', key: 'email', sortable: true },
   { title: 'Name', key: 'fullName', sortable: true },
   { title: 'Role', key: 'roleId', sortable: true },
+  { title: 'Status', key: 'status', sortable: true },
   { title: 'Last Login', key: 'lastLogin', sortable: true },
   { title: 'Actions', key: 'actions', sortable: false }
 ]);
@@ -456,9 +452,7 @@ const saveUser = async () => {
         fullName: dialog.value.user.fullName,
         currentLevel: dialog.value.user.currentLevel,
         jlptGoal: dialog.value.user.jlptGoal,
-        roleId: dialog.value.user.roleId,
-        isActive: dialog.value.user.isActive,
-        isEmailVerified: dialog.value.user.isEmailVerified
+        roleId: dialog.value.user.roleId
       };
 
       if (dialog.value.user.password) {
@@ -492,15 +486,16 @@ const saveUser = async () => {
 
 // Toggle user active status
 const toggleUserStatus = (user: UserInfo) => {
-  const isActive = user.isActive !== false;
+  // Explicitly check if isActive is true or undefined/null (meaning it's active)
+  const isCurrentlyActive = user.isActive !== false;
 
   confirmDialog.value = {
     visible: true,
-    title: isActive ? 'Deactivate User?' : 'Activate User?',
-    message: `Are you sure you want to ${isActive ? 'deactivate' : 'activate'} ${user.email}?`,
+    title: isCurrentlyActive ? 'Deactivate User?' : 'Activate User?',
+    message: `Are you sure you want to ${isCurrentlyActive ? 'deactivate' : 'activate'} ${user.email}?`,
     action: async () => {
       try {
-        if (isActive) {
+        if (isCurrentlyActive) {
           await adminService.deactivateUser(user.userId);
           showSnackbar('User deactivated successfully');
         } else {
@@ -514,8 +509,8 @@ const toggleUserStatus = (user: UserInfo) => {
         showSnackbar(error.response?.data?.message || 'Failed to update user status', 'error');
       }
     },
-    actionText: isActive ? 'Deactivate' : 'Activate',
-    color: isActive ? 'error' : 'success'
+    actionText: isCurrentlyActive ? 'Deactivate' : 'Activate',
+    color: isCurrentlyActive ? 'error' : 'success'
   };
 };
 

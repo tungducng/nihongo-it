@@ -242,7 +242,8 @@ class AdminService(
             profilePicture = this.profilePicture,
             currentLevel = this.currentLevel,
             jlptGoal = this.jlptGoal,
-            lastLogin = this.lastLogin
+            lastLogin = this.lastLogin,
+            isActive = this.isActive
         )
     }
 } 

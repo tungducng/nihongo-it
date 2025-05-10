@@ -36,4 +36,7 @@ data class UserDto(
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
     @JsonSerialize(using = LocalDateTimeSerializer::class)
     val lastLogin: LocalDateTime?,
+    
+    @JsonProperty("isActive")
+    val isActive: Boolean = true,
 )

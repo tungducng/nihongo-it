@@ -27,32 +27,60 @@
               @click:clear="clearSearch"
             ></v-text-field>
           </v-col>
-          <v-col cols="12" sm="6" md="3">
-            <v-select
-              v-model="sortBy"
-              :items="[
-                { title: 'Hoạt động gần đây', value: 'lastActive' },
-                { title: 'Tên', value: 'fullName' },
-                { title: 'Chuỗi ngày', value: 'streakCount' }
-              ]"
-              label="Sắp xếp theo"
-              density="compact"
-              hide-details
-              @update:model-value="fetchUserStatistics"
-            ></v-select>
-          </v-col>
-          <v-col cols="12" sm="6" md="3">
-            <v-select
-              v-model="sortDirection"
-              :items="[
-                { title: 'Giảm dần', value: 'desc' },
-                { title: 'Tăng dần', value: 'asc' }
-              ]"
-              label="Thứ tự"
-              density="compact"
-              hide-details
-              @update:model-value="fetchUserStatistics"
-            ></v-select>
+          <v-col cols="12" sm="6" md="4">
+            <div class="d-flex align-center">
+              <v-select
+                v-model="sortBy"
+                :items="[
+                  { title: 'Hoạt động gần đây', value: 'lastActive' },
+                  { title: 'Tên', value: 'fullName' },
+                  { title: 'Chuỗi ngày', value: 'streakCount' }
+                ]"
+                label="Sắp xếp theo"
+                density="compact"
+                hide-details
+                class="me-2"
+                @update:model-value="fetchUserStatistics"
+              ></v-select>
+
+              <v-btn-toggle
+                v-model="sortDirection"
+                mandatory
+                density="comfortable"
+                color="primary"
+                rounded="sm"
+                @update:model-value="fetchUserStatistics"
+              >
+                <v-tooltip text="Giảm dần">
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      :value="'desc'"
+                      icon
+                      size="small"
+                      variant="tonal"
+                      :color="sortDirection === 'desc' ? 'primary' : undefined"
+                    >
+                      <v-icon>mdi-sort-descending</v-icon>
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+                <v-tooltip text="Tăng dần">
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      v-bind="props"
+                      :value="'asc'"
+                      icon
+                      size="small"
+                      variant="tonal"
+                      :color="sortDirection === 'asc' ? 'primary' : undefined"
+                    >
+                      <v-icon>mdi-sort-ascending</v-icon>
+                    </v-btn>
+                  </template>
+                </v-tooltip>
+              </v-btn-toggle>
+            </div>
           </v-col>
           <v-col cols="12" sm="6" md="2">
             <v-btn
@@ -293,8 +321,8 @@ const fetchUserStatistics = async () => {
       console.error('Backend error:', response.result.message);
       error.value = true;
       // Fallback to userId sorting if there's an error
-      if (sortBy.value !== 'userId') {
-        sortBy.value = 'userId';
+      if (sortBy.value !== 'lastActive') {
+        sortBy.value = 'lastActive';
         fetchUserStatistics();
         return;
       }

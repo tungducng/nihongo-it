@@ -342,7 +342,7 @@ class UserService @Autowired constructor(
      */
     fun getAllUsers(pageable: org.springframework.data.domain.Pageable, search: String? = null): org.springframework.data.domain.Page<UserEntity> {
         // Since lastActive is not a field in UserEntity, we need special handling
-        val sortBy = pageable.sort.map { order -> order.property }.firstOrNull() ?: "userId"
+        val sortBy = pageable.sort.map { order -> order.property }.firstOrNull() ?: "lastActive"
         
         // Get all users, possibly filtered by search term
         val allUsers = if (search.isNullOrBlank()) {

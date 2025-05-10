@@ -136,6 +136,7 @@ class FlashcardService(
         // Save review log
         reviewLogRepository.save(reviewLog)
 
+        logger.info("Calling updateUserStreak for user $userId after successful review")
         userService.updateUserStreak(userId)
         
         val result = ResponseDto(

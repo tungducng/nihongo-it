@@ -254,24 +254,56 @@ class UserService @Autowired constructor(
      */
     @Transactional
     fun updateUserStreak(userId: UUID) {
+        logger.info("==================== STREAK UPDATE LOG START ====================")
+        logger.info("Updating streak for user $userId")
+        
         val user = getUserById(userId)
+        logger.info("Current user streak: ${user.streakCount}")
+        
         val now = LocalDateTime.now()
         val today = now.toLocalDate()
         val yesterday = today.minusDays(1)
         
+        logger.info("Today: $today, Yesterday: $yesterday")
+        
         // Get most recent review log (besides the current one)
         val previousReview = reviewLogRepository.findTopByUserIdOrderByReviewTimestampDesc(userId)
+        
+        if (previousReview != null) {
+            logger.info("Found previous review with timestamp: ${previousReview.reviewTimestamp}")
+            logger.info("Previous review date: ${previousReview.reviewTimestamp.toLocalDate()}")
+            logger.info("Review flashcard ID: ${previousReview.flashcard.flashcardId}")
+            logger.info("Review rating: ${previousReview.rating}")
+        } else {
+            logger.info("No previous reviews found for this user")
+        }
+        
+        // Get count of all reviews today
+        val startOfToday = today.atStartOfDay()
+        val reviewsToday = reviewLogRepository.countByUserIdAndReviewTimestampAfter(userId, startOfToday)
+        logger.info("Total reviews today: $reviewsToday")
         
         val updatedUser = if (previousReview != null) {
             val previousReviewDate = previousReview.reviewTimestamp.toLocalDate()
             
             when {
-                // If last review was today, don't change the streak
+                // If last review was today
                 previousReviewDate == today -> {
-                    user
+                    // If streak is 0, set it to 1
+                    if (user.streakCount == 0) {
+                        logger.info("Last review was today but streak is 0 - setting streak to 1")
+                        user.copy(
+                            streakCount = 1,
+                            updatedAt = now
+                        )
+                    } else {
+                        logger.info("Last review was today - not changing streak")
+                        user
+                    }
                 }
                 // If last review was yesterday, increment the streak
                 previousReviewDate == yesterday -> {
+                    logger.info("Last review was yesterday - incrementing streak from ${user.streakCount} to ${user.streakCount + 1}")
                     user.copy(
                         streakCount = user.streakCount + 1,
                         updatedAt = now
@@ -279,6 +311,7 @@ class UserService @Autowired constructor(
                 }
                 // If the user missed a day or more, reset streak to 1
                 else -> {
+                    logger.info("Last review was before yesterday (${previousReviewDate}) - resetting streak to 1")
                     user.copy(
                         streakCount = 1,
                         updatedAt = now
@@ -287,6 +320,7 @@ class UserService @Autowired constructor(
             }
         } else {
             // First time user is reviewing, set streak to 1
+            logger.info("First time user is reviewing - setting streak to 1")
             user.copy(
                 streakCount = 1,
                 updatedAt = now
@@ -294,9 +328,13 @@ class UserService @Autowired constructor(
         }
         
         if (updatedUser != user) {
-            userRepository.save(updatedUser)
-            logger.info("Updated streak count for user $userId: ${updatedUser.streakCount}")
+            val savedUser = userRepository.save(updatedUser)
+            logger.info("User streak updated and saved: old=${user.streakCount}, new=${savedUser.streakCount}")
+        } else {
+            logger.info("No change to user streak needed")
         }
+        
+        logger.info("==================== STREAK UPDATE LOG END ====================")
     }
 
     /**

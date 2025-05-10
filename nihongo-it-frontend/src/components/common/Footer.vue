@@ -19,5 +19,7 @@ export default class Footer extends Vue {}
 <style lang="sass" scoped>
 .v-footer
   background-color: #f8f9fa
-  padding: 1rem
+
+:deep(.v-col-12)
+  padding: 0px !important
 </style>

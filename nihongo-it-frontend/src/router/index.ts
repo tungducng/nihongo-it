@@ -188,6 +188,18 @@ const routes = [
     name: 'adminUserStatisticsDetail',
     component: () => import('@/views/admin/UserStatisticsDetailView.vue'),
     meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/learning/conversation',
+    name: 'conversationLearning',
+    component: () => import('../views/learning/conversation/ConversationLearningView.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/learning/conversation/:id',
+    name: 'conversationPractice',
+    component: () => import('../views/learning/conversation/ConversationPracticeView.vue'),
+    meta: { requiresAuth: true }
   }
 ]
 

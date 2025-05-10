@@ -29,7 +29,7 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/kaiwa"
+        to="/learning/conversation"
         density="compact"
         class="mx-1 nav-btn"
       >
@@ -162,7 +162,7 @@
     <v-list density="compact">
       <v-list-item prepend-icon="mdi-home" title="Trang chủ" to="/" />
       <v-list-item prepend-icon="mdi-book-open-variant" title="Từ vựng" to="/vocabulary/category" />
-      <v-list-item prepend-icon="mdi-forum" title="Hội thoại" to="/kaiwa" />
+      <v-list-item prepend-icon="mdi-chat" title="Hội thoại" to="/learning/conversation" />
       <v-list-item prepend-icon="mdi-translate" title="Dịch thuật" to="/translations" />
       <v-list-item prepend-icon="mdi-alphabetical-variant" title="Furigana" to="/furigana" />
       <v-list-item prepend-icon="mdi-chart-line" title="Tiến độ học tập" to="/statistics" />

@@ -119,7 +119,7 @@
                         icon
                         density="comfortable"
                         size="x-small"
-                        @click="playAudio(line)"
+                        @click="playAudio(line, true)"
                         color="info"
                         variant="text"
                         title="Nghe phát âm mẫu"
@@ -330,6 +330,9 @@ const azureSpeechRecognizer = ref<speechsdk.SpeechRecognizer | null>(null);
 // Cập nhật biến để theo dõi trạng thái đang phát âm
 const isPlayingAudio = ref(false);
 
+// Thêm biến để theo dõi việc phát âm thanh tự động đã xảy ra hay chưa
+const hasAutoPlayedAudio = ref(false);
+
 // Computed
 const isConversationCompleted = computed(() => {
   const userLines = conversation.value?.dialogue.filter(line => line.speaker === 'user') || [];
@@ -395,11 +398,22 @@ const toggleSave = () => {
   });
 }
 
-const playAudio = async (line: ConversationLine) => {
+const playAudio = async (line: ConversationLine, forcePlay = false) => {
   if (!line.japanese || isPlayingAudio.value) return;
+
+  // Nếu không phải là forcePlay (nghĩa là do người dùng nhấn nút), kiểm tra xem đã tự động phát audio chưa
+  if (!forcePlay && hasAutoPlayedAudio.value) {
+    // Đã tự động phát audio trước đó, không phát nữa để tránh phát lại nhiều lần
+    return;
+  }
 
   try {
     isPlayingAudio.value = true;
+
+    // Nếu là phát tự động, đánh dấu đã phát
+    if (!forcePlay) {
+      hasAutoPlayedAudio.value = true;
+    }
 
     // Verify authentication before proceeding
     const authToken = authService.getToken()
@@ -557,6 +571,9 @@ const canInteractWith = (index: number): boolean => {
 onMounted(() => {
   loading.value = true;
 
+  // Reset cờ khi component được tạo
+  hasAutoPlayedAudio.value = false;
+
   // Demo data loading
   setTimeout(() => {
     // Mock conversation data
@@ -574,7 +591,7 @@ onMounted(() => {
         },
         {
           speaker: 'user',
-          japanese: 'こんにちは、初めまして。',
+          japanese: 'こんにちは、はじめまして。',
           meaning: 'Xin chào, rất vui được gặp bạn.'
         },
         {
@@ -966,7 +983,7 @@ const markAsComplete = (index: number) => {
         if (nextLine && nextLine.speaker !== 'user') {
           // Đợi một chút để hiệu ứng hiển thị hoàn tất
           setTimeout(() => {
-            playAudio(nextLine);
+            playAudio(nextLine, false);
           }, 500);
         }
 
@@ -1160,7 +1177,6 @@ const scrollToLatestMessage = () => {
 
 // Hiệu ứng typing cải tiến cho văn bản
 const typeTextEffect = (text: string) => {
-  // Sử dụng requestAnimationFrame để đồng bộ với refresh rate màn hình
   if (!text || text.length === 0) {
     isTyping.value = false;
 
@@ -1172,7 +1188,7 @@ const typeTextEffect = (text: string) => {
         // Đợi một chút sau khi typing kết thúc
         setTimeout(() => {
           if (!isPlayingAudio.value) {
-            playAudio(currentLine);
+            playAudio(currentLine, false);
           }
         }, 200);
       }
@@ -1220,9 +1236,9 @@ const typeTextEffect = (text: string) => {
 
     // Phát âm thanh ngay sau khi typing xong nếu là câu của Nihongo IT
     if (currentLine.speaker !== 'user') {
-      setTimeout(() => {
+  setTimeout(() => {
         if (!isPlayingAudio.value) {
-          playAudio(currentLine);
+          playAudio(currentLine, false);
         }
       }, 200);
     }
@@ -1270,9 +1286,9 @@ const startTypingNextLine = () => {
       visibleLineIndices.value.push(nextIndex);
 
       // Áp dụng hiệu ứng typing
-      isTyping.value = true;
-      typedText.value = '';
-      currentTypeIndex.value = 0;
+    isTyping.value = true;
+    typedText.value = '';
+    currentTypeIndex.value = 0;
 
       // Đảm bảo tất cả thay đổi DOM đã được áp dụng trước khi bắt đầu typing
       setTimeout(() => {
@@ -1284,7 +1300,7 @@ const startTypingNextLine = () => {
         if (nextLine.speaker !== 'user') {
           let typingDuration = nextLine.japanese.length * typeSpeed.value + 200;
           setTimeout(() => {
-            playAudio(nextLine);
+            playAudio(nextLine, false);
           }, typingDuration);
         }
       }, 50);
@@ -1373,6 +1389,11 @@ onUnmounted(() => {
     });
   }
 })
+
+// Thêm hàm resetAutoPlayState để cho phép reset trạng thái khi cần
+const resetAutoPlayState = () => {
+  hasAutoPlayedAudio.value = false;
+}
 </script>
 
 <style scoped lang="scss">

@@ -47,7 +47,18 @@
                   <v-icon color="primary" size="small" class="mr-1">mdi-format-title</v-icon>
                 </template>
                 <v-list-item-title class="text-body-2 font-weight-medium">Tiêu đề</v-list-item-title>
-                <v-list-item-subtitle class="text-caption">{{ conversation.title }}</v-list-item-subtitle>
+                <v-list-item-subtitle>
+                  <v-text-field
+                    v-model="conversation.title"
+                    hide-details="auto"
+                    density="compact"
+                    variant="outlined"
+                    placeholder="Nhập tiêu đề hội thoại"
+                    class="mt-1"
+                    @input="markAsDirty"
+                    bg-color="white"
+                  ></v-text-field>
+                </v-list-item-subtitle>
               </v-list-item>
 
 
@@ -59,55 +70,88 @@
                   <v-icon color="primary" size="small" class="mr-1">mdi-text-box-outline</v-icon>
                 </template>
                 <v-list-item-title class="text-body-2 font-weight-medium">Mô tả</v-list-item-title>
-                <v-list-item-subtitle class="text-caption">{{ conversation.description }}</v-list-item-subtitle>
+                <v-list-item-subtitle>
+                  <v-textarea
+                    v-model="conversation.description"
+                    hide-details="auto"
+                    density="compact"
+                    variant="outlined"
+                    placeholder="Nhập mô tả hội thoại"
+                    class="mt-1"
+                    @input="markAsDirty"
+                    rows="1"
+                    auto-grow
+                    bg-color="white"
+                  ></v-textarea>
+                </v-list-item-subtitle>
               </v-list-item>
 
               <v-divider inset></v-divider>
 
               <!-- Các thông tin khác gộp trên một hàng -->
-              <v-row class="ma-0 pa-0">
+              <v-row class="ma-0 pa-0" align="center">
                 <v-col cols="3" class="pa-0">
-                  <v-list-item density="compact" class="py-1">
+                  <v-list-item density="compact" class="py-1 d-flex align-center">
                     <template v-slot:prepend>
                       <v-icon color="primary" size="small" class="mr-1">mdi-certificate-outline</v-icon>
                     </template>
-                    <v-list-item-title class="text-body-2 font-weight-medium">JLPT</v-list-item-title>
+                    <v-list-item-title class="text-body-2 font-weight-medium d-flex align-center">JLPT</v-list-item-title>
                     <v-list-item-subtitle>
-                      <v-chip :color="getJlptColor(conversation.jlptLevel)" size="x-small" class="mt-1">{{
-                        conversation.jlptLevel
-                        }}</v-chip>
+                      <v-select
+                        v-model="conversation.jlptLevel"
+                        :items="jlptLevels"
+                        hide-details="auto"
+                        density="compact"
+                        variant="outlined"
+                        class="mt-1"
+                        @update:model-value="markAsDirty"
+                        bg-color="white"
+                      ></v-select>
                     </v-list-item-subtitle>
                   </v-list-item>
                 </v-col>
 
                 <v-col cols="3" class="pa-0">
-                  <v-list-item density="compact" class="py-1">
+                  <v-list-item density="compact" class="py-1 d-flex align-center">
                     <template v-slot:prepend>
                       <v-icon color="primary" size="small" class="mr-1">mdi-book-open-variant</v-icon>
                     </template>
-                    <v-list-item-title class="text-body-2 font-weight-medium">Bài học</v-list-item-title>
-                    <v-list-item-subtitle class="text-caption">{{ conversation.unit }}</v-list-item-subtitle>
+                    <v-list-item-title class="text-body-2 font-weight-medium d-flex align-center">Bài học</v-list-item-title>
+                    <v-list-item-subtitle>
+                      <v-text-field
+                        v-model.number="conversation.unit"
+                        hide-details="auto"
+                        density="compact"
+                        variant="outlined"
+                        type="number"
+                        min="1"
+                        style="max-width: 80px;"
+                        class="mt-1"
+                        @input="markAsDirty"
+                        bg-color="white"
+                      ></v-text-field>
+                    </v-list-item-subtitle>
                   </v-list-item>
                 </v-col>
 
                 <v-col cols="3" class="pa-0">
-                  <v-list-item density="compact" class="py-1">
+                  <v-list-item density="compact" class="py-1 d-flex align-center">
                     <template v-slot:prepend>
                       <v-icon color="primary" size="small" class="mr-1">mdi-chat-outline</v-icon>
                     </template>
-                    <v-list-item-title class="text-body-2 font-weight-medium">Số dòng</v-list-item-title>
-                    <v-list-item-subtitle class="text-caption">{{ conversation.lines?.length || 0
+                    <v-list-item-title class="text-body-2 font-weight-medium d-flex align-center">Số dòng</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption d-flex align-center">{{ conversation.lines?.length || 0
                       }}</v-list-item-subtitle>
                   </v-list-item>
                 </v-col>
 
                 <v-col cols="3" class="pa-0">
-                  <v-list-item density="compact" class="py-1">
+                  <v-list-item density="compact" class="py-1 d-flex align-center">
                     <template v-slot:prepend>
                       <v-icon color="primary" size="small" class="mr-1">mdi-drag-variant</v-icon>
                     </template>
-                    <v-list-item-title class="text-body-2 font-weight-medium">Sắp xếp</v-list-item-title>
-                    <v-list-item-subtitle class="text-caption">Kéo thả để sắp xếp</v-list-item-subtitle>
+                    <v-list-item-title class="text-body-2 font-weight-medium d-flex align-center">Sắp xếp</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption d-flex align-center">Kéo thả để sắp xếp</v-list-item-subtitle>
                   </v-list-item>
                 </v-col>
               </v-row>
@@ -313,6 +357,7 @@ const deleteLineDialog = ref(false);
 const lineToDelete = ref<number | null>(null);
 const unsavedChangesDialog = ref(false);
 const pendingNavigation = ref<string | null>(null);
+const jlptLevels = ref(['N1', 'N2', 'N3', 'N4', 'N5']);
 
 // Computed cho thông tin user
 const userProfilePicture = computed(() => authStore.user?.profilePicture || null)

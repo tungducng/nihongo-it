@@ -38,7 +38,7 @@
               </div>
             </div>
             <v-spacer></v-spacer>
-            <v-btn
+            <!-- <v-btn
               :icon="conversation.isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
               size="small"
               variant="text"
@@ -46,7 +46,7 @@
               @click="toggleSave"
               class="ml-1 action-btn"
               :title="conversation.isSaved ? 'Bỏ lưu' : 'Lưu hội thoại'"
-            ></v-btn>
+            ></v-btn> -->
           </div>
         </v-card>
       </div>
@@ -914,14 +914,14 @@ const startRecording = async (index: number) => {
         if (isRecording.value && mediaRecorder.value && mediaRecorder.value.state === 'recording') {
           if (!hasSpoken.value) {
             isSilent.value = true;
-            toast.warning('Không phát hiện giọng nói sau 5 giây, dừng ghi âm', {
+            toast.warning('Không phát hiện giọng nói sau 7 giây, dừng ghi âm', {
               position: 'top',
               duration: 2000
             });
           }
           stopRecording();
         }
-      }, 5000);
+      }, 7000);
     }
   } catch (err) {
     console.error('Error starting recording:', err);

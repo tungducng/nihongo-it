@@ -304,6 +304,7 @@ const audioChunks = ref<Blob[]>([])
 const isSilent = ref(false)
 const silenceTimeout = ref<number | null>(null)
 const silenceDetectionDuration = 3000 //  giây im lặng sau khi nói sẽ tự động gửi
+const hasSpoken = ref(false) // Biến để theo dõi xem người dùng đã nói gì chưa
 
 // Audio stream
 let audioStream: MediaStream | null = null
@@ -647,18 +648,15 @@ onMounted(() => {
     // Kiểm tra xem dòng thứ 2 có phải của Nihongo IT không để hiển thị mờ
     if (conversation.value.dialogue.length > 1 && conversation.value.dialogue[1].speaker !== 'user') {
       dimmedLineIndices.value.push(1);
-      console.log("Initially showing dimmed next line: 1");
     }
 
     // Bắt đầu hiệu ứng typing cho tin nhắn đầu tiên
     if (conversation.value && conversation.value.dialogue.length > 0) {
-      console.log("Starting typing effect for first message");
       typeTextEffect(conversation.value.dialogue[0].japanese);
     }
 
     // Thêm watcher để tự động cuộn xuống khi có dòng mới
     watch(visibleLineIndices, () => {
-      console.log("Visible lines changed, scrolling to bottom");
       scrollToLatestMessage();
     }, { deep: true });
 
@@ -746,19 +744,8 @@ const processRecording = async (index: number) => {
       pronunciationScores.value[index] = Math.round(analysis.score);
       lineAnalysisResults.value[index] = analysis;
 
-      // Log detailed analysis for debugging
-      console.log('Speech analysis response full data:', JSON.stringify(analysis, null, 2));
-      logSpeechAnalysisResult(analysis);
-
       // Chỉ đánh dấu hoàn thành nếu là dòng cuối cùng đang hiển thị
       const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
-      console.log("Processing recording:", {
-        index,
-        lastVisibleIndex,
-        isLastVisible: index === lastVisibleIndex,
-        visibleIndices: [...visibleLineIndices.value],
-        score: pronunciationScores.value[index]
-      });
 
       if (index === lastVisibleIndex && pronunciationScores.value[index] > 50) {
         markAsComplete(index);
@@ -819,6 +806,7 @@ const startRecording = async (index: number) => {
     activeLineIndex.value = index;
     isSilent.value = false;
     interimText.value = '';
+    hasSpoken.value = false; // Reset biến theo dõi trạng thái nói
 
     // Bắt đầu nhận dạng giọng nói nếu service đã được khởi tạo
     if (speechRecognitionService.isServiceInitialized()) {
@@ -875,7 +863,11 @@ const startRecording = async (index: number) => {
 
       mediaRecorder.value.onstop = () => {
         // Nếu im lặng thì không xử lý kết quả
-        if (isSilent.value) {
+        if (isSilent.value && !hasSpoken.value) {
+          toast.warning('Không phát hiện giọng nói, vui lòng thử lại', {
+            position: 'top',
+            duration: 2000
+          });
           return;
         }
 
@@ -1091,8 +1083,6 @@ const formatJapaneseWithHighlights = (text: string, analysis: SpeechAnalysisResu
       }
     });
 
-    console.log("Correct words:", correctWords);
-
     // Tìm và tô màu tất cả các phần đúng
     if (correctWords.length > 0) {
       // Sắp xếp từ dài đến ngắn để tránh trùng lặp khi thay thế
@@ -1106,7 +1096,6 @@ const formatJapaneseWithHighlights = (text: string, analysis: SpeechAnalysisResu
           const regex = new RegExp(escapedWord, 'gu');
           // Tô màu xanh các từ đúng
           formattedText = formattedText.replace(regex, `<span style="color: #4CAF50; font-weight: bold;">${word}</span>`);
-          console.log(`Applied regex for word: ${word}, escapedWord: ${escapedWord}`);
         } catch (e) {
           console.error(`Error replacing word ${word}:`, e);
         }
@@ -1154,26 +1143,6 @@ const formatJapaneseWithHighlights = (text: string, analysis: SpeechAnalysisResu
   return text;
 }
 
-// Thêm hàm mới để debug dữ liệu từ API
-const logSpeechAnalysisResult = (result: SpeechAnalysisResult | null) => {
-  if (!result) {
-    return;
-  }
-
-  console.log("Speech Analysis Score:", result.score);
-  console.log("Transcription:", result.transcription);
-
-  if (result.words && result.words.length > 0) {
-    console.log("Words analysis:");
-    result.words.forEach((word, index) => {
-      console.log(`  Word ${index+1}: ${word.text} - ${word.isCorrect ? 'Correct' : 'Incorrect'}`);
-      if (word.suggestion) console.log(`    Suggestion: ${word.suggestion}`);
-    });
-  } else {
-    console.log("No word-level analysis available");
-  }
-}
-
 // Hàm escape RegExp để tránh lỗi khi tìm kiếm các ký tự đặc biệt
 const escapeRegExp = (string: string): string => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -1200,6 +1169,7 @@ const setupSilenceDetection = (stream: MediaStream) => {
 
     let silenceStart: number | null = null;
     const silenceThreshold = 20; // Ngưỡng im lặng
+    const speechThreshold = 20; // Ngưỡng để xác định đã nói (cao hơn ngưỡng im lặng)
 
     // Biến để theo dõi mức âm thanh cao nhất và trạng thái nói
     let hasSpeechDetected = false;
@@ -1216,14 +1186,10 @@ const setupSilenceDetection = (stream: MediaStream) => {
       }
       const average = sum / bufferLength;
 
-      // Kiểm tra nếu âm thanh vượt ngưỡng đáng kể
-      if (average > 30) { // Ngưỡng lớn hơn để đảm bảo đó là lời nói thực sự
-        hasSpeechDetected = true;
-      }
-
-      // Kiểm tra nếu có lời nói từ Azure Speech API
-      if (interimText.value.trim()) {
-        hasSpeechDetected = true;
+      // Kiểm tra xem người dùng đã nói hay chưa
+      if (average > speechThreshold && !hasSpoken.value) {
+        hasSpoken.value = true;
+        console.log('Speech detected');
       }
 
       if (average < silenceThreshold) {
@@ -1233,19 +1199,19 @@ const setupSilenceDetection = (stream: MediaStream) => {
         } else {
           const silenceDuration = Date.now() - silenceStart;
 
-          // Xử lý theo logic mới
-          if (silenceDuration > silenceDetectionDuration) { // Im lặng hơn 3 giây
-            if (hasSpeechDetected) {
-              // Đã nói và im lặng 3 giây -> Dừng và gửi request
-              console.log('Silence after speech detected, stopping and submitting');
-              isSilent.value = false; // Không đánh dấu là im lặng vì đã có lời nói
-              stopRecordingAndProcess();
-            } else {
-              // Chưa nói gì và im lặng 3 giây -> Dừng nhưng không gửi request
-              console.log('No speech detected for 3 seconds, canceling');
-              isSilent.value = true; // Đánh dấu là im lặng để không xử lý
-              stopRecordingWithoutProcessing();
-            }
+          if (!hasSpoken.value && silenceDuration > 3000) {
+            // Chưa nói gì và im lặng quá 3 giây -> hủy ghi âm
+            console.log('No speech detected, canceling recording');
+            isSilent.value = true;
+            stopRecordingAndProcess();
+            // stopRecording();
+            return;
+          } else if (hasSpoken.value && silenceDuration > silenceDetectionDuration) {
+            // Đã nói và im lặng quá 3 giây -> tự động kết thúc và gửi đi
+            console.log('Silence after speech detected, auto-submitting');
+            isSilent.value = true;
+            stopRecordingAndProcess();
+            // stopRecording();
             return;
           }
         }

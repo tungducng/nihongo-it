@@ -2,16 +2,6 @@
   <v-container fluid>
     <div class="d-flex align-center mb-4">
       <h2 class="font-weight-bold" style="font-size: 1.3rem;">Từ vựng tiếng Nhật</h2>
-      <v-spacer></v-spacer>
-      <v-btn
-        color="primary"
-        variant="outlined"
-        prepend-icon="mdi-bookmark-multiple"
-        :to="{ name: 'savedVocabulary' }"
-        class="ml-2"
-      >
-        Từ vựng đã lưu
-      </v-btn>
     </div>
 
     <!-- Search and Filter Bar -->

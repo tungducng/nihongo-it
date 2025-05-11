@@ -5,8 +5,8 @@
       <v-container>
         <h1 class="hero-title display-2 font-weight-bold mb-4">Chinh phục Tiếng Nhật IT</h1>
         <p class="hero-subtitle headline mb-8">Nền tảng toàn diện giúp bạn tự tin giao tiếp và làm việc trong ngành CNTT tại Nhật Bản.</p>
-        <v-btn color="primary" large to="/learning-path" class="mx-2">Bắt đầu lộ trình</v-btn>
-        <v-btn color="secondary" large to="/vocabulary" class="mx-2">Khám phá từ vựng</v-btn>
+        <v-btn color="primary" large :to="{ name: 'vocabularyLearning' }" class="mx-2">Bắt đầu lộ trình</v-btn>
+        <v-btn color="secondary" large :to="{ name: 'vocabulary' }" class="mx-2">Khám phá từ vựng</v-btn>
       </v-container>
     </section>
 
@@ -30,7 +30,7 @@
                 <p>{{ dailyProgress.minutesStudied }} / {{ studyPlan.dailyGoalMinutes }} phút đã học</p>
               </v-card-text>
               <v-card-actions>
-                <v-btn color="primary" block to="/learning-path">Tiếp tục học</v-btn>
+                <v-btn color="primary" block :to="{ name: 'vocabularyLearning' }">Tiếp tục học</v-btn>
               </v-card-actions>
             </v-card>
           </v-col>
@@ -38,7 +38,7 @@
             <v-card class="pa-4 fill-height">
               <v-card-title>Gợi ý cho hôm nay</v-card-title>
               <v-card-text v-if="suggestedLessons.length > 0">
-                <v-list-item :to="`/${suggestedLessons[0].type}?lessonId=${suggestedLessons[0].id}`">
+                <v-list-item :to="getLessonLink(suggestedLessons[0])">
                   <v-list-item-content>
                     <v-list-item-title class="font-weight-medium">{{ suggestedLessons[0].title }}</v-list-item-title>
                     <v-list-item-subtitle>{{ suggestedLessons[0].description }}</v-list-item-subtitle>
@@ -48,7 +48,7 @@
                   </v-list-item-action>
                 </v-list-item>
                  <v-divider class="my-2" v-if="suggestedLessons.length > 1"></v-divider>
-                 <v-list-item v-if="suggestedLessons.length > 1" :to="`/${suggestedLessons[1].type}?lessonId=${suggestedLessons[1].id}`">
+                 <v-list-item v-if="suggestedLessons.length > 1" :to="getLessonLink(suggestedLessons[1])">
                    <v-list-item-content>
                     <v-list-item-title class="font-weight-medium">{{ suggestedLessons[1].title }}</v-list-item-title>
                   </v-list-item-content>
@@ -61,7 +61,7 @@
                   <p>Không có bài học nào được đề xuất hôm nay. Hãy khám phá các chủ đề khác!</p>
               </v-card-text>
               <v-card-actions>
-                <v-btn text color="primary" to="/lessons">Xem tất cả bài học</v-btn>
+                <v-btn text color="primary" :to="{ name: 'vocabularyLearning' }">Xem tất cả bài học</v-btn>
               </v-card-actions>
             </v-card>
           </v-col>
@@ -79,7 +79,7 @@
               <v-icon size="50" color="primary" class="mb-3">mdi-book-open-page-variant-outline</v-icon>
               <h3 class="text-h6 mb-2">Từ vựng IT Chuyên sâu</h3>
               <p>Học và tra cứu hàng ngàn thuật ngữ IT tiếng Nhật.</p>
-              <v-btn color="primary" variant="outlined" to="/vocabulary">Khám phá Từ vựng</v-btn>
+              <v-btn color="primary" variant="outlined" :to="{ name: 'vocabulary' }">Khám phá Từ vựng</v-btn>
             </v-card>
           </v-col>
           <v-col cols="12" md="4">
@@ -95,7 +95,7 @@
               <v-icon size="50" color="primary" class="mb-3">mdi-alphabet-japanese</v-icon>
               <h3 class="text-h6 mb-2">Tạo Furigana Tức thì</h3>
               <p>Dễ dàng thêm Furigana vào bất kỳ văn bản tiếng Nhật nào.</p>
-              <v-btn color="primary" variant="outlined" to="/furigana">Tạo Furigana</v-btn>
+              <v-btn color="primary" variant="outlined" :to="{ name: 'furigana' }">Tạo Furigana</v-btn>
             </v-card>
           </v-col>
         </v-row>
@@ -183,13 +183,13 @@
                   {{ lesson.description }}
                 </v-card-text>
                 <v-card-actions>
-                  <v-btn :to="`/${lesson.type}?lessonId=${lesson.id}`" color="primary" variant="tonal">Bắt đầu học</v-btn>
+                  <v-btn :to="getLessonLink(lesson)" color="primary" variant="tonal">Bắt đầu học</v-btn>
                 </v-card-actions>
               </v-card>
             </v-col>
           </v-row>
            <div class="text-center mt-4" v-if="suggestedLessons.length > 2">
-                <v-btn color="secondary" to="/lessons">Xem tất cả bài học</v-btn>
+                <v-btn color="secondary" :to="{ name: 'vocabularyLearning' }">Xem tất cả bài học</v-btn>
             </div>
         </v-col>
 
@@ -201,7 +201,7 @@
             <v-list class="recent-vocab-list py-0">
               <v-list-item
                 v-for="(vocab) in recentVocabulary.slice(0,5)" :key="vocab.id"
-                :to="`/vocabulary/${vocab.id}`"
+                :to="{ name: 'vocabulary', query: { keyword: (vocab.kanji || vocab.hiragana) } }"
                 class="vocab-item"
               >
                 <template v-slot:prepend>
@@ -220,7 +220,7 @@
               </v-list-item>
             </v-list>
             <v-card-actions class="justify-center pa-2">
-              <v-btn color="primary" variant="text" to="/vocabulary">Xem tất cả từ vựng</v-btn>
+              <v-btn color="primary" variant="text" :to="{ name: 'vocabulary' }">Xem tất cả từ vựng</v-btn>
             </v-card-actions>
           </v-card>
 
@@ -230,7 +230,7 @@
             <v-list density="compact" class="py-0">
               <v-list-item
                 v-for="(term, index) in trendingSearches.slice(0,5)" :key="index"
-                :to="`/vocabulary/search?keyword=${term.keyword}`"
+                :to="{ name: 'vocabulary', query: { keyword: term.keyword } }"
                 class="ranking-item"
               >
                 <template v-slot:prepend>
@@ -243,7 +243,7 @@
               </v-list-item>
             </v-list>
              <v-card-actions class="justify-center pa-2">
-              <v-btn size="small" variant="text" color="primary" to="/vocabulary/trending">Xem thêm xu hướng</v-btn>
+              <v-btn size="small" variant="text" color="primary" :to="{ name: 'vocabulary' }">Xem thêm xu hướng</v-btn>
             </v-card-actions>
           </v-card>
         </v-col>
@@ -373,10 +373,28 @@ export default class HomeView extends Vue {
     }
   ]
 
+  getLessonLink(lesson: Lesson): any {
+    // Hàm này tạo đường dẫn phù hợp dựa vào loại bài học
+    switch (lesson.type) {
+      case 'conversation':
+        // Đường dẫn đến trang thực hành hội thoại cụ thể
+        return { name: 'conversationPractice', params: { id: lesson.id } };
+      case 'vocabulary':
+        // Đường dẫn đến trang học từ vựng chung
+        return { name: 'vocabularyLearning' };
+      case 'grammar':
+        // Có thể thêm routing cho bài học ngữ pháp nếu cần
+        return { name: 'vocabularyLearning' };
+      default:
+        // Fallback đến trang danh mục từ vựng
+        return { name: 'vocabularyLearning' };
+    }
+  }
+
   searchVocabulary() {
     if (this.searchQuery.trim()) {
       this.$router.push({
-        path: '/vocabulary/search',
+        name: 'vocabulary',
         query: { keyword: this.searchQuery }
       });
     }
@@ -385,7 +403,7 @@ export default class HomeView extends Vue {
   goToTranslationPage() {
     if (!this.translationText.trim()) return;
     this.$router.push({
-      path: '/translations',
+      name: 'translations',
       query: {
         text: this.translationText,
         dir: this.translationDirection

@@ -2,7 +2,7 @@
   <!-- Navigation Header -->
   <v-app-bar flat density="compact" class="px-2 header-bar">
     <v-app-bar-title class="logo-container pa-0">
-      <router-link to="/" class="app-logo d-flex align-center text-decoration-none">
+      <router-link :to="{ name: 'home' }" class="app-logo d-flex align-center text-decoration-none">
         <img src="/nihongo_it_logo_larger_text.svg" alt="Nihongo IT" class="logo-image" />
       </router-link>
     </v-app-bar-title>
@@ -13,7 +13,7 @@
     <div class="d-none d-md-flex align-center navigation-links">
       <v-btn
         variant="text"
-        to="/"
+        :to="{ name: 'home' }"
         density="compact"
         class="mx-1 nav-btn"
       >
@@ -21,7 +21,7 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/vocabulary/category"
+        :to="{ name: 'vocabularyLearning' }"
         density="compact"
         class="mx-1 nav-btn"
       >
@@ -29,7 +29,7 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/learning/conversation"
+        :to="{ name: 'conversationLearning' }"
         density="compact"
         class="mx-1 nav-btn"
       >
@@ -37,7 +37,7 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/statistics"
+        :to="{ name: 'statistics' }"
         density="compact"
         class="mx-1 nav-btn"
       >
@@ -45,7 +45,7 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/translations"
+        :to="{ name: 'translations' }"
         density="compact"
         class="mx-1 nav-btn"
       >
@@ -53,7 +53,7 @@
       </v-btn>
       <v-btn
         variant="text"
-        to="/furigana"
+        :to="{ name: 'furigana' }"
         density="compact"
         class="mx-1 nav-btn"
       >
@@ -64,7 +64,7 @@
     <!-- Mobile Menu Button -->
     <v-app-bar-nav-icon
       class="d-md-none"
-      @click="mobileMenuOpen = !mobileMenuOpen"
+      @click="toggleMobileMenu"
     ></v-app-bar-nav-icon>
 
     <v-spacer></v-spacer>
@@ -73,14 +73,14 @@
     <div v-if="!isLoggedIn" class="d-flex align-center">
       <v-btn
         variant="text"
-        to="/login"
+        :to="{ name: 'login' }"
         size="small"
         class="mx-1 d-none d-sm-flex"
       >
         Đăng nhập
       </v-btn>
       <v-btn
-        to="/register"
+        :to="{ name: 'register' }"
         color="primary"
         variant="elevated"
         size="small"
@@ -135,13 +135,13 @@
           </v-card-text>
           <v-divider></v-divider>
           <v-list density="compact">
-            <v-list-item to="/account/profile" density="compact" prepend-icon="mdi-account-outline">
+            <v-list-item :to="{ name: 'profile' }" density="compact" prepend-icon="mdi-account-outline">
               <v-list-item-title class="text-body-2">Hồ sơ cá nhân</v-list-item-title>
             </v-list-item>
-            <v-list-item to="/account/settings" density="compact" prepend-icon="mdi-cog-outline">
+            <v-list-item :to="{ name: 'accountSettings' }" density="compact" prepend-icon="mdi-cog-outline">
               <v-list-item-title class="text-body-2">Cài đặt</v-list-item-title>
             </v-list-item>
-            <v-list-item v-if="isAdmin" to="/admin" density="compact" prepend-icon="mdi-shield-account">
+            <v-list-item v-if="isAdmin" :to="{ name: 'adminDashboard' }" density="compact" prepend-icon="mdi-shield-account">
               <v-list-item-title class="text-body-2">Quản trị viên</v-list-item-title>
             </v-list-item>
             <v-list-item @click="logout" density="compact" prepend-icon="mdi-logout">
@@ -160,12 +160,12 @@
     location="left"
   >
     <v-list density="compact">
-      <v-list-item prepend-icon="mdi-home" title="Trang chủ" to="/" />
-      <v-list-item prepend-icon="mdi-book-open-variant" title="Từ vựng" to="/vocabulary/category" />
-      <v-list-item prepend-icon="mdi-chat" title="Hội thoại" to="/learning/conversation" />
-      <v-list-item prepend-icon="mdi-translate" title="Dịch thuật" to="/translations" />
-      <v-list-item prepend-icon="mdi-alphabetical-variant" title="Furigana" to="/furigana" />
-      <v-list-item prepend-icon="mdi-chart-line" title="Tiến độ học tập" to="/statistics" />
+      <v-list-item prepend-icon="mdi-home" title="Trang chủ" :to="{ name: 'home' }" />
+      <v-list-item prepend-icon="mdi-book-open-variant" title="Từ vựng" :to="{ name: 'vocabularyLearning' }" />
+      <v-list-item prepend-icon="mdi-chat" title="Hội thoại" :to="{ name: 'conversationLearning' }" />
+      <v-list-item prepend-icon="mdi-translate" title="Dịch thuật" :to="{ name: 'translations' }" />
+      <v-list-item prepend-icon="mdi-alphabetical-variant" title="Furigana" :to="{ name: 'furigana' }" />
+      <v-list-item prepend-icon="mdi-chart-line" title="Tiến độ học tập" :to="{ name: 'statistics' }" />
     </v-list>
   </v-navigation-drawer>
 </template>
@@ -206,10 +206,19 @@ export default class AppHeader extends Vue {
     return this.authStore.user?.roleId === 1
   }
 
+  toggleMobileMenu(): void {
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+  }
+
   logout(): void {
     this.authStore.logout()
     const router = useRouter()
-    router.push('/login')
+    router.push({ name: 'login' })
+  }
+
+  // Đảm bảo giải phóng tham chiếu khi component bị hủy
+  beforeUnmount() {
+    this.mobileMenuOpen = false;
   }
 }
 </script>

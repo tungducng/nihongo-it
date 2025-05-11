@@ -24,7 +24,7 @@
               class="mb-6"
             >
               Mật khẩu của bạn đã được đặt lại thành công. Bây giờ bạn có thể
-              <router-link to="/login" class="font-weight-bold">
+              <router-link :to="{ name: 'login' }" class="font-weight-bold">
                 đăng nhập
               </router-link>
               với mật khẩu mới.
@@ -81,7 +81,7 @@
 
               <div class="text-center">
                 <v-btn
-                  to="/login"
+                  :to="{ name: 'login' }"
                   color="primary"
                   variant="text"
                   prepend-icon="mdi-arrow-left"

@@ -75,7 +75,7 @@
 
           <div class="text-center mt-4">
             <v-btn
-              to="/account/settings"
+              :to="{ name: 'accountSettings' }"
               color="primary"
               variant="text"
               prepend-icon="mdi-arrow-left"
@@ -143,7 +143,7 @@ const handleSubmit = async () => {
 
       // Redirect to profile after 3 seconds
       setTimeout(() => {
-        router.push('/account/profile')
+        router.push({ name: 'profile' })
       }, 3000)
     } else if (authStore.error) {
       error.value = translateError(authStore.error)

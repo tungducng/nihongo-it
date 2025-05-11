@@ -80,7 +80,7 @@
               </v-btn>
 
               <div class="text-center mt-4">
-                <router-link to="/login" class="text-decoration-none">
+                <router-link :to="{ name: 'login' }" class="text-decoration-none">
                   Already have an account? Login
                 </router-link>
               </div>

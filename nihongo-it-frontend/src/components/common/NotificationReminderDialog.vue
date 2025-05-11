@@ -89,7 +89,7 @@ function closeDialog() {
 }
 
 function goToStudy() {
-  router.push('/flashcards/study')
+  router.push({ name: 'flashcardStudy' })
   show.value = false
 }
 </script>

@@ -28,7 +28,7 @@
               ></v-text-field>
 
               <div class="text-right mb-4">
-                <router-link to="/account/forgot-password" class="text-decoration-none forgot-password">
+                <router-link :to="{ name: 'forgotPassword' }" class="text-decoration-none forgot-password">
                   Forgot Password?
                 </router-link>
               </div>
@@ -53,7 +53,7 @@
               </div>
 
               <div class="text-center mt-4">
-                <router-link to="/register" class="text-decoration-none">
+                <router-link :to="{ name: 'register' }" class="text-decoration-none">
                   Don't have an account? Register
                 </router-link>
               </div>
@@ -97,7 +97,7 @@ export default class LoginView extends Vue {
   mounted(): void {
     if (this.authStore.isAuthenticated) {
       console.log('User already authenticated, redirecting to home')
-      this.$router.push('/')
+      this.$router.push({ name: 'home' })
     } else {
       // Check for error message in query params
       const errorMsg = this.$route.query.error

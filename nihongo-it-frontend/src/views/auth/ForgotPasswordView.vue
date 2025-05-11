@@ -54,7 +54,7 @@
 
               <div class="text-center">
                 <v-btn
-                  to="/login"
+                  :to="{ name: 'login' }"
                   color="primary"
                   variant="text"
                   prepend-icon="mdi-arrow-left"

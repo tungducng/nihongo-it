@@ -52,7 +52,7 @@
                 <div class="text-caption text-grey">Tổng số người dùng</div>
               </v-card-text>
               <v-card-actions class="px-4 pb-4">
-                <v-btn block variant="flat" color="primary" to="/admin/users" class="action-btn">
+                <v-btn block variant="flat" color="primary" :to="{ name: 'adminUsers' }" class="action-btn">
                   <v-icon class="mr-1">mdi-account-cog</v-icon>
                   Quản lý người dùng
                 </v-btn>
@@ -78,7 +78,7 @@
                 <div class="text-caption text-grey">Tổng số từ vựng</div>
               </v-card-text>
               <v-card-actions class="px-4 pb-4">
-                <v-btn block variant="flat" color="success" to="/admin/vocabulary" class="action-btn">
+                <v-btn block variant="flat" color="success" :to="{ name: 'adminVocabulary' }" class="action-btn">
                   <v-icon class="mr-1">mdi-dictionary</v-icon>
                   Quản lý từ vựng
                 </v-btn>
@@ -104,7 +104,7 @@
                 <div class="text-caption text-grey">Tổng số danh mục</div>
               </v-card-text>
               <v-card-actions class="px-4 pb-4">
-                <v-btn block variant="flat" color="info" to="/admin/categories" class="action-btn">
+                <v-btn block variant="flat" color="info" :to="{ name: 'adminCategories' }" class="action-btn">
                   <v-icon class="mr-1">mdi-folder-cog</v-icon>
                   Quản lý danh mục
                 </v-btn>
@@ -130,7 +130,7 @@
                 <div class="text-caption text-grey">Tổng số chủ đề</div>
               </v-card-text>
               <v-card-actions class="px-4 pb-4">
-                <v-btn block variant="flat" color="warning" to="/admin/topics" class="action-btn">
+                <v-btn block variant="flat" color="warning" :to="{ name: 'adminTopics' }" class="action-btn">
                   <v-icon class="mr-1">mdi-tag-edit</v-icon>
                   Quản lý chủ đề
                 </v-btn>
@@ -169,7 +169,7 @@
                       color="success"
                       variant="elevated"
                       prepend-icon="mdi-chart-areaspline"
-                      to="/admin/statistics"
+                      :to="{ name: 'adminStatistics' }"
                       class="action-btn"
                     >
                       Xem thống kê tổng quan
@@ -179,7 +179,7 @@
                       color="primary"
                       variant="tonal"
                       prepend-icon="mdi-account-multiple-check"
-                      to="/admin/statistics/users"
+                      :to="{ name: 'adminUserStatistics' }"
                       class="action-btn"
                     >
                       Thống kê theo học viên

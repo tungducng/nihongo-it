@@ -12,7 +12,7 @@
         <v-list-item
           prepend-icon="mdi-view-dashboard"
           title="Dashboard"
-          to="/admin"
+          :to="{ name: 'adminDashboard' }"
           class="admin-menu-item"
         />
         <v-divider class="my-2"></v-divider>
@@ -21,25 +21,25 @@
         <v-list-item
           prepend-icon="mdi-book-open-variant"
           title="Từ vựng"
-          to="/admin/vocabulary"
+          :to="{ name: 'adminVocabulary' }"
           class="admin-menu-item"
         />
         <v-list-item
           prepend-icon="mdi-folder"
           title="Danh mục"
-          to="/admin/categories"
+          :to="{ name: 'adminCategories' }"
           class="admin-menu-item"
         />
         <v-list-item
           prepend-icon="mdi-tag-multiple"
           title="Chủ đề"
-          to="/admin/topics"
+          :to="{ name: 'adminTopics' }"
           class="admin-menu-item"
         />
         <v-list-item
           prepend-icon="mdi-chat"
           title="Hội thoại"
-          to="/admin/conversations"
+          :to="{ name: 'admin-conversations' }"
           class="admin-menu-item"
         />
 
@@ -49,13 +49,13 @@
         <v-list-item
           prepend-icon="mdi-account-group"
           title="Quản lý người dùng"
-          to="/admin/users"
+          :to="{ name: 'adminUsers' }"
           class="admin-menu-item"
         />
         <v-list-item
           prepend-icon="mdi-chart-bar"
           title="Thống kê"
-          to="/admin/statistics"
+          :to="{ name: 'adminStatistics' }"
           class="admin-menu-item"
         />
       </v-list>
@@ -64,17 +64,31 @@
     <div
       class="admin-toggle-btn"
       :class="{ 'admin-toggle-btn-open': drawer }"
-      @click="drawer = !drawer"
+      @click="toggleDrawer"
     >
       <v-icon :icon="drawer ? 'mdi-chevron-right' : 'mdi-chevron-left'" color="white"></v-icon>
     </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref } from 'vue';
+<script lang="ts">
+import { Component, Vue } from 'vue-facing-decorator'
 
-const drawer = ref(false);
+@Component({
+  name: 'AdminQuickMenu'
+})
+export default class AdminQuickMenu extends Vue {
+  drawer = false;
+
+  toggleDrawer(): void {
+    this.drawer = !this.drawer;
+  }
+
+  // Giải phóng tham chiếu để tránh lỗi parentNode
+  beforeUnmount() {
+    this.drawer = false;
+  }
+}
 </script>
 
 <style scoped>

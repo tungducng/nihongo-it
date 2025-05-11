@@ -2,20 +2,20 @@
   <nav class="navbar">
     <div class="container">
       <div class="logo">
-        <router-link to="/">Nihongo IT</router-link>
+        <router-link :to="{ name: 'home' }">Nihongo IT</router-link>
       </div>
 
       <div class="nav-links">
-        <router-link to="/" class="nav-link">Home</router-link>
-        <router-link to="/vocabulary" class="nav-link">Vocabulary</router-link>
-        <router-link to="/exercises" class="nav-link">Exercises</router-link>
-        <router-link to="/conversation" class="nav-link">Conversation</router-link>
-        <router-link to="/flashcards" class="nav-link">Flashcards</router-link>
+        <router-link :to="{ name: 'home' }" class="nav-link">Home</router-link>
+        <router-link :to="{ name: 'vocabulary' }" class="nav-link">Vocabulary</router-link>
+        <router-link :to="{ name: 'vocabularyLearning' }" class="nav-link">Exercises</router-link>
+        <router-link :to="{ name: 'conversationLearning' }" class="nav-link">Conversation</router-link>
+        <router-link :to="{ name: 'flashcardStudy' }" class="nav-link">Flashcards</router-link>
 
         <!-- Authenticated-only links -->
         <template v-if="authStore.isAuthenticated">
-          <router-link to="/learning-path" class="nav-link">My Learning Path</router-link>
-          <router-link to="/progress" class="nav-link">My Progress</router-link>
+          <router-link :to="{ name: 'statistics' }" class="nav-link">My Learning Path</router-link>
+          <router-link :to="{ name: 'statistics' }" class="nav-link">My Progress</router-link>
         </template>
       </div>
 
@@ -31,14 +31,14 @@
             <span class="user-name">{{ authStore.user?.fullName }}</span>
 
             <div class="dropdown-menu" v-if="showDropdown">
-              <router-link to="/profile" class="dropdown-item">Profile</router-link>
+              <router-link :to="{ name: 'profile' }" class="dropdown-item">Profile</router-link>
               <div class="dropdown-item" @click="logout">Logout</div>
             </div>
           </div>
         </template>
         <template v-else>
-          <router-link to="/login" class="btn-login">Login</router-link>
-          <router-link to="/register" class="btn-register">Register</router-link>
+          <router-link :to="{ name: 'login' }" class="btn-login">Login</router-link>
+          <router-link :to="{ name: 'register' }" class="btn-register">Register</router-link>
         </template>
       </div>
     </div>

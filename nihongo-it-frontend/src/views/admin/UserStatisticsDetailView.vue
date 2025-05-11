@@ -340,7 +340,7 @@ const calculateJlptPercent = (level: string, count: number) => {
 
 // Navigation
 const goBack = () => {
-  router.push('/admin/statistics/users');
+  router.push({ name: 'adminUserStatistics' });
 };
 
 // Format date for charts

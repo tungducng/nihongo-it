@@ -313,7 +313,7 @@ function goToFlashcardStudy() {
 }
 
 function navigateToVocabularyStorage() {
-  router.push('/learning/vocabulary-storage');
+  router.push({ name: 'vocabularyStorage' });
 }
 
 // Format helpers

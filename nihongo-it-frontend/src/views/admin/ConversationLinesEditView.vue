@@ -332,7 +332,7 @@ onMounted(async () => {
     await fetchConversation(conversationId);
   } else {
     error.value = 'Không tìm thấy ID hội thoại';
-    router.push('/admin/conversations');
+    router.push({ name: 'admin-conversations' });
   }
 
   // Add event listener for beforeunload
@@ -543,7 +543,7 @@ const goBack = () => {
     pendingNavigation.value = '/admin/conversations';
     unsavedChangesDialog.value = true;
   } else {
-    router.push('/admin/conversations');
+    router.push({ name: 'admin-conversations' });
   }
 };
 

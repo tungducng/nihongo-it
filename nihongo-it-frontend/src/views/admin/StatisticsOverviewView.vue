@@ -229,7 +229,7 @@ const viewUserDetails = (userId: string) => {
 };
 
 const goToUserStatistics = () => {
-  router.push('/admin/statistics/users');
+  router.push({ name: 'adminUserStatistics' });
 };
 
 // Fetch statistics

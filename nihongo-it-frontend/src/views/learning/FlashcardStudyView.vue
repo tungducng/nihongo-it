@@ -629,7 +629,7 @@ function refreshDueCards() {
 }
 
 function goToVocabulary() {
-  router.push('/vocabulary')
+  router.push({ name: 'vocabulary' })
 }
 
 function goBack() {

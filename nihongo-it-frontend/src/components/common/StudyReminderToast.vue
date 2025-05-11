@@ -122,7 +122,7 @@ function dismissToast() {
 }
 
 function navigateToStudy() {
-  router.push('/flashcards/study')
+  router.push({ name: 'flashcardStudy' })
   dismissToast()
 }
 </script>

@@ -270,7 +270,7 @@ const getRetentionRateColor = (rate: number | undefined) => {
 
 // Navigation functions
 const goToOverview = () => {
-  router.push('/admin/statistics');
+  router.push({ name: 'adminStatistics' });
 };
 
 // Clear search and refresh the data

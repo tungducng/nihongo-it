@@ -252,7 +252,7 @@ onMounted(async () => {
     await fetchConversation(conversationId);
   } else {
     error.value = 'Không tìm thấy ID hội thoại';
-    router.push('/admin/conversations');
+    router.push({ name: 'admin-conversations' });
   }
 });
 
@@ -298,7 +298,7 @@ const getSpeakerName = (speaker: string) => {
 };
 
 const goBack = () => {
-  router.push('/admin/conversations');
+  router.push({ name: 'admin-conversations' });
 };
 
 const goToEdit = () => {

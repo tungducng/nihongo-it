@@ -37,7 +37,7 @@ const conversationService = {
     page: number = 0,
     size: number = 10,
     search: string = '',
-    sortBy: string = 'title',
+    sortBy: string = 'unit',
     sortDir: string = 'asc'
   ): Promise<AxiosResponse<PagedResponse<Conversation>>> {
     const params = new URLSearchParams();
@@ -74,7 +74,7 @@ const conversationService = {
     page: number = 0,
     size: number = 10,
     search: string = '',
-    sortBy: string = 'title',
+    sortBy: string = 'unit',
     sortDir: string = 'asc'
   ): Promise<AxiosResponse<PagedResponse<Conversation>>> {
     const params = new URLSearchParams();

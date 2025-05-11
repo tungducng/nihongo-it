@@ -45,7 +45,7 @@
       <!-- Main Content Column -->
       <div class="main-content-column">
         <!-- Loading Skeleton -->
-        <div v-if="loading">
+        <div v-if="loading" class="pt-0">
           <v-sheet
             v-for="i in 3"
             :key="i"
@@ -60,7 +60,7 @@
         </div>
 
         <!-- Error Alert -->
-        <div v-else-if="error" class="py-4">
+        <div v-else-if="error" class="py-0">
           <v-alert
             type="error"
             variant="tonal"
@@ -80,7 +80,7 @@
         </div>
 
         <!-- No Conversations Found -->
-        <div v-else-if="filteredConversations.length === 0" class="py-4">
+        <div v-else-if="filteredConversations.length === 0" class="py-0">
           <v-alert
             type="info"
             variant="tonal"
@@ -100,7 +100,7 @@
         </div>
 
         <!-- Conversation List -->
-        <div v-else class="conversation-list py-4">
+        <div v-else class="conversation-list py-0">
           <div class="active-filters mb-4" v-if="search || jlptFilter">
             <div class="d-flex align-center">
               <v-icon size="small" color="primary" class="mr-2">mdi-filter-outline</v-icon>
@@ -578,8 +578,8 @@ const fetchConversations = async () => {
       apiPage,
       pageSize.value,
       search.value, // search
-      'title', // sortBy
-      'asc' // sortDir
+      'unit', // sortBy - sắp xếp theo bài học
+      'asc' // sortDir - tăng dần
     )
 
     // Lấy dữ liệu từ response
@@ -649,10 +649,11 @@ onMounted(() => {
 
 .content-grid {
   display: grid;
-  grid-template-columns: 180px 1fr 320px;
+  grid-template-columns: 72px 1fr 320px 120px;
   gap: 24px;
   max-width: 1440px;
   margin: 0 auto;
+  padding-right: 24px;
 }
 
 .empty-column {
@@ -662,12 +663,12 @@ onMounted(() => {
 .main-content-column {
   width: 100%;
   background-color: transparent;
-  border-radius: 12px;
-  padding: 12px;
+  padding: 0;
 }
 
 .banner-column {
   width: 100%;
+  padding-top: 0;
 }
 
 .search-field {
@@ -688,10 +689,19 @@ onMounted(() => {
   border-radius: 8px;
   padding: 8px 12px;
   border: 1px dashed rgba(var(--v-theme-primary), 0.2);
+  margin-bottom: 12px;
 }
 
 .conversation-list-container {
   position: relative;
+}
+
+.conversation-list {
+  margin-top: 0;
+}
+
+.conversation-card:first-child {
+  margin-top: 0;
 }
 
 // Animation for list items
@@ -829,6 +839,10 @@ onMounted(() => {
 }
 
 /* Banner card styles */
+.jlpt-card, .conversation-card:first-child {
+  margin-top: 0;
+}
+
 .jlpt-card {
   border-left: 4px solid #9C27B0 !important;
   background-color: rgba(156, 39, 176, 0.05);

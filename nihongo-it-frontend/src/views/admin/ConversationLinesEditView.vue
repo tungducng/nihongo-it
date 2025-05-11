@@ -3,26 +3,13 @@
     <!-- Header -->
     <div class="conversation-header mb-1">
       <div class="d-flex align-center">
-        <v-btn
-          icon
-          @click="goBack"
-          class="mr-1"
-          size="small"
-          color="secondary"
-          variant="text"
-        >
+        <v-btn icon @click="goBack" class="mr-1" size="small" color="secondary" variant="text">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
         <span class="text-subtitle-1 font-weight-medium">Chỉnh sửa hội thoại</span>
         <v-spacer></v-spacer>
-        <v-btn
-          color="success"
-          prepend-icon="mdi-content-save"
-          @click="saveConversation"
-          :loading="saving"
-          :disabled="!dirty"
-          size="small"
-        >
+        <v-btn color="success" prepend-icon="mdi-content-save" @click="saveConversation" :loading="saving"
+          :disabled="!dirty" size="small">
           Lưu thay đổi
         </v-btn>
       </div>
@@ -45,269 +32,209 @@
 
     <!-- Main Content -->
     <template v-else-if="conversation">
-      <!-- Conversation Card -->
-      <v-card class="main-conversation-card mb-4" variant="outlined">
+      <!-- Main Conversation Container -->
+      <v-card class="main-conversation-container" variant="elevated" color="#fff">
         <!-- Conversation Info -->
-        <v-card-text class="py-3 px-3">
+        <v-card-text class="py-4 px-4" variant="outlined">
           <!-- Thông tin hội thoại -->
-          <v-list lines="two" density="compact" class="py-0">
-            <!-- Tiêu đề trên một hàng riêng -->
-            <v-list-item density="compact" class="py-1">
-              <template v-slot:prepend>
-                <v-icon color="primary" size="small" class="mr-1">mdi-format-title</v-icon>
+
+          <v-card variant="outlined">
+            <v-list lines="two" density="compact" class="py-0">
+              <!-- Tiêu đề trên một hàng riêng -->
+
+              <v-list-item density="compact" class="py-1">
+                <template v-slot:prepend>
+                  <v-icon color="primary" size="small" class="mr-1">mdi-format-title</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2 font-weight-medium">Tiêu đề</v-list-item-title>
+                <v-list-item-subtitle class="text-caption">{{ conversation.title }}</v-list-item-subtitle>
+              </v-list-item>
+
+
+              <v-divider inset></v-divider>
+
+              <!-- Mô tả trên một hàng riêng -->
+              <v-list-item density="compact" class="py-1">
+                <template v-slot:prepend>
+                  <v-icon color="primary" size="small" class="mr-1">mdi-text-box-outline</v-icon>
+                </template>
+                <v-list-item-title class="text-body-2 font-weight-medium">Mô tả</v-list-item-title>
+                <v-list-item-subtitle class="text-caption">{{ conversation.description }}</v-list-item-subtitle>
+              </v-list-item>
+
+              <v-divider inset></v-divider>
+
+              <!-- Các thông tin khác gộp trên một hàng -->
+              <v-row class="ma-0 pa-0">
+                <v-col cols="3" class="pa-0">
+                  <v-list-item density="compact" class="py-1">
+                    <template v-slot:prepend>
+                      <v-icon color="primary" size="small" class="mr-1">mdi-certificate-outline</v-icon>
+                    </template>
+                    <v-list-item-title class="text-body-2 font-weight-medium">JLPT</v-list-item-title>
+                    <v-list-item-subtitle>
+                      <v-chip :color="getJlptColor(conversation.jlptLevel)" size="x-small" class="mt-1">{{
+                        conversation.jlptLevel
+                        }}</v-chip>
+                    </v-list-item-subtitle>
+                  </v-list-item>
+                </v-col>
+
+                <v-col cols="3" class="pa-0">
+                  <v-list-item density="compact" class="py-1">
+                    <template v-slot:prepend>
+                      <v-icon color="primary" size="small" class="mr-1">mdi-book-open-variant</v-icon>
+                    </template>
+                    <v-list-item-title class="text-body-2 font-weight-medium">Bài học</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption">{{ conversation.unit }}</v-list-item-subtitle>
+                  </v-list-item>
+                </v-col>
+
+                <v-col cols="3" class="pa-0">
+                  <v-list-item density="compact" class="py-1">
+                    <template v-slot:prepend>
+                      <v-icon color="primary" size="small" class="mr-1">mdi-chat-outline</v-icon>
+                    </template>
+                    <v-list-item-title class="text-body-2 font-weight-medium">Số dòng</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption">{{ conversation.lines?.length || 0
+                      }}</v-list-item-subtitle>
+                  </v-list-item>
+                </v-col>
+
+                <v-col cols="3" class="pa-0">
+                  <v-list-item density="compact" class="py-1">
+                    <template v-slot:prepend>
+                      <v-icon color="primary" size="small" class="mr-1">mdi-drag-variant</v-icon>
+                    </template>
+                    <v-list-item-title class="text-body-2 font-weight-medium">Sắp xếp</v-list-item-title>
+                    <v-list-item-subtitle class="text-caption">Kéo thả để sắp xếp</v-list-item-subtitle>
+                  </v-list-item>
+                </v-col>
+              </v-row>
+            </v-list>
+          </v-card>
+
+
+          <!-- Divider -->
+          <v-divider class="mb-4"></v-divider>
+
+          <!-- Conversation Lines Section -->
+          <div>
+            <div class="d-flex align-center mb-4">
+              <v-chip color="primary" label size="small">
+                <v-icon start size="small">mdi-chat-outline</v-icon>
+                Nội dung hội thoại
+              </v-chip>
+              <v-spacer></v-spacer>
+              <v-btn color="primary" prepend-icon="mdi-plus" @click="addLine" size="small" variant="text">
+                Thêm dòng
+              </v-btn>
+            </div>
+
+            <!-- Empty state -->
+            <div v-if="!conversation.lines || conversation.lines.length === 0"
+              class="text-center pa-4 bg-grey-lighten-4 rounded-lg mb-4">
+              <v-icon icon="mdi-chat-outline" size="large" class="mb-2 text-grey"></v-icon>
+              <div class="text-body-2 text-grey-darken-1">Chưa có dòng hội thoại nào. Hãy thêm dòng hội thoại đầu tiên.
+              </div>
+            </div>
+
+            <!-- Lines list -->
+            <draggable v-else v-model="conversation.lines" handle=".drag-handle" item-key="tempId"
+              class="chat-container" @change="onLinesReordered">
+              <template #item="{ element, index }">
+                <div class="message-row mb-4" :class="element.speaker === 'user' ? 'justify-end' : 'justify-start'"
+                  :data-temp-id="element.tempId">
+                  <!-- Avatar for Nihongo IT -->
+                  <div v-if="element.speaker !== 'user'" class="avatar-container mr-2">
+                    <v-avatar size="36" color="info" class="drag-handle cursor-move">
+                      <v-icon color="white">mdi-robot</v-icon>
+                    </v-avatar>
+                  </div>
+
+                  <!-- Message Bubble -->
+                  <div class="message-container" :class="{
+                    'user-message': element.speaker === 'user',
+                    'bot-message': element.speaker !== 'user'
+                  }">
+                    <!-- Message Header Controls -->
+                    <div class="message-header px-2 pt-1 d-flex align-center">
+                      <div class="line-number me-2 text-caption">#{{ index + 1 }}</div>
+                      <v-chip size="x-small" :color="element.speaker === 'user' ? 'primary' : 'info'" variant="tonal">
+                        {{ getSpeakerName(element.speaker) }}
+                      </v-chip>
+                      <v-spacer></v-spacer>
+                      <div class="drag-controls d-flex align-center me-2">
+                        <v-btn size="x-small" icon variant="text" color="grey-darken-1"
+                          class="drag-handle cursor-move mr-2" title="Di chuyển lên" :disabled="index === 0"
+                          @click.stop="moveLineUp(index)">
+                          <v-icon size="small">mdi-arrow-up</v-icon>
+                        </v-btn>
+                        <v-btn size="x-small" icon variant="text" color="grey-darken-1" class="drag-handle cursor-move"
+                          title="Di chuyển xuống" :disabled="index === conversation.lines.length - 1"
+                          @click.stop="moveLineDown(index)">
+                          <v-icon size="small">mdi-arrow-down</v-icon>
+                        </v-btn>
+                      </div>
+                      <v-btn icon size="x-small" color="error" variant="text" @click="confirmDeleteLine(index)"
+                        class="ml-1">
+                        <v-icon size="small">mdi-delete</v-icon>
+                      </v-btn>
+                      <v-btn icon size="x-small" :color="expandedLines[element.tempId] ? 'primary' : 'default'"
+                        variant="text" @click="toggleExpand(element.tempId)" class="ml-1">
+                        <v-icon size="small">{{ expandedLines[element.tempId] ? 'mdi-chevron-up' : 'mdi-chevron-down'
+                          }}</v-icon>
+                      </v-btn>
+                    </div>
+
+                    <!-- Message Preview (when collapsed) -->
+                    <div v-if="!expandedLines[element.tempId]" class="message-preview px-2 pb-2">
+                      <div class="japanese-text text-body-1 font-weight-medium word-break-wrap">
+                        {{ element.japaneseText || 'Chưa có nội dung' }}
+                      </div>
+                      <div class="text-body-2 text-medium-emphasis word-break-wrap">
+                        {{ element.vietnameseTranslation || 'Chưa có bản dịch' }}
+                      </div>
+                    </div>
+
+                    <!-- Message Edit Form (when expanded) -->
+                    <v-expand-transition>
+                      <div v-if="expandedLines[element.tempId]" class="message-edit pa-2">
+                        <v-textarea v-model="element.japaneseText" label="Đoạn hội thoại (tiếng Nhật)" rows="2"
+                          auto-grow hide-details="auto" density="compact" variant="outlined" bg-color="white"
+                          class="mb-2" :rules="[v => !!v || 'Đoạn hội thoại tiếng Nhật là bắt buộc']" required
+                          @input="markAsDirty"></v-textarea>
+
+                        <v-textarea v-model="element.vietnameseTranslation" label="Bản dịch (tiếng Việt)" rows="2"
+                          auto-grow hide-details="auto" density="compact" variant="outlined" bg-color="white"
+                          class="mb-2" :rules="[v => !!v || 'Bản dịch tiếng Việt là bắt buộc']" required
+                          @input="markAsDirty"></v-textarea>
+
+                        <v-textarea v-model="element.notes" label="Ghi chú" rows="2" auto-grow hide-details="auto"
+                          density="compact" variant="outlined" bg-color="white" class="mb-2"
+                          @input="markAsDirty"></v-textarea>
+
+                        <v-text-field v-model="element.importantVocab" label="Từ vựng quan trọng"
+                          hint="Các từ vựng phân cách bởi dấu phẩy" hide-details="auto" density="compact"
+                          variant="outlined" bg-color="white" style="min-height: 50px;"
+                          @input="markAsDirty"></v-text-field>
+                      </div>
+                    </v-expand-transition>
+                  </div>
+
+                  <!-- Avatar for User with profile picture -->
+                  <div v-if="element.speaker === 'user'" class="avatar-container ml-2">
+                    <v-avatar size="36" color="primary" class="drag-handle cursor-move">
+                      <v-img v-if="userProfilePicture" :src="userProfilePicture" alt="Ảnh đại diện của bạn"></v-img>
+                      <span v-else class="text-subtitle-2 text-white">{{ avatarInitials }}</span>
+                    </v-avatar>
+                  </div>
+                </div>
               </template>
-              <v-list-item-title class="text-body-2 font-weight-medium">Tiêu đề</v-list-item-title>
-              <v-list-item-subtitle class="text-caption">{{ conversation.title }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-divider inset></v-divider>
-
-            <!-- Mô tả trên một hàng riêng -->
-            <v-list-item density="compact" class="py-1">
-              <template v-slot:prepend>
-                <v-icon color="primary" size="small" class="mr-1">mdi-text-box-outline</v-icon>
-              </template>
-              <v-list-item-title class="text-body-2 font-weight-medium">Mô tả</v-list-item-title>
-              <v-list-item-subtitle class="text-caption">{{ conversation.description }}</v-list-item-subtitle>
-            </v-list-item>
-
-            <v-divider inset></v-divider>
-
-            <!-- Các thông tin khác gộp trên một hàng -->
-            <v-row class="ma-0 pa-0">
-              <v-col cols="3" class="pa-0">
-                <v-list-item density="compact" class="py-1">
-                  <template v-slot:prepend>
-                    <v-icon color="primary" size="small" class="mr-1">mdi-certificate-outline</v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2 font-weight-medium">JLPT</v-list-item-title>
-                  <v-list-item-subtitle>
-                    <v-chip :color="getJlptColor(conversation.jlptLevel)" size="x-small" class="mt-1">{{ conversation.jlptLevel }}</v-chip>
-                  </v-list-item-subtitle>
-                </v-list-item>
-              </v-col>
-
-              <v-col cols="3" class="pa-0">
-                <v-list-item density="compact" class="py-1">
-                  <template v-slot:prepend>
-                    <v-icon color="primary" size="small" class="mr-1">mdi-book-open-variant</v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2 font-weight-medium">Bài học</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption">{{ conversation.unit }}</v-list-item-subtitle>
-                </v-list-item>
-              </v-col>
-
-              <v-col cols="3" class="pa-0">
-                <v-list-item density="compact" class="py-1">
-                  <template v-slot:prepend>
-                    <v-icon color="primary" size="small" class="mr-1">mdi-chat-outline</v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2 font-weight-medium">Số dòng</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption">{{ conversation.lines?.length || 0 }}</v-list-item-subtitle>
-                </v-list-item>
-              </v-col>
-
-              <v-col cols="3" class="pa-0">
-                <v-list-item density="compact" class="py-1">
-                  <template v-slot:prepend>
-                    <v-icon color="primary" size="small" class="mr-1">mdi-drag-variant</v-icon>
-                  </template>
-                  <v-list-item-title class="text-body-2 font-weight-medium">Sắp xếp</v-list-item-title>
-                  <v-list-item-subtitle class="text-caption">Kéo thả để sắp xếp</v-list-item-subtitle>
-                </v-list-item>
-              </v-col>
-            </v-row>
-          </v-list>
+            </draggable>
+          </div>
         </v-card-text>
       </v-card>
-
-      <!-- Conversation Lines Management -->
-      <div class="d-flex align-center mb-2">
-        <v-chip color="primary" label size="small">
-          <v-icon start size="small">mdi-chat-outline</v-icon>
-          Nội dung hội thoại
-        </v-chip>
-        <v-spacer></v-spacer>
-        <v-btn
-          color="primary"
-          prepend-icon="mdi-plus"
-          @click="addLine"
-          size="small"
-          variant="text"
-        >
-          Thêm dòng
-        </v-btn>
-      </div>
-
-      <!-- Empty state -->
-      <div v-if="!conversation.lines || conversation.lines.length === 0" class="text-center pa-4 bg-grey-lighten-4 rounded-lg mb-4">
-        <v-icon icon="mdi-chat-outline" size="large" class="mb-2 text-grey"></v-icon>
-        <div class="text-body-2 text-grey-darken-1">Chưa có dòng hội thoại nào. Hãy thêm dòng hội thoại đầu tiên.</div>
-      </div>
-
-      <!-- Lines list -->
-      <draggable
-        v-else
-        v-model="conversation.lines"
-        handle=".drag-handle"
-        item-key="tempId"
-        class="chat-container"
-        @change="onLinesReordered"
-      >
-        <template #item="{element, index}">
-          <div class="message-row mb-4" :class="element.speaker === 'user' ? 'justify-end' : 'justify-start'">
-            <!-- Avatar for Nihongo IT -->
-            <div v-if="element.speaker !== 'user'" class="avatar-container mr-2">
-              <v-avatar size="36" color="info" class="drag-handle cursor-move">
-                <v-icon color="white">mdi-robot</v-icon>
-              </v-avatar>
-            </div>
-
-            <!-- Message Bubble -->
-            <div class="message-container" :class="{
-              'user-message': element.speaker === 'user',
-              'bot-message': element.speaker !== 'user'
-            }">
-              <!-- Message Header Controls -->
-              <div class="message-header px-2 pt-1 d-flex align-center">
-                <div class="line-number me-2 text-caption">#{{ index + 1 }}</div>
-                <v-chip size="x-small" :color="element.speaker === 'user' ? 'primary' : 'info'" variant="tonal">
-                  {{ getSpeakerName(element.speaker) }}
-                </v-chip>
-                <v-spacer></v-spacer>
-                <div class="drag-controls d-flex align-center me-2">
-                  <v-btn
-                    size="x-small"
-                    icon
-                    variant="text"
-                    color="grey-darken-1"
-                    class="drag-handle cursor-move mr-2"
-                    title="Di chuyển lên"
-                    :disabled="index === 0"
-                    @click.stop="moveLineUp(index)"
-                  >
-                    <v-icon size="small">mdi-arrow-up</v-icon>
-                  </v-btn>
-                  <v-btn
-                    size="x-small"
-                    icon
-                    variant="text"
-                    color="grey-darken-1"
-                    class="drag-handle cursor-move"
-                    title="Di chuyển xuống"
-                    :disabled="index === conversation.lines.length - 1"
-                    @click.stop="moveLineDown(index)"
-                  >
-                    <v-icon size="small">mdi-arrow-down</v-icon>
-                  </v-btn>
-                </div>
-                <v-btn
-                  icon
-                  size="x-small"
-                  color="error"
-                  variant="text"
-                  @click="confirmDeleteLine(index)"
-                  class="ml-1"
-                >
-                  <v-icon size="small">mdi-delete</v-icon>
-                </v-btn>
-                <v-btn
-                  icon
-                  size="x-small"
-                  :color="expandedLines[element.tempId] ? 'primary' : 'default'"
-                  variant="text"
-                  @click="toggleExpand(element.tempId)"
-                  class="ml-1"
-                >
-                  <v-icon size="small">{{ expandedLines[element.tempId] ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                </v-btn>
-              </div>
-
-              <!-- Message Preview (when collapsed) -->
-              <div v-if="!expandedLines[element.tempId]" class="message-preview px-2 pb-2">
-                <div class="japanese-text text-body-1 font-weight-medium word-break-wrap">
-                  {{ element.japaneseText || 'Chưa có nội dung' }}
-                </div>
-                <div class="text-body-2 text-medium-emphasis word-break-wrap">
-                  {{ element.vietnameseTranslation || 'Chưa có bản dịch' }}
-                </div>
-              </div>
-
-              <!-- Message Edit Form (when expanded) -->
-              <v-expand-transition>
-                <div v-if="expandedLines[element.tempId]" class="message-edit pa-2">
-                  <v-textarea
-                    v-model="element.japaneseText"
-                    label="Đoạn hội thoại (tiếng Nhật)"
-                    rows="2"
-                    auto-grow
-                    hide-details="auto"
-                    density="compact"
-                    variant="outlined"
-                    bg-color="white"
-                    class="mb-2"
-                    :rules="[v => !!v || 'Đoạn hội thoại tiếng Nhật là bắt buộc']"
-                    required
-                    @input="markAsDirty"
-                  ></v-textarea>
-
-                  <v-textarea
-                    v-model="element.vietnameseTranslation"
-                    label="Bản dịch (tiếng Việt)"
-                    rows="2"
-                    auto-grow
-                    hide-details="auto"
-                    density="compact"
-                    variant="outlined"
-                    bg-color="white"
-                    class="mb-2"
-                    :rules="[v => !!v || 'Bản dịch tiếng Việt là bắt buộc']"
-                    required
-                    @input="markAsDirty"
-                  ></v-textarea>
-
-                  <v-textarea
-                    v-model="element.notes"
-                    label="Ghi chú"
-                    rows="2"
-                    auto-grow
-                    hide-details="auto"
-                    density="compact"
-                    variant="outlined"
-                    bg-color="white"
-                    class="mb-2"
-                    @input="markAsDirty"
-                  ></v-textarea>
-
-                  <v-text-field
-                    v-model="element.importantVocab"
-                    label="Từ vựng quan trọng"
-                    hint="Các từ vựng phân cách bởi dấu phẩy"
-                    hide-details="auto"
-                    density="compact"
-                    variant="outlined"
-                    bg-color="white"
-                    style="min-height: 50px;"
-                    @input="markAsDirty"
-                  ></v-text-field>
-                </div>
-              </v-expand-transition>
-            </div>
-
-            <!-- Avatar for User with profile picture -->
-            <div v-if="element.speaker === 'user'" class="avatar-container ml-2">
-              <v-avatar size="36" color="primary" class="drag-handle cursor-move">
-                <v-img
-                  v-if="userProfilePicture"
-                  :src="userProfilePicture"
-                  alt="Ảnh đại diện của bạn"
-                ></v-img>
-                <span v-else class="text-subtitle-2 text-white">{{ avatarInitials }}</span>
-              </v-avatar>
-            </div>
-          </div>
-        </template>
-      </draggable>
     </template>
 
     <!-- Delete Line Confirmation Dialog -->
@@ -545,6 +472,11 @@ const addLine = () => {
   }
 
   markAsDirty();
+
+  // Thêm hiệu ứng cuộn đến dòng mới sau khi DOM cập nhật
+  setTimeout(() => {
+    scrollToElement(`.message-row:last-child`);
+  }, 50);
 };
 
 const confirmDeleteLine = (index: number) => {
@@ -574,6 +506,16 @@ const deleteLine = () => {
 
 const toggleExpand = (tempId: string) => {
   expandedLines.value[tempId] = !expandedLines.value[tempId];
+
+  // Nếu đang mở, cuộn đến phần tử đó sau khi hiệu ứng expand hoàn tất
+  if (expandedLines.value[tempId]) {
+    setTimeout(() => {
+      const element = document.querySelector(`[data-temp-id="${tempId}"]`);
+      if (element) {
+        scrollToElement(`[data-temp-id="${tempId}"]`);
+      }
+    }, 300);
+  }
 };
 
 const updateOrderIndices = () => {
@@ -649,6 +591,21 @@ const moveLineDown = (index: number) => {
   updateOrderIndices();
   markAsDirty();
 };
+
+// Thêm hiệu ứng cuộn mượt
+const scrollToElement = (selector: string) => {
+  const element = document.querySelector(selector);
+  if (!element) return;
+
+  const rect = element.getBoundingClientRect();
+  const targetPosition = window.scrollY + rect.top - 150;
+
+  // Sử dụng smooth scrolling
+  window.scrollTo({
+    top: targetPosition,
+    behavior: 'smooth'
+  });
+};
 </script>
 
 <style scoped lang="scss">
@@ -656,6 +613,11 @@ const moveLineDown = (index: number) => {
   max-width: 900px;
   margin: 0 auto;
   padding: 16px;
+
+  .main-conversation-container {
+    border-radius: 8px;
+    overflow: hidden;
+  }
 
   .loading-container,
   .error-container {
@@ -666,7 +628,7 @@ const moveLineDown = (index: number) => {
     min-height: 60vh;
   }
 
-  .japanese-text {
+  versation-edit-container .japanese-text {
     font-family: 'Noto Sans JP', sans-serif;
   }
 
@@ -678,6 +640,7 @@ const moveLineDown = (index: number) => {
     position: relative;
     overflow: visible;
     margin-bottom: 16px;
+    will-change: contents;
   }
 
   .message-row {
@@ -685,6 +648,21 @@ const moveLineDown = (index: number) => {
     align-items: flex-start;
     width: 100%;
     margin-bottom: 16px;
+    animation: fadeInUp 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+    will-change: transform, opacity;
+    transform: translateZ(0);
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translate3d(0, 20px, 0);
+    }
+
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
   }
 
   .message-container {
@@ -696,9 +674,13 @@ const moveLineDown = (index: number) => {
     min-width: 390px;
     max-width: 600px;
     width: fit-content;
+    transform-origin: center center;
+    will-change: transform, box-shadow;
+    backface-visibility: hidden;
 
     &:hover {
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px) translateZ(0);
     }
 
     &.user-message {
@@ -718,13 +700,21 @@ const moveLineDown = (index: number) => {
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     background-color: rgba(0, 0, 0, 0.02);
     border-radius: 18px 18px 0 0;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
   }
 
-  .message-preview, .message-edit {
+  .message-preview,
+  .message-edit {
     padding: 8px 12px;
   }
 
   .message-edit {
+    width: 100%;
+
     :deep(.v-field__input) {
       min-height: unset;
       padding-top: 4px;
@@ -732,12 +722,23 @@ const moveLineDown = (index: number) => {
     }
 
     :deep(.v-textarea__input) {
-      min-height: 32px;
-      line-height: 1.3;
+      min-height: 24px;
+      line-height: 1.2;
+      transition: all 0.2s ease;
     }
 
     :deep(.v-field--variant-outlined .v-field__outline) {
       margin-bottom: 0;
+      transition: border-color 0.2s ease;
+    }
+
+    :deep(.v-field) {
+      transition: all 0.2s ease;
+
+      &:focus-within {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
     }
   }
 
@@ -769,6 +770,66 @@ const moveLineDown = (index: number) => {
     &:hover {
       background-color: rgba(0, 0, 0, 0.08);
     }
+
+    .v-btn {
+      transition: all 0.2s cubic-bezier(0.25, 0.8, 0.5, 1);
+
+      &:hover {
+        transform: translateY(-1px);
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      &:active {
+        transform: translateY(0);
+      }
+    }
   }
+
+  .avatar-container {
+    .v-avatar {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+      &:hover {
+        transform: scale(1.05);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+      }
+    }
+  }
+}
+
+// Sửa cách viết transition để tránh lỗi với :deep
+.v-expand-transition {
+
+  &:deep(.v-expand-transition-enter-active),
+  &:deep(.v-expand-transition-leave-active) {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden;
+  }
+
+  &:deep(.v-expand-transition-enter-from),
+  &:deep(.v-expand-transition-leave-to) {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+}
+
+// Sửa các selector cho sortable
+.sortable-ghost:deep() {
+  opacity: 0.5;
+  background-color: #f5f5f5;
+  border-radius: 18px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1) !important;
+
+  * {
+    opacity: 0.5;
+  }
+}
+
+.sortable-drag:deep() {
+  opacity: 1 !important;
+  z-index: 10;
+  transform: rotate(1deg) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1) !important;
 }
 </style>

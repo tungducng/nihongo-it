@@ -47,7 +47,6 @@
             <div v-for="category in filteredCategories" :key="category.id" class="category-item">
               <div class="text-center mb-2">
                 <div class="text-h6 font-weight-bold text-center japanese-text">{{ category.name }}</div>
-                <div class="text-caption text-center">{{ category.meaning }}</div>
           </div>
 
               <div class="category-card">
@@ -428,11 +427,23 @@ function clearAllFilters() {
   .category-item {
     margin-bottom: 20px;
   }
+
+  .text-h6.japanese-text {
+    font-size: 1rem !important;
+  }
 }
 
 @media (max-width: 600px) {
   .category-card {
     max-width: 150px;
+  }
+
+  .text-h6.japanese-text {
+    font-size: 0.9rem !important;
+  }
+
+  .category-item .text-caption {
+    font-size: 0.75rem !important;
   }
 }
 

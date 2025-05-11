@@ -1,105 +1,117 @@
 <template>
-  <v-container fluid>
-    <div class="d-flex align-center mb-4">
-      <h2 class="font-weight-bold" style="font-size: 1.3rem;">Từ vựng tiếng Nhật</h2>
+  <v-container fluid class="vocabulary-container pa-0">
+    <!-- Header Section -->
+    <div class="header px-4 py-3 d-flex justify-space-between align-center mb-2">
+      <div class="d-flex align-center">
+        <div class="text-subtitle-1 font-weight-bold text-dark">
+          <span class="text-primary">Từ vựng tiếng Nhật</span>
+          <span class="japanese-text ms-2">単語学習</span>
+        </div>
+      </div>
     </div>
 
     <!-- Search and Filter Bar -->
-    <v-card class="mb-6 filter-card elevation-1">
-      <v-card-text>
-        <v-row align="center">
-          <!-- Search Box -->
-          <v-col cols="12" sm="4">
-            <v-text-field
-              v-model="filters.keyword"
-              prepend-inner-icon="mdi-magnify"
-              label="Tìm kiếm từ vựng"
-              clearable
-              hide-details
-              density="comfortable"
-              variant="outlined"
-              @update:model-value="debounceSearch"
-            ></v-text-field>
-          </v-col>
+    <div class="search-filter-container px-4 mb-4">
+      <v-card class="filter-card elevation-1 rounded-lg">
+        <v-card-text>
+          <v-row align="center">
+            <!-- Search Box -->
+            <v-col cols="12" sm="4">
+              <div class="search-field d-flex align-center pa-1 rounded-pill">
+                <v-text-field
+                  v-model="filters.keyword"
+                  prepend-inner-icon="mdi-magnify"
+                  placeholder="検索 / Tìm kiếm từ vựng"
+                  clearable
+                  hide-details
+                  density="comfortable"
+                  variant="plain"
+                  @update:model-value="debounceSearch"
+                ></v-text-field>
+              </div>
+            </v-col>
 
-          <!-- JLPT Level Filter -->
-          <v-col cols="12" sm="3">
-            <v-select
-              v-model="filters.jlptLevel"
-              label="Trình độ JLPT"
-              :items="jlptLevels"
-              clearable
-              hide-details
-              density="comfortable"
-              variant="outlined"
-              @update:model-value="fetchVocabulary"
-            ></v-select>
-          </v-col>
-
-          <!-- Topic Filter -->
-          <v-col cols="12" sm="5">
-            <v-select
-              v-model="filters.topicName"
-              label="Chủ đề"
-              :items="topics"
-              item-title="name"
-              item-value="name"
-              clearable
-              hide-details
-              density="comfortable"
-              variant="outlined"
-              @update:model-value="fetchVocabulary"
-            ></v-select>
-          </v-col>
-        </v-row>
-
-        <!-- Active Filters -->
-        <v-row class="mt-3" v-if="hasActiveFilters">
-          <v-col cols="12">
-            <div class="d-flex flex-wrap align-center">
-              <span class="text-body-2 text-medium-emphasis mr-2">Bộ lọc đang dùng:</span>
-              <v-chip
-                v-if="filters.keyword"
-                size="small"
-                class="mr-2 mb-1"
-                closable
-                @click:close="clearFilter('keyword')"
-              >
-                Tìm kiếm: {{ filters.keyword }}
-              </v-chip>
-              <v-chip
-                v-if="filters.jlptLevel"
-                size="small"
-                color="primary"
-                class="mr-2 mb-1"
-                closable
-                @click:close="clearFilter('jlptLevel')"
-              >
-                Trình độ: {{ filters.jlptLevel }}
-              </v-chip>
-              <v-chip
-                v-if="filters.topicName"
-                size="small"
-                color="success"
-                class="mr-2 mb-1"
-                closable
-                @click:close="clearFilter('topicName')"
-              >
-                Chủ đề: {{ filters.topicName }}
-              </v-chip>
-              <v-btn
-                size="small"
-                variant="text"
+            <!-- JLPT Level Filter -->
+            <v-col cols="12" sm="3">
+              <v-select
+                v-model="filters.jlptLevel"
+                label="Trình độ JLPT"
+                :items="jlptLevels"
+                clearable
+                hide-details
                 density="comfortable"
-                @click="clearAllFilters"
-              >
-                Xóa tất cả
-              </v-btn>
-            </div>
-          </v-col>
-        </v-row>
-      </v-card-text>
-    </v-card>
+                variant="outlined"
+                rounded="lg"
+                @update:model-value="fetchVocabulary"
+              ></v-select>
+            </v-col>
+
+            <!-- Topic Filter -->
+            <v-col cols="12" sm="5">
+              <v-select
+                v-model="filters.topicName"
+                label="Chủ đề"
+                :items="topics"
+                item-title="name"
+                item-value="name"
+                clearable
+                hide-details
+                density="comfortable"
+                variant="outlined"
+                rounded="lg"
+                @update:model-value="fetchVocabulary"
+              ></v-select>
+            </v-col>
+          </v-row>
+
+          <!-- Active Filters -->
+          <v-row class="mt-3" v-if="hasActiveFilters">
+            <v-col cols="12">
+              <div class="d-flex flex-wrap align-center">
+                <span class="text-body-2 text-medium-emphasis mr-2">Bộ lọc đang dùng:</span>
+                <v-chip
+                  v-if="filters.keyword"
+                  size="small"
+                  class="mr-2 mb-1"
+                  closable
+                  @click:close="clearFilter('keyword')"
+                >
+                  Tìm kiếm: {{ filters.keyword }}
+                </v-chip>
+                <v-chip
+                  v-if="filters.jlptLevel"
+                  size="small"
+                  color="primary"
+                  class="mr-2 mb-1"
+                  closable
+                  @click:close="clearFilter('jlptLevel')"
+                >
+                  Trình độ: {{ filters.jlptLevel }}
+                </v-chip>
+                <v-chip
+                  v-if="filters.topicName"
+                  size="small"
+                  color="success"
+                  class="mr-2 mb-1"
+                  closable
+                  @click:close="clearFilter('topicName')"
+                >
+                  Chủ đề: {{ filters.topicName }}
+                </v-chip>
+                <v-btn
+                  size="small"
+                  variant="text"
+                  density="comfortable"
+                  @click="clearAllFilters"
+                >
+                  Xóa tất cả
+                </v-btn>
+              </div>
+            </v-col>
+          </v-row>
+        </v-card-text>
+      </v-card>
+    </div>
 
     <!-- Loading State -->
     <div v-if="loading" class="d-flex justify-center my-8">
@@ -110,142 +122,151 @@
       ></v-progress-circular>
     </div>
 
-    <!-- Custom Vocabulary Table -->
-    <v-card v-else class="vocabulary-card elevation-2">
-      <v-list class="custom-vocabulary-list pa-0">
-        <div v-if="vocabulary.length === 0" class="text-center pa-6">
-          <v-icon size="large" icon="mdi-book-search-outline" class="mb-4"></v-icon>
-          <h3 class="text-h6">Không tìm thấy từ vựng</h3>
-          <p class="text-body-1 text-medium-emphasis mb-4">
-            Hãy điều chỉnh bộ lọc tìm kiếm hoặc thêm từ vựng mới.
-          </p>
-          <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
-            Thêm từ vựng
-          </v-btn>
-        </div>
+    <!-- Vocabulary Content -->
+    <div v-else class="vocabulary-content px-4">
+      <div v-if="vocabulary.length === 0" class="text-center pa-6">
+        <v-icon size="large" icon="mdi-book-search-outline" class="mb-4"></v-icon>
+        <h3 class="text-h6">Không tìm thấy từ vựng</h3>
+        <p class="text-body-1 text-medium-emphasis mb-4">
+          Hãy điều chỉnh bộ lọc tìm kiếm hoặc thêm từ vựng mới.
+        </p>
+        <v-btn color="primary" prepend-icon="mdi-plus" @click="openAddDialog">
+          Thêm từ vựng
+        </v-btn>
+      </div>
 
-        <template v-else>
-          <!-- Table Header -->
-          <div class="custom-header">
-            <div class="d-flex px-4 py-3 text-subtitle-2 font-weight-bold w-100">
-              <div class="header-cell column-border" style="width: 95px;">Trình độ</div>
-              <div class="header-cell column-border" style="width: 450px;">Từ vựng</div>
-              <div class="header-cell column-border" style="width: 200px;">Cách đọc</div>
-              <div class="header-cell column-border" style="width: 150px;">Chủ đề</div>
-              <div class="header-cell column-border" style="flex-grow: 1;">Thao tác</div>
-            </div>
-          </div>
-
-          <!-- Table Content -->
-          <v-list-item
-            v-for="item in vocabulary"
-            :key="item.vocabId"
-            class="vocabulary-item"
-            :data-vocab-id="item.vocabId"
-            @click="toggleExpand(item.vocabId)"
-            density="compact"
-          >
-            <!-- Main Row Content -->
-            <div class="d-flex align-center w-100 vocabulary-row">
-              <!-- JLPT Level -->
-              <div class="content-cell text-center column-border" style="width: 95px;">
-                <v-chip
-                  :color="getJlptColor(item.jlptLevel)"
-                  size="small"
-                  class="font-weight-bold level-chip"
-                >
-                  {{ item.jlptLevel }}
-                </v-chip>
-              </div>
-
-              <!-- Vocabulary Term with Meaning -->
-              <div class="content-cell vocabulary-cell column-border" style="width: 450px;">
-                <div class="d-flex align-center">
-                  <span class="text-body-2 text-wrap japanese-text">
-                    {{ item.term }}
-                  </span>
-                </div>
-                <div class="meaning-text text-caption mt-1 text-medium-emphasis text-wrap">
-                  {{ item.meaning }}
-                </div>
-              </div>
-
-              <!-- Pronunciation -->
-              <div class="content-cell text-center column-border" style="width: 200px;">
-                <span v-if="item.pronunciation" class="japanese-text">{{ item.pronunciation }}</span>
-                <span v-else class="text-medium-emphasis">—</span>
-              </div>
-
-              <!-- Topic Name -->
-              <div class="content-cell text-center column-border" style="width: 150px;">
-                <v-chip
-                  v-if="item.topicName"
-                  size="x-small"
-                  color="success"
-                  variant="outlined"
-                  class="category-chip"
-                >
-                  {{ item.topicName }}
-                </v-chip>
-                <span v-else class="text-medium-emphasis">—</span>
-              </div>
-
-              <!-- Actions -->
-              <div class="content-cell text-center column-border action-cell" style="flex-grow: 1;" @click.stop>
-                <div class="d-flex justify-center">
-                  <v-btn
-                    icon="mdi-volume-high"
-                    size="small"
-                    variant="text"
-                    @click.stop="playAudio(item.audioPath || null, item)"
-                    class="mr-2 action-btn"
-                    color="blue"
-                    title="Phát âm"
-                    :loading="playingAudioId === item.vocabId"
-                    :disabled="playingAudioId !== null && playingAudioId !== item.vocabId || playingExampleAudioId !== null"
-                  ></v-btn>
-
-                  <v-btn
-                    :icon="item.isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
-                    size="small"
-                    variant="text"
-                    :color="item.isSaved ? 'warning' : undefined"
-                    @click.stop="toggleSave(item)"
-                    class="mr-2 action-btn"
-                    :title="item.isSaved ? 'Bỏ lưu' : 'Lưu từ vựng'"
-                  ></v-btn>
-
-                  <v-btn
-                    :icon="expandedItems.includes(item.vocabId) ? 'mdi-chevron-up' : 'mdi-chevron-down'"
-                    size="small"
-                    variant="text"
-                    @click.stop="toggleExpand(item.vocabId)"
-                    class="action-btn mr-2"
-                    title="Hiện câu ví dụ"
-                  ></v-btn>
-
-                  <v-btn
-                    size="small"
-                    variant="outlined"
-                    color="success"
-                    @click.stop="toggleChatGPT(item.vocabId)"
-                    class="chat-gpt-btn"
-                    :disabled="loadingChatGPT === item.vocabId"
-                    :loading="loadingChatGPT === item.vocabId"
+      <div v-else>
+        <!-- Vocabulary Cards -->
+        <v-card
+          v-for="item in vocabulary"
+          :key="item.vocabId"
+          class="vocabulary-card mb-3"
+          :class="{ 'expanded': expandedItems.includes(item.vocabId) }"
+          variant="outlined"
+          rounded="lg"
+          @click="toggleExpand(item.vocabId)"
+        >
+          <!-- Main vocabulary item content -->
+          <div class="pa-3">
+            <div class="d-flex align-center justify-space-between">
+              <div class="item-text">
+                <div class="term-container">
+                  <div class="text-subtitle-2 japanese-text font-weight-bold">{{ item.term }}</div>
+                  <div v-if="item.pronunciation" class="japanese-text d-none d-md-inline-block ml-2">
+                    ({{ item.pronunciation }})
+                  </div>
+                  <v-chip
+                    :color="getJlptColor(item.jlptLevel)"
+                    size="x-small"
+                    class="ml-2"
                   >
-                    <v-icon left size="small" class="mr-1">mdi-chat-processing</v-icon>
-                    Hỏi ChatGPT
-                  </v-btn>
+                    {{ item.jlptLevel }}
+                  </v-chip>
                 </div>
+                <!-- Mobile pronunciation display - only shows on mobile -->
+                <div v-if="item.pronunciation" class="text-body-2 japanese-text text-medium-emphasis d-md-none pronunciation-mobile">
+                  {{ item.pronunciation }}
+                </div>
+                <div class="text-body-2 meaning-text mt-1">{{ item.meaning }}</div>
+              </div>
+              <v-spacer></v-spacer>
+
+              <!-- Audio button - always visible -->
+              <v-btn
+                icon="mdi-volume-high"
+                size="small"
+                variant="text"
+                @click.stop="playAudio(item.audioPath || null, item)"
+                class="mx-1 audio-btn"
+                color="blue"
+                title="Phát âm"
+                :loading="playingAudioId === item.vocabId"
+                :disabled="playingAudioId !== null && playingAudioId !== item.vocabId || playingExampleAudioId !== null"
+              ></v-btn>
+
+              <!-- Desktop buttons - hidden on mobile -->
+              <div class="action-buttons-container d-none d-md-flex" @click.stop>
+                <v-btn
+                  :icon="item.isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+                  size="small"
+                  variant="text"
+                  :color="item.isSaved ? 'warning' : undefined"
+                  @click.stop="toggleSave(item)"
+                  class="mx-1"
+                  :title="item.isSaved ? 'Bỏ lưu' : 'Lưu từ vựng'"
+                ></v-btn>
+                <v-btn
+                  variant="text"
+                  color="primary"
+                  size="small"
+                  @click.stop="viewDetails(item)"
+                  class="mx-1"
+                  title="Xem chi tiết"
+                  icon="mdi-open-in-new"
+                ></v-btn>
+                <v-btn
+                  size="small"
+                  variant="text"
+                  color="success"
+                  @click.stop="toggleChatGPT(item.vocabId)"
+                  class="chat-gpt-btn mx-1"
+                  :disabled="loadingChatGPT === item.vocabId"
+                  :loading="loadingChatGPT === item.vocabId"
+                  prepend-icon="mdi-chat-processing"
+                >
+                  <span class="d-none d-sm-inline">Hỏi ChatGPT</span>
+                </v-btn>
+              </div>
+
+              <!-- Mobile Actions Menu - excluding audio button -->
+              <div class="mobile-actions d-md-none" @click.stop>
+                <v-menu>
+                  <template v-slot:activator="{ props }">
+                    <v-btn
+                      icon="mdi-dots-vertical"
+                      size="small"
+                      variant="text"
+                      v-bind="props"
+                      @click.stop
+                    ></v-btn>
+                  </template>
+                  <v-list density="compact">
+                    <v-list-item @click.stop="toggleSave(item)">
+                      <template v-slot:prepend>
+                        <v-icon :color="item.isSaved ? 'warning' : undefined">
+                          {{ item.isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline' }}
+                        </v-icon>
+                      </template>
+                      <v-list-item-title>{{ item.isSaved ? 'Bỏ lưu' : 'Lưu từ vựng' }}</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click.stop="viewDetails(item)">
+                      <template v-slot:prepend>
+                        <v-icon color="primary">mdi-open-in-new</v-icon>
+                      </template>
+                      <v-list-item-title>Xem chi tiết</v-list-item-title>
+                    </v-list-item>
+
+                    <v-list-item @click.stop="toggleChatGPT(item.vocabId)" :disabled="loadingChatGPT === item.vocabId">
+                      <template v-slot:prepend>
+                        <v-icon color="success">mdi-chat-processing</v-icon>
+                      </template>
+                      <v-list-item-title>Hỏi ChatGPT</v-list-item-title>
+                    </v-list-item>
+                  </v-list>
+                </v-menu>
               </div>
             </div>
 
-            <!-- Expanded Content (Example Sentences) -->
-            <div v-if="expandedItems.includes(item.vocabId)" class="expanded-content py-2 px-4" @click.stop>
-              <div v-if="item.example" class="example-sentence my-2">
+            <!-- Expanded Content -->
+            <div v-if="expandedItems.includes(item.vocabId)" class="mt-2" @click.stop>
+              <v-divider class="mb-2"></v-divider>
+
+              <!-- Example Section -->
+              <div v-if="item.example" class="example-section mb-2 pa-2 rounded">
                 <div class="d-flex align-items-center">
-                  <v-icon class="mr-2" size="x-small" color="grey">mdi-format-quote-open</v-icon>
-                  <div class="flex-grow-1 japanese-text">{{ item.example }}</div>
+                  <v-icon class="mr-1" size="x-small" color="grey">mdi-format-quote-open</v-icon>
+                  <div class="flex-grow-1 japanese-text text-body-2">{{ item.example }}</div>
                   <v-btn
                     icon="mdi-volume-high"
                     size="x-small"
@@ -253,12 +274,11 @@
                     @click.stop="playAudio(null, item, true)"
                     color="blue"
                     title="Phát âm câu ví dụ"
-                    class="action-btn"
                     :loading="playingExampleAudioId === item.vocabId"
                     :disabled="playingExampleAudioId !== null && playingExampleAudioId !== item.vocabId || playingAudioId !== null"
                   ></v-btn>
                 </div>
-                <div v-if="item.exampleMeaning" class="example-translation ml-6 mt-1 text-caption text-medium-emphasis">
+                <div v-if="item.exampleMeaning" class="example-translation ml-4 mt-1 text-caption text-medium-emphasis">
                   {{ item.exampleMeaning }}
                 </div>
               </div>
@@ -268,45 +288,38 @@
                   <span class="text-caption text-medium-emphasis">Ngày tạo:</span>
                   <span class="text-caption ml-1">{{ formatDate(item.createdAt ?? '1999') }}</span>
                 </div>
-                <div class="ms-auto">
-                  <v-btn
-                    size="x-small"
-                    variant="outlined"
-                    color="primary"
-                    @click.stop="viewDetails(item)"
-                    class="text-none"
-                  >
-                    Xem chi tiết
-                  </v-btn>
-                </div>
               </div>
             </div>
+          </div>
 
-            <!-- ChatGPT Content -->
-            <div v-if="chatGPTItems.includes(item.vocabId)" class="chatgpt-content mt-0 py-2 px-4" @click.stop>
+          <!-- ChatGPT Content (completely independent section) -->
+          <div v-if="chatGPTItems.includes(item.vocabId)" class="pa-3 pt-0" @click.stop>
+            <div class="chatgpt-content py-2 px-2 rounded" @click.stop>
+              <v-divider class="mb-2"></v-divider>
+
               <!-- Initial AI Explanation -->
-              <v-card flat class="chatgpt-card pa-3 mb-3" v-if="item.aiExplanation">
-                <div class="d-flex align-items-start mb-2">
-                  <v-avatar size="32" color="green" class="mr-2">
+              <v-card flat class="chatgpt-card pa-2 mb-2" v-if="item.aiExplanation" @click.stop>
+                <div class="d-flex align-items-start mb-1">
+                  <v-avatar size="24" color="green" class="mr-2 mt-1">
                     <span class="text-caption text-white">AI</span>
                   </v-avatar>
                   <div>
-                    <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
+                    <div class="text-caption font-weight-medium">Trợ lý ChatGPT</div>
                     <div class="chatgpt-message text-body-2 mt-1">
                       <p v-html="displayedText[item.vocabId] || ''"></p>
                       <span v-if="typingInProgress === item.vocabId && typingExamples[item.vocabId] === undefined" class="typing-cursor">|</span>
 
-                      <div v-if="item.aiExamples && item.aiExamples.length > 0 && typingExamples[item.vocabId] !== undefined" class="mt-3">
-                        <p class="font-weight-medium">Câu ví dụ:</p>
-                        <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-2">
+                      <div v-if="item.aiExamples && item.aiExamples.length > 0 && typingExamples[item.vocabId] !== undefined" class="mt-2">
+                        <p class="font-weight-medium text-caption">Câu ví dụ:</p>
+                        <div v-for="(example, exIndex) in item.aiExamples" :key="exIndex" class="mt-1">
                           <template v-if="typingExamples[item.vocabId] > exIndex || typingExamples[item.vocabId] === -1">
                             <!-- Fully displayed examples -->
-                            <p class="example-text">{{ example.japanese }}</p>
+                            <p class="example-text text-caption">{{ example.japanese }}</p>
                             <p class="text-caption ml-3">{{ example.vietnamese }}</p>
                           </template>
                           <template v-else-if="typingExamples[item.vocabId] === exIndex">
                             <!-- Currently typing example -->
-                            <p class="example-text">
+                            <p class="example-text text-caption">
                               {{ getExampleProperty(example, 'japaneseDisplayed') || '' }}
                               <span v-if="isJapaneseComplete(example) && !hasVietnameseStarted(example)" class="typing-cursor">|</span>
                             </p>
@@ -325,40 +338,40 @@
               <!-- Chat History -->
               <template v-if="item.chatHistory && item.chatHistory.length > 0">
                 <div
-                  v-for="(message, msgIndex) in (item.chatHistory as Array<{role: string, content: string}>)"
+                  v-for="(message, msgIndex) in item.chatHistory"
                   :key="msgIndex"
-                  class="mb-3"
+                  class="mb-2"
                 >
                   <!-- User Message -->
                   <div v-if="message.role === 'user'" class="d-flex align-items-start">
-                <v-avatar size="32" color="blue" class="mr-2">
+                    <v-avatar size="24" color="blue" class="mr-2 mt-1">
                       <span class="text-caption text-white">Bạn</span>
-                </v-avatar>
-                <div>
-                      <div class="text-subtitle-2 font-weight-medium">Bạn</div>
-                  <div class="chatgpt-message text-body-2 mt-1">
+                    </v-avatar>
+                    <div>
+                      <div class="text-caption font-weight-medium">Bạn</div>
+                      <div class="chatgpt-message text-body-2 mt-1">
                         {{ message.content }}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
                   <!-- AI Response -->
-                  <v-card v-else flat class="chatgpt-card pa-3">
-                <div class="d-flex align-items-start">
-                  <v-avatar size="32" color="green" class="mr-2">
-                    <span class="text-caption text-white">AI</span>
-                  </v-avatar>
-                  <div>
-                        <div class="text-subtitle-2 font-weight-medium">Trợ lý ChatGPT</div>
-                    <div class="chatgpt-message text-body-2 mt-1">
+                  <v-card v-else flat class="chatgpt-card pa-2">
+                    <div class="d-flex align-items-start">
+                      <v-avatar size="24" color="green" class="mr-2 mt-1">
+                        <span class="text-caption text-white">AI</span>
+                      </v-avatar>
+                      <div>
+                        <div class="text-caption font-weight-medium">Trợ lý ChatGPT</div>
+                        <div class="chatgpt-message text-body-2 mt-1">
                           <span v-html="message.content"></span>
                           <span v-if="typingInProgress === item.vocabId &&
                                       msgIndex === (item.chatHistory?.length - 1)"
                                 class="typing-cursor">|</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </v-card>
+                  </v-card>
                 </div>
               </template>
 
@@ -382,48 +395,46 @@
                 </v-btn>
               </div>
             </div>
+          </div>
+        </v-card>
 
-            <v-divider></v-divider>
-          </v-list-item>
-        </template>
-      </v-list>
+        <!-- Bottom pagination & Item per page selector -->
+        <div class="d-flex align-center justify-space-between mt-4">
+          <v-select
+            v-model="filters.size"
+            label="Số mục trên trang"
+            :items="[10, 20, 50, 100]"
+            density="compact"
+            variant="outlined"
+            style="max-width: 150px"
+            @update:model-value="changeItemsPerPage"
+            hide-details
+          ></v-select>
 
-      <!-- Custom Pagination -->
-      <v-card-actions class="d-flex align-center justify-space-between px-4 py-3 pagination-footer">
-        <v-select
-          v-model="filters.size"
-          label="Số mục trên trang"
-          :items="[10, 20, 50, 100]"
-          density="compact"
-          variant="outlined"
-          style="max-width: 150px"
-          @update:model-value="changeItemsPerPage"
-          hide-details
-        ></v-select>
+          <v-pagination
+            v-if="totalPages > 1"
+            v-model="currentPage"
+            :length="totalPages"
+            :total-visible="7"
+            rounded="circle"
+            @update:model-value="changePage"
+          ></v-pagination>
 
-        <v-pagination
-          v-if="totalPages > 1"
-          v-model="currentPage"
-          :length="totalPages"
-          :total-visible="7"
-          rounded
-          @update:model-value="changePage"
-        ></v-pagination>
+          <div v-else class="text-caption text-medium-emphasis">
+            Hiển thị {{ vocabulary.length }} mục
+          </div>
 
-        <div v-else class="text-caption text-medium-emphasis">
-          Hiển thị {{ vocabulary.length }} mục{{ vocabulary.length !== 1 ? '' : '' }}
+          <!-- Add Vocabulary Button -->
+          <v-btn
+            color="primary"
+            prepend-icon="mdi-plus"
+            @click="openAddDialog"
+          >
+            Thêm từ vựng
+          </v-btn>
         </div>
-
-        <!-- Add Vocabulary Button -->
-        <v-btn
-          color="primary"
-          prepend-icon="mdi-plus"
-          @click="openAddDialog"
-        >
-          Thêm từ vựng
-        </v-btn>
-      </v-card-actions>
-    </v-card>
+      </div>
+    </div>
   </v-container>
 </template>
 
@@ -1138,239 +1149,95 @@ onMounted(async () => {
 </script>
 
 <style lang="sass" scoped>
+.vocabulary-container
+  background-color: #f8f9fa
+  min-height: 100vh
+
+.header
+  background-color: #ffffff
+  border-bottom: 1px solid rgba(0,0,0,0.06)
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05)
+
+.search-filter-container
+  margin-top: 12px
+
 .filter-card
-  border-radius: 8px
-  background-color: #f9fafc
+  border-radius: 12px
+  background-color: #ffffff
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05)
 
+.search-field
+  background-color: #f5f5f7
+  border-radius: 24px
+
+  :deep(.v-field__field)
+    padding-top: 0
+    padding-bottom: 0
+
+  :deep(.v-field__outline)
+    display: none
+
+.vocabulary-content
+  margin-bottom: 24px
+
 .vocabulary-card
-  border-radius: 8px
+  transition: all 0.2s
   overflow: hidden
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06)
-
-.custom-vocabulary-list
-  padding: 0
-
-.custom-header
-  background-color: #f0f4f8
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12)
-  position: sticky
-  top: 0
-  z-index: 2
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05)
-
-.custom-header .d-flex > div:nth-child(1)
-  min-width: 95px
-  width: 95px
-
-.custom-header .d-flex > div:nth-child(2)
-  min-width: 450px
-  width: 450px
-  text-align: left
-  justify-content: flex-start
-
-.custom-header .d-flex > div:nth-child(3)
-  min-width: 200px
-  width: 200px
-
-.custom-header .d-flex > div:nth-child(4)
-  min-width: 150px
-  width: 150px
-
-.custom-header .d-flex > div:nth-child(5)
-  min-width: 220px
-  flex-grow: 1
-
-.header-cell
-  text-align: center
-  padding: 0 8px
-  color: rgba(0, 0, 0, 0.7)
-  font-weight: 600
-  display: flex
-  align-items: center
-  justify-content: center
-  text-transform: uppercase
-  font-size: 0.8rem
-  letter-spacing: 0.5px
-  height: 48px
-
-.column-border
-  border-right: 1px solid rgba(0, 0, 0, 0.08)
-  &:last-of-type
-    border-right: none
-
-.content-cell
-  padding: 4px 8px
-  overflow: hidden
-  display: flex
-  align-items: center
-  justify-content: center
-
-.vocabulary-row
-  display: flex
-  align-items: stretch
-  padding: 8px 16px
-  min-height: 62px
-  width: 100%
-  transition: background-color 0.15s ease
-
-.vocabulary-cell
-  padding: 4px 12px
-  min-height: 60px
-  display: flex
-  flex-direction: column
-  justify-content: center
-  align-items: flex-start
-  width: 100%
-
-  .text-wrap
-    max-width: 430px
-    width: 100%
-
-  .meaning-text
-    font-style: italic
-    color: rgba(0, 0, 0, 0.6)
-    margin-top: 4px
-    max-width: 430px
-    width: 100%
-    white-space: normal
-    overflow: hidden
-    text-overflow: ellipsis
-    display: -webkit-box
-    -webkit-line-clamp: 2
-    -webkit-box-orient: vertical
-
-.vocabulary-item
-  padding: 0
-  cursor: pointer
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05)
-  transition: background-color 0.2s ease
+  background-color: #ffffff
+  border: 1px solid rgba(0,0,0,0.1)
 
   &:hover
-    background-color: rgba(0, 0, 0, 0.03)
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08)
+    transform: translateY(-2px)
 
-  &:nth-child(even)
-    background-color: rgba(240, 244, 248, 0.4)
-
-    &:hover
-      background-color: rgba(240, 244, 248, 0.6)
+  &.expanded
+    background-color: #f9fdff
+    border-color: rgba(25, 118, 210, 0.2)
 
 .japanese-text
   font-family: 'Noto Sans JP', sans-serif
+  font-size: 0.8rem !important
+  line-height: 1.5
 
-.hiragana-text
-  font-weight: 500
-  color: rgba(0, 0, 0, 0.8)
+.meaning-text
+  color: rgba(0, 0, 0, 0.6)
+  margin-top: 6px
+  line-height: 1.4
 
-.kanji-text
-  color: rgba(0, 0, 0, 0.85)
-  font-weight: 600
+.action-buttons-container
+  display: flex
+  align-items: center
 
-.expanded-content
-  background-color: #f8fafd
-  border-top: 1px dashed rgba(0, 0, 0, 0.08)
-  padding: 6px 16px
-  margin-top: 4px
-  border-radius: 0 0 8px 8px
-  transition: all 0.3s ease
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03)
-
-.example-sentence
-  padding: 12px 14px
-  background-color: rgba(255, 255, 255, 0.7)
+.example-section
+  background-color: #f5f9ff
   border-radius: 8px
-  border-left: 3px solid rgba(0, 0, 0, 0.1)
-  font-style: italic
-  margin: 8px 0
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05)
+  padding: 10px
+  margin-top: 12px
 
 .example-translation
   color: rgba(0, 0, 0, 0.6)
   font-style: italic
-  margin-top: 4px
 
-.level-chip
-  min-width: 40px
-  font-size: 0.75rem
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1)
-  font-weight: 600
-  letter-spacing: 0.2px
-
-.category-chip
-  font-size: 0.65rem
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05)
-  letter-spacing: 0.2px
-  padding: 0 6px
-
-// Adjust JLPT color opacity for better visual
-:deep(.v-chip)
-  &.v-theme--light.red
-    background-color: rgba(244, 67, 54, 0.85) !important
-
-  &.v-theme--light.orange
-    background-color: rgba(255, 152, 0, 0.85) !important
-
-  &.v-theme--light.amber
-    background-color: rgba(255, 193, 7, 0.85) !important
-
-  &.v-theme--light.light-green
-    background-color: rgba(139, 195, 74, 0.85) !important
-
-  &.v-theme--light.green
-    background-color: rgba(76, 175, 80, 0.85) !important
-
-.action-btn
-  opacity: 0.8
-  transition: all 0.2s ease
-  border-radius: 50%
-  margin: 0 2px
-
-  &:hover
-    opacity: 1
-    transform: scale(1.1)
-    background-color: rgba(0, 0, 0, 0.04)
-
-  &:active
-    transform: scale(0.95)
-
-.pagination-footer
-  background-color: #f9fafc
-  border-top: 1px solid rgba(0, 0, 0, 0.05)
-  padding: 12px 16px
-
-:deep(.v-pagination__item)
-  transition: all 0.2s ease
-  font-weight: 500
-
-:deep(.v-pagination__item--active)
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)
-  transform: scale(1.05)
-
-:deep(.v-pagination__item:hover)
-  background-color: rgba(0, 0, 0, 0.05)
-
-.action-cell
+.additional-info
+  margin-top: 12px
   display: flex
-  justify-content: center
+  flex-wrap: wrap
+
+  .text-caption
+    font-size: 0.7rem
 
 .chatgpt-content
   background-color: #f0f7ff
-  border-top: 1px dashed rgba(0, 150, 0, 0.15)
-  border-bottom: 1px dashed rgba(0, 150, 0, 0.15)
+  border-radius: 8px
+  margin-top: 8px
 
 .chatgpt-card
   background-color: rgba(255, 255, 255, 0.7)
-  border-radius: 12px
+  border-radius: 8px
 
 .chatgpt-message
   line-height: 1.5
   color: rgba(0, 0, 0, 0.7)
-
-.example-text
-  color: rgba(0, 0, 0, 0.6)
-  font-style: italic
-  padding-left: 12px
-  border-left: 2px solid rgba(0, 150, 0, 0.3)
 
 .chat-input-container
   background-color: rgba(255, 255, 255, 0.8)
@@ -1379,47 +1246,15 @@ onMounted(async () => {
 
 .chat-gpt-btn
   font-size: 0.75rem
-  height: 28px
-  opacity: 0.9
+  height: 32px
   transition: all 0.2s ease
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1)
 
   &:hover
     opacity: 1
     transform: scale(1.05)
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15)
 
   &:active
     transform: scale(0.98)
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1)
-
-.additional-info
-  display: flex
-  flex-wrap: wrap
-  margin-top: 6px
-
-  .text-caption
-    font-size: 0.7rem
-
-// Japanese text styling similar to Jisho
-.japanese-text
-  font-size: 1rem
-  line-height: 1.6
-
-// Example sentence styling
-.example-sentence
-  background-color: #f9f9f9
-  border-radius: 8px
-  padding: 10px
-
-  .japanese-text
-    font-size: 1.1rem
-    line-height: 1.6
-
-  .example-translation
-    margin-top: 5px
-    color: #666
-    font-style: italic
 
 .typing-cursor
   display: inline-block
@@ -1435,51 +1270,82 @@ onMounted(async () => {
   50%
     opacity: 0
 
-.text-wrap
-  word-break: break-word
-  white-space: normal
-  overflow-wrap: break-word
-  max-width: 100%
+.example-text
+  color: rgba(0, 0, 0, 0.6)
+  font-style: italic
+  border-left: 2px solid rgba(0, 150, 0, 0.3)
+  padding-left: 8px
 
-// Level cell specific styles
-.vocabulary-row > div:nth-child(1)
-  width: 95px
+// Mobile responsive styles
+.mobile-actions
+  display: none
+
+@media (max-width: 960px)
+  .mobile-actions
+    display: block
+
+  .chat-gpt-btn span
+    display: none
+
+  .item-text
+    max-width: calc(100% - 100px)
+
+  // Ensure the audio button has enough space on mobile
+  .audio-btn
+    margin-right: 8px !important
+
+@media (max-width: 600px)
+  .vocabulary-card
+    margin-left: -12px
+    margin-right: -12px
+    border-radius: 0
+    border-left: none
+    border-right: none
+
+  .vocabulary-container
+    padding: 0
+
+  .vocabulary-content
+    padding-left: 12px
+    padding-right: 12px
+
+// Customize menu overlay styles
+:deep(.v-menu > .v-overlay__content)
+  border-radius: 8px
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15) !important
+  max-width: 250px
+
+:deep(.v-list-item--density-compact)
+  min-height: 40px !important
+
+:deep(.v-list-item__prepend)
+  margin-right: 8px !important
+
+:deep(.v-list)
+  padding: 4px !important
+
+:deep(.v-pagination)
   justify-content: center
-  min-width: 95px
 
-// Vocabulary term cell specific styles
-.vocabulary-row > div:nth-child(2)
-  width: 450px
-  justify-content: flex-start
-  min-width: 450px
+:deep(.v-pagination__item)
+  transition: all 0.2s ease
+  font-weight: 500
 
-// Pronunciation cell specific styles
-.vocabulary-row > div:nth-child(3)
-  width: 200px
-  justify-content: center
-  min-width: 200px
+:deep(.v-pagination__item--active)
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)
+  transform: scale(1.05)
 
-// Topic cell specific styles
-.vocabulary-row > div:nth-child(4)
-  width: 150px
-  justify-content: center
-  min-width: 150px
+:deep(.v-pagination__item:hover)
+  background-color: rgba(0, 0, 0, 0.05)
 
-// Action cell specific styles
-.vocabulary-row > div:nth-child(5)
-  flex-grow: 1
-  justify-content: center
-  min-width: 220px
+.term-container
+  display: flex
+  align-items: center
+  flex-wrap: wrap
 
-// Cải thiện hiển thị của bảng và hàng
-.custom-vocabulary-list
-  margin: 0 !important
-  padding: 0 !important
-
-.v-list-item__content
-  padding: 0 !important
-
-.v-list-item
-  min-height: auto !important
-  padding: 0 !important
+.pronunciation-mobile
+  margin-top: 2px
+  margin-bottom: 2px
+  color: rgba(0, 0, 0, 0.7)
+  font-style: italic
 </style>

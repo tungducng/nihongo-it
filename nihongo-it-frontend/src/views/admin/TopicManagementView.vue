@@ -2,142 +2,147 @@
   <v-container>
     <v-row class="mb-4">
       <v-col cols="12">
-        <div class="d-flex align-center">
-          <h1 class="text-h5 font-weight-bold mr-4">Quản lý chủ đề</h1>
-          <v-spacer></v-spacer>
-          <v-text-field
-            v-model="searchQuery.term"
-            prepend-inner-icon="mdi-magnify"
-            label="Tìm kiếm chủ đề"
-            single-line
-            hide-details
-            class="mr-2"
-            density="compact"
-            style="max-width: 333px"
-            @input="debouncedSearch"
-          ></v-text-field>
-          <v-select
-            v-model="selectedCategoryId"
-            :items="categories"
-            item-title="name"
-            item-value="categoryId"
-            label="Lọc theo danh mục"
-            class="mr-2"
-            density="compact"
-            style="max-width: 200px"
-            hide-details
-            @update:model-value="fetchTopicsByCategory"
-            clearable
-          >
-          </v-select>
-          <v-btn
-            color="primary"
-            prepend-icon="mdi-plus"
-            @click="openAddDialog"
-          >
-            Thêm chủ đề mới
-          </v-btn>
+        <div class="header-section">
+          <h1 class="text-h5 font-weight-bold mb-3 mb-md-0">Quản lý chủ đề</h1>
+
+          <div class="filters-container">
+            <v-text-field
+              v-model="searchQuery.term"
+              prepend-inner-icon="mdi-magnify"
+              label="Tìm kiếm chủ đề"
+              single-line
+              hide-details
+              class="search-field mb-2 mb-md-0 mr-md-2"
+              density="compact"
+              @input="debouncedSearch"
+            ></v-text-field>
+
+            <v-select
+              v-model="selectedCategoryId"
+              :items="categories"
+              item-title="name"
+              item-value="categoryId"
+              label="Lọc theo danh mục"
+              class="filter-select mb-2 mb-md-0 mr-md-2"
+              density="compact"
+              hide-details
+              @update:model-value="fetchTopicsByCategory"
+              clearable
+            >
+            </v-select>
+
+            <v-btn
+              color="primary"
+              prepend-icon="mdi-plus"
+              @click="openAddDialog"
+              class="add-btn"
+            >
+              Thêm chủ đề mới
+            </v-btn>
+          </div>
         </div>
       </v-col>
     </v-row>
 
     <v-card>
-      <v-data-table
-        :headers="headers"
-        :items="topics"
-        :loading="loading"
-        class="elevation-1"
-        :items-per-page="10"
-        :items-per-page-options="[10, 20, 50]"
-      >
-        <!-- Name column -->
-        <template v-slot:item.name="{ item }">
-          <div class="font-weight-bold">{{ item.name }}</div>
-        </template>
+      <div class="table-responsive">
+        <v-data-table
+          :headers="headers"
+          :items="topics"
+          :loading="loading"
+          class="elevation-1"
+          :items-per-page="10"
+          :items-per-page-options="[10, 20, 50]"
+        >
+          <!-- Name column -->
+          <template v-slot:item.name="{ item }">
+            <div class="font-weight-bold">{{ item.name }}</div>
+          </template>
 
-        <!-- Meaning column -->
-        <template v-slot:item.meaning="{ item }">
-          {{ item.meaning }}
-        </template>
+          <!-- Meaning column -->
+          <template v-slot:item.meaning="{ item }">
+            {{ item.meaning }}
+          </template>
 
-        <!-- Category column -->
-        <template v-slot:item.categoryName="{ item }">
-          <v-chip
-            size="small"
-            color="info"
-            variant="tonal"
-          >
-            {{ item.categoryName }}
-          </v-chip>
-        </template>
-
-        <!-- Status column -->
-        <template v-slot:item.isActive="{ item }">
-          <v-chip
-            size="small"
-            :color="item.isActive ? 'success' : 'error'"
-            :text="item.isActive ? 'Đang hoạt động' : 'Vô hiệu hóa'"
-            :variant="item.isActive ? 'elevated' : 'tonal'"
-          >
-            {{ item.isActive ? 'Đang hoạt động' : 'Vô hiệu hóa' }}
-          </v-chip>
-        </template>
-
-        <!-- Updated at column -->
-        <template v-slot:item.updatedAt="{ item }">
-          {{ formatDate(item.updatedAt) }}
-        </template>
-
-        <!-- Actions column -->
-        <template v-slot:item.actions="{ item }">
-          <div class="d-flex">
-            <v-btn
-              icon
+          <!-- Category column -->
+          <template v-slot:item.categoryName="{ item }">
+            <v-chip
               size="small"
-              color="primary"
-              variant="text"
-              class="mr-1"
-              @click="openEditDialog(item)"
+              color="info"
+              variant="tonal"
             >
-              <v-icon>mdi-pencil</v-icon>
-              <v-tooltip activator="parent" location="top">Chỉnh sửa</v-tooltip>
-            </v-btn>
-            <v-btn
-              icon
-              size="small"
-              :color="item.isActive ? 'error' : 'success'"
-              variant="text"
-              class="mr-1"
-              @click="confirmToggleStatus(item)"
-            >
-              <v-icon>{{ item.isActive ? 'mdi-close-circle' : 'mdi-check-circle' }}</v-icon>
-              <v-tooltip activator="parent" location="top">
-                {{ item.isActive ? 'Vô hiệu hóa' : 'Kích hoạt' }}
-              </v-tooltip>
-            </v-btn>
-            <!-- <v-btn
-              icon
-              size="small"
-              color="error"
-              variant="text"
-              @click="confirmDelete(item)"
-            >
-              <v-icon>mdi-delete</v-icon>
-              <v-tooltip activator="parent" location="top">Xóa</v-tooltip>
-            </v-btn> -->
-          </div>
-        </template>
+              {{ item.categoryName }}
+            </v-chip>
+          </template>
 
-        <!-- No data template -->
-        <template v-slot:no-data>
-          <div class="text-center pa-5">
-            <v-icon size="large" icon="mdi-text-box-search-outline" class="mb-2"></v-icon>
-            <div v-if="error" class="text-body-1 text-error">{{ error }}</div>
-            <div v-else-if="loading" class="text-body-1">Đang tải dữ liệu...</div>
-            <div v-else class="text-body-1">Không tìm thấy chủ đề nào</div>
-          </div>
-        </template>
-      </v-data-table>
+          <!-- Status column -->
+          <template v-slot:item.isActive="{ item }">
+            <v-chip
+              size="small"
+              :color="item.isActive ? 'success' : 'error'"
+              :text="item.isActive ? 'Đang hoạt động' : 'Vô hiệu hóa'"
+              :variant="item.isActive ? 'elevated' : 'tonal'"
+            >
+              {{ item.isActive ? 'Đang hoạt động' : 'Vô hiệu hóa' }}
+            </v-chip>
+          </template>
+
+          <!-- Updated at column -->
+          <template v-slot:item.updatedAt="{ item }">
+            {{ formatDate(item.updatedAt) }}
+          </template>
+
+          <!-- Actions column -->
+          <template v-slot:item.actions="{ item }">
+            <div class="d-flex">
+              <v-btn
+                icon
+                size="small"
+                color="primary"
+                variant="text"
+                class="mr-1"
+                @click="openEditDialog(item)"
+              >
+                <v-icon>mdi-pencil</v-icon>
+                <v-tooltip activator="parent" location="top">Chỉnh sửa</v-tooltip>
+              </v-btn>
+              <v-btn
+                icon
+                size="small"
+                :color="item.isActive ? 'error' : 'success'"
+                variant="text"
+                class="mr-1"
+                @click="confirmToggleStatus(item)"
+              >
+                <v-icon>{{ item.isActive ? 'mdi-close-circle' : 'mdi-check-circle' }}</v-icon>
+                <v-tooltip activator="parent" location="top">
+                  {{ item.isActive ? 'Vô hiệu hóa' : 'Kích hoạt' }}
+                </v-tooltip>
+              </v-btn>
+              <!-- <v-btn
+                icon
+                size="small"
+                color="error"
+                variant="text"
+                @click="confirmDelete(item)"
+              >
+                <v-icon>mdi-delete</v-icon>
+                <v-tooltip activator="parent" location="top">Xóa</v-tooltip>
+              </v-btn> -->
+            </div>
+          </template>
+
+          <!-- No data template -->
+          <template v-slot:no-data>
+            <div class="text-center pa-5">
+              <v-icon size="large" icon="mdi-text-box-search-outline" class="mb-2"></v-icon>
+              <div v-if="error" class="text-body-1 text-error">{{ error }}</div>
+              <div v-else-if="loading" class="text-body-1">Đang tải dữ liệu...</div>
+              <div v-else class="text-body-1">Không tìm thấy chủ đề nào</div>
+            </div>
+          </template>
+        </v-data-table>
+      </div>
     </v-card>
 
     <!-- Edit/Add Dialog -->
@@ -575,5 +580,48 @@ onMounted(async () => {
 .v-data-table :deep(th) {
   font-weight: bold;
   background-color: #f5f5f5;
+}
+
+.header-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.filters-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive :deep(.v-data-table) {
+  min-width: 800px;
+  width: 100%;
+}
+
+/* Responsive styles */
+@media (min-width: 960px) {
+  .header-section {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .filters-container {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .search-field {
+    max-width: 333px;
+  }
+
+  .filter-select {
+    max-width: 200px;
+  }
 }
 </style>

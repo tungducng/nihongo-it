@@ -1,35 +1,37 @@
 <template>
   <v-container fluid>
-    <div class="d-flex align-center justify-space-between mb-4">
-      <h1 class="text-h5">Quản lý danh mục</h1>
-      <v-btn color="primary" @click="openDialog(null)" prepend-icon="mdi-plus">
-        Thêm danh mục
+    <div class="header-container mb-4">
+      <h1 class="text-h5 mobile-title">Quản lý danh mục</h1>
+      <v-btn color="primary" @click="openDialog(null)" prepend-icon="mdi-plus" class="add-btn" density="comfortable">
+        <span class="btn-text">Thêm danh mục</span>
       </v-btn>
     </div>
 
     <!-- Search and filter -->
-    <v-card class="mb-4 pa-1" elevation="2">
-      <v-card-text>
-        <v-row>
-          <v-col cols="12" md="6">
+    <v-card class="mb-4 search-card" elevation="2">
+      <v-card-text class="search-card-content">
+        <v-row dense>
+          <v-col cols="12" sm="9" md="6">
             <v-text-field
               v-model="searchQuery.term"
-              label="Tìm theo tên hoặc ý nghĩa"
-              prepend-icon="mdi-magnify"
+              label="Tìm kiếm"
+              prepend-inner-icon="mdi-magnify"
               hide-details
               density="compact"
               variant="outlined"
               @update:model-value="debounceSearch"
-              placeholder="Nhập từ khóa để tìm kiếm (tên tiếng Nhật hoặc ý nghĩa tiếng Việt)"
+              placeholder="Nhập từ khóa"
+              class="search-field"
             ></v-text-field>
           </v-col>
-          <v-col cols="12" md="1" class="d-flex align-center">
+          <v-col cols="4" sm="9" md="6" class="d-flex align-center">
             <v-btn
               variant="outlined"
               color="red"
               @click="clearSearch"
-              class="ml-auto"
-              size="small"
+              class="clear-btn "
+              size="large"
+              density="compact"
             >
               Xóa
             </v-btn>
@@ -50,72 +52,74 @@
 
     <!-- Categories table -->
     <v-card v-if="!loading && categories.length > 0" elevation="2" class="category-table-card">
-      <v-table class="category-table">
-        <thead>
-          <tr>
-            <th class="text-left">Tên (日本語)</th>
-            <th class="text-left">Ý nghĩa (Tiếng Việt)</th>
-            <th class="text-center">Thứ tự hiển thị</th>
-            <th class="text-center">Số chủ đề</th>
-            <th class="text-center">Trạng thái</th>
-            <th class="text-center">Ngày tạo</th>
-            <th class="text-center">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in categories" :key="item.categoryId" class="category-row">
-            <td class="text-left">{{ item.name }}</td>
-            <td class="text-left">{{ item.meaning }}</td>
-            <td class="text-center">{{ item.displayOrder }}</td>
-            <td class="text-center">
-              <v-chip size="small" color="info" variant="outlined" class="topic-chip">
-                {{ item.topicCount || 0 }}
-              </v-chip>
-            </td>
-            <td class="text-center">
-              <v-chip
-                size="small"
-                :color="item.isActive ? 'success' : 'error'"
-                :text="item.isActive ? 'Đang hoạt động' : 'Đã vô hiệu'"
-                variant="outlined"
-              ></v-chip>
-            </td>
-            <td class="text-center">{{ formatDate(item.createdAt) }}</td>
-            <td class="text-center">
-              <div class="actions-container">
-                <v-tooltip text="Chỉnh sửa" location="top">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon
-                      size="small"
-                      variant="text"
-                      color="primary"
-                      @click="openDialog(item)"
-                    >
-                      <v-icon>mdi-pencil</v-icon>
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-                <v-tooltip :text="item.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'" location="top">
-                  <template v-slot:activator="{ props }">
-                    <v-btn
-                      v-bind="props"
-                      icon
-                      size="small"
-                      variant="text"
-                      :color="item.isActive ? 'error' : 'success'"
-                      @click="confirmToggleStatus(item)"
-                    >
-                      <v-icon>{{ item.isActive ? 'mdi-close-circle' : 'mdi-check-circle' }}</v-icon>
-                    </v-btn>
-                  </template>
-                </v-tooltip>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
+      <div class="table-responsive">
+        <v-table class="category-table">
+          <thead>
+            <tr>
+              <th class="text-left">Tên (日本語)</th>
+              <th class="text-left">Ý nghĩa (Tiếng Việt)</th>
+              <th class="text-center">Thứ tự hiển thị</th>
+              <th class="text-center">Số chủ đề</th>
+              <th class="text-center">Trạng thái</th>
+              <th class="text-center">Ngày tạo</th>
+              <th class="text-center">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in categories" :key="item.categoryId" class="category-row">
+              <td class="text-left">{{ item.name }}</td>
+              <td class="text-left">{{ item.meaning }}</td>
+              <td class="text-center">{{ item.displayOrder }}</td>
+              <td class="text-center">
+                <v-chip size="small" color="info" variant="outlined" class="topic-chip">
+                  {{ item.topicCount || 0 }}
+                </v-chip>
+              </td>
+              <td class="text-center">
+                <v-chip
+                  size="small"
+                  :color="item.isActive ? 'success' : 'error'"
+                  :text="item.isActive ? 'Đang hoạt động' : 'Đã vô hiệu'"
+                  variant="outlined"
+                ></v-chip>
+              </td>
+              <td class="text-center">{{ formatDate(item.createdAt) }}</td>
+              <td class="text-center">
+                <div class="actions-container">
+                  <v-tooltip text="Chỉnh sửa" location="top">
+                    <template v-slot:activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        icon
+                        size="small"
+                        variant="text"
+                        color="primary"
+                        @click="openDialog(item)"
+                      >
+                        <v-icon>mdi-pencil</v-icon>
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
+                  <v-tooltip :text="item.isActive ? 'Vô hiệu hóa' : 'Kích hoạt'" location="top">
+                    <template v-slot:activator="{ props }">
+                      <v-btn
+                        v-bind="props"
+                        icon
+                        size="small"
+                        variant="text"
+                        :color="item.isActive ? 'error' : 'success'"
+                        @click="confirmToggleStatus(item)"
+                      >
+                        <v-icon>{{ item.isActive ? 'mdi-close-circle' : 'mdi-check-circle' }}</v-icon>
+                      </v-btn>
+                    </template>
+                  </v-tooltip>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </v-table>
+      </div>
     </v-card>
 
     <v-card v-if="!loading && categories.length === 0" class="pa-4 text-center" elevation="2">
@@ -435,8 +439,15 @@ onMounted(() => {
   border-radius: 8px;
 }
 
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .category-table {
   width: 100%;
+  min-width: 800px;
 }
 
 .category-table thead {
@@ -469,5 +480,67 @@ onMounted(() => {
 
 .v-card-title {
   padding: 16px 20px;
+}
+
+/* Responsive styles for header and search */
+.header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search-field {
+  width: 100%;
+}
+
+@media (max-width: 600px) {
+  .mobile-title {
+    font-size: 1.2rem !important;
+  }
+
+  .header-container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .add-btn {
+    align-self: flex-start;
+    margin-top: 8px;
+    font-size: 0.875rem;
+  }
+
+  .search-card {
+    margin-bottom: 12px !important;
+  }
+
+  .search-card-content {
+    padding: 8px !important;
+  }
+
+  .clear-btn {
+    width: 100%;
+    margin-top: 4px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .mobile-title {
+    font-size: 1.1rem !important;
+  }
+
+  .btn-text {
+    font-size: 0.8rem;
+  }
+
+  .search-field :deep(.v-field__input) {
+    font-size: 0.9rem;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .search-field :deep(.v-label) {
+    font-size: 0.85rem;
+  }
 }
 </style>

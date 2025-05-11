@@ -1,22 +1,23 @@
 <template>
   <div class="users-management">
-    <h1 class="text-h5 mb-1">User Management</h1>
+    <h1 class="text-h5 mb-3">User Management</h1>
 
-    <div class="d-flex flex-wrap align-center mb-4">
+    <div class="header-controls mb-4">
       <v-text-field
         v-model="searchQuery"
         label="Search users"
         prepend-inner-icon="mdi-magnify"
         single-line
         hide-details
-        class="mr-4 flex-grow-1"
+        class="search-field mb-3 mb-md-0"
         @keyup.enter="loadUsers"
+        density="compact"
       ></v-text-field>
 
       <v-btn
         color="primary"
         prepend-icon="mdi-account-plus"
-        class="ml-auto"
+        class="add-user-btn"
         @click="openCreateDialog"
       >
         Add User
@@ -24,97 +25,99 @@
     </div>
 
     <v-card elevation="2">
-      <v-data-table
-        :headers="headers"
-        :items="users"
-        :items-per-page="10"
-        :loading="loading"
-        :sort-by="[{ key: sortBy, order: sortDirection }]"
-        class="elevation-1"
-        item-value="userId"
-        @update:sort-by="handleSort"
-      >
-        <template v-slot:item.profilePicture="{ item }">
-          <v-avatar size="36">
-            <v-img
-              :src="item.profilePicture || '/img/default-avatar.png'"
-              :alt="`${item.fullName}'s avatar`"
-            ></v-img>
-          </v-avatar>
-        </template>
+      <div class="table-responsive">
+        <v-data-table
+          :headers="headers"
+          :items="users"
+          :items-per-page="10"
+          :loading="loading"
+          :sort-by="[{ key: sortBy, order: sortDirection }]"
+          class="elevation-1"
+          item-value="userId"
+          @update:sort-by="handleSort"
+        >
+          <template v-slot:item.profilePicture="{ item }">
+            <v-avatar size="36">
+              <v-img
+                :src="item.profilePicture || '/img/default-avatar.png'"
+                :alt="`${item.fullName}'s avatar`"
+              ></v-img>
+            </v-avatar>
+          </template>
 
-        <template v-slot:item.roleId="{ item }">
-          <v-chip
-            :color="item.roleId === 1 ? 'error' : 'primary'"
-            size="small"
-            variant="outlined"
-          >
-            {{ item.roleId === 1 ? 'Admin' : 'User' }}
-          </v-chip>
-        </template>
+          <template v-slot:item.roleId="{ item }">
+            <v-chip
+              :color="item.roleId === 1 ? 'error' : 'primary'"
+              size="small"
+              variant="outlined"
+            >
+              {{ item.roleId === 1 ? 'Admin' : 'User' }}
+            </v-chip>
+          </template>
 
-        <template v-slot:item.status="{ item }">
-          <v-chip
-            :color="item.isActive ? 'success' : 'error'"
-            size="small"
-            :text="item.isActive ? 'Active' : 'Inactive'"
-            variant="outlined"
-          ></v-chip>
-        </template>
+          <template v-slot:item.status="{ item }">
+            <v-chip
+              :color="item.isActive ? 'success' : 'error'"
+              size="small"
+              :text="item.isActive ? 'Active' : 'Inactive'"
+              variant="outlined"
+            ></v-chip>
+          </template>
 
-        <template v-slot:item.lastLogin="{ item }">
-          {{ formatDate(item.lastLogin) }}
-        </template>
+          <template v-slot:item.lastLogin="{ item }">
+            {{ formatDate(item.lastLogin) }}
+          </template>
 
-        <template v-slot:item.actions="{ item }">
-          <div class="d-flex">
-            <v-tooltip text="Edit User">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  v-bind="props"
-                  icon
-                  size="small"
-                  variant="text"
-                  color="primary"
-                  @click="editUser(item)"
-                >
-                  <v-icon>mdi-pencil</v-icon>
-                </v-btn>
-              </template>
-            </v-tooltip>
+          <template v-slot:item.actions="{ item }">
+            <div class="d-flex">
+              <v-tooltip text="Edit User">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    icon
+                    size="small"
+                    variant="text"
+                    color="primary"
+                    @click="editUser(item)"
+                  >
+                    <v-icon>mdi-pencil</v-icon>
+                  </v-btn>
+                </template>
+              </v-tooltip>
 
-            <v-tooltip :text="item.isActive ? 'Deactivate User' : 'Activate User'">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  v-bind="props"
-                  icon
-                  size="small"
-                  variant="text"
-                  :color="item.isActive ? 'error' : 'success'"
-                  @click="toggleUserStatus(item)"
-                >
-                  <v-icon>{{ item.isActive ? 'mdi-account-off' : 'mdi-account-check' }}</v-icon>
-                </v-btn>
-              </template>
-            </v-tooltip>
+              <v-tooltip :text="item.isActive ? 'Deactivate User' : 'Activate User'">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    icon
+                    size="small"
+                    variant="text"
+                    :color="item.isActive ? 'error' : 'success'"
+                    @click="toggleUserStatus(item)"
+                  >
+                    <v-icon>{{ item.isActive ? 'mdi-account-off' : 'mdi-account-check' }}</v-icon>
+                  </v-btn>
+                </template>
+              </v-tooltip>
 
-            <v-tooltip text="Change Role">
-              <template v-slot:activator="{ props }">
-                <v-btn
-                  v-bind="props"
-                  icon
-                  size="small"
-                  variant="text"
-                  color="warning"
-                  @click="changeRole(item)"
-                >
-                  <v-icon>mdi-shield-account</v-icon>
-                </v-btn>
-              </template>
-            </v-tooltip>
-          </div>
-        </template>
-      </v-data-table>
+              <v-tooltip text="Change Role">
+                <template v-slot:activator="{ props }">
+                  <v-btn
+                    v-bind="props"
+                    icon
+                    size="small"
+                    variant="text"
+                    color="warning"
+                    @click="changeRole(item)"
+                  >
+                    <v-icon>mdi-shield-account</v-icon>
+                  </v-btn>
+                </template>
+              </v-tooltip>
+            </div>
+          </template>
+        </v-data-table>
+      </div>
     </v-card>
 
     <!-- User Create/Edit Dialog -->
@@ -271,20 +274,7 @@
             {{ confirmDialog.actionText }}
           </v-btn>
         </v-card-actions>
-      </v-card><v-snackbar
-      v-model="snackbar.visible"
-      :color="snackbar.color"
-      :timeout="3000"
-    >
-      {{ snackbar.text }}
-      <template v-slot:actions>
-        <v-btn
-          variant="text"
-          icon="mdi-close"
-          @click="snackbar.visible = false"
-        ></v-btn>
-      </template>
-    </v-snackbar>
+      </v-card>
     </v-dialog>
 
     <!-- Snackbar for notifications -->
@@ -561,5 +551,48 @@ onMounted(() => {
 .users-management {
   padding: 24px;
   padding-top: 0px;
+}
+
+.header-controls {
+  display: flex;
+  flex-direction: column;
+}
+
+.search-field {
+  width: 100%;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive :deep(.v-data-table) {
+  min-width: 800px;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .header-controls {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .search-field {
+    flex-grow: 1;
+    margin-right: 16px;
+  }
+
+  .add-user-btn {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .users-management {
+    padding: 16px;
+    padding-top: 0px;
+  }
 }
 </style>

@@ -27,7 +27,7 @@
         </div>
 
         <v-card class="" variant="flat">
-          <div class="d-flex align-center px-2 py-1">
+          <div class="d-flex align-center px-2 py-1 conversation-card-header">
             <div class="conversation-info d-flex align-center">
               <h2 class="text-body-1 font-weight-bold mb-0 mr-2">{{ conversation.title }}</h2>
               <v-chip :color="getJlptColor(conversation.jlptLevel)" size="x-small" density="compact">
@@ -42,7 +42,7 @@
             <!-- Furigana Toggle Button -->
             <v-switch
               v-model="showFurigana"
-              label="Furigana"
+              :label="$vuetify.display.mdAndUp ? 'Furigana' : undefined"
               color="primary"
               hide-details
               density="compact"
@@ -1567,6 +1567,22 @@ onUnmounted(() => {
     min-height: 60vh;
   }
 
+  .conversation-header {
+    margin-bottom: 12px;
+
+    .d-flex {
+      // Luôn giữ nút quay lại và tiêu đề trên cùng một hàng
+      align-items: center !important;
+    }
+  }
+
+  .conversation-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
   .japanese-text {
     font-family: 'Noto Sans JP', sans-serif;
     will-change: contents;
@@ -1768,7 +1784,6 @@ onUnmounted(() => {
     z-index: 0;
     will-change: contents;
     contain: content;
-
     padding-top: 12px !important;
   }
 
@@ -1807,6 +1822,177 @@ onUnmounted(() => {
 
     :deep(.v-switch__thumb) {
       transform: scale(0.75);
+    }
+  }
+
+  // Responsive styles for mobile
+  @media (max-width: 960px) {
+    padding: 12px;
+
+    .conversation-header {
+      .text-subtitle-1 {
+        font-size: 0.9rem !important;
+      }
+    }
+
+    .message-container {
+      min-width: 220px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .mini-switch {
+      transform: scale(0.85);
+      margin-right: 0;
+
+      :deep(.v-switch__track) {
+        opacity: 0.7;
+        transform: scale(0.7);
+      }
+
+      :deep(.v-switch__thumb) {
+        transform: scale(0.7);
+      }
+    }
+
+    .conversation-info {
+      h2 {
+        font-size: 0.9rem !important;
+        margin-right: 4px !important;
+      }
+
+      .v-chip {
+        font-size: 0.7rem;
+      }
+    }
+
+    .conversation-header {
+      .text-subtitle-1 {
+        font-size: 0.85rem !important;
+      }
+    }
+
+    .message-container {
+      max-width: 85% !important;
+      min-width: 180px;
+
+      .japanese-text {
+        font-size: 0.95rem !important;
+      }
+
+      .text-body-2 {
+        font-size: 0.85rem !important;
+      }
+    }
+
+    .chat-container {
+      padding: 2px 0;
+    }
+
+    .user-controls {
+      padding: 2px 8px;
+
+      .v-btn {
+        padding: 0 6px;
+        min-width: auto;
+
+        .v-icon {
+          font-size: 1rem;
+        }
+      }
+    }
+
+    .avatar-container {
+      .v-avatar {
+        width: 32px;
+        height: 32px;
+
+        .v-icon {
+          font-size: 1rem;
+        }
+      }
+    }
+  }
+
+  @media (max-width: 480px) {
+    padding: 8px;
+
+    .conversation-header {
+      .text-subtitle-1 {
+        font-size: 0.8rem !important;
+      }
+    }
+
+    .mini-switch {
+      transform: scale(0.75);
+
+      :deep(.v-switch__track) {
+        opacity: 0.7;
+        transform: scale(0.65);
+      }
+
+      :deep(.v-switch__thumb) {
+        transform: scale(0.65);
+      }
+    }
+
+    .message-container {
+      min-width: 150px;
+      max-width: 90% !important;
+
+      .japanese-text {
+        font-size: 0.9rem !important;
+        line-height: 1.5;
+      }
+
+      .text-body-2 {
+        font-size: 0.8rem !important;
+        line-height: 1.4;
+      }
+
+      .v-btn {
+        min-width: 28px;
+        width: 28px;
+        height: 28px;
+
+        .v-icon {
+          font-size: 0.9rem;
+        }
+      }
+    }
+
+    .user-controls {
+      .d-flex {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 4px;
+      }
+
+      .v-btn {
+        margin: 0;
+        padding: 0 4px;
+        height: 28px;
+
+        .v-icon {
+          margin-right: 0 !important;
+        }
+      }
+    }
+
+    .avatar-container {
+      .v-avatar {
+        width: 28px;
+        height: 28px;
+      }
+    }
+
+    .typing-cursor {
+      height: 14px;
+    }
+
+    .azure-interim-text {
+      font-size: 0.8rem;
+      padding: 3px 6px;
     }
   }
 }

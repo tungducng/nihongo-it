@@ -73,102 +73,104 @@
     </v-row>
 
     <v-card>
-      <v-data-table
-        :headers="headers"
-        :items="vocabulary"
-        :loading="loading"
-        class="elevation-1"
-        :items-per-page="10"
-        :items-per-page-options="[10, 20, 50]"
-        @update:options="handleTableOptions"
-      >
-        <!-- Term column -->
-        <template v-slot:item.term="{ item }">
-          <div class="d-flex flex-column">
-            <div class="font-weight-bold mb-1 text-body-1">{{ item.term }}</div>
-            <div class="text-body-2 text-grey">{{ item.pronunciation }}</div>
-          </div>
-        </template>
+      <div class="table-responsive">
+        <v-data-table
+          :headers="headers"
+          :items="vocabulary"
+          :loading="loading"
+          class="elevation-1"
+          :items-per-page="10"
+          :items-per-page-options="[10, 20, 50]"
+          @update:options="handleTableOptions"
+        >
+          <!-- Term column -->
+          <template v-slot:item.term="{ item }">
+            <div class="d-flex flex-column">
+              <div class="font-weight-bold mb-1 text-body-1">{{ item.term }}</div>
+              <div class="text-body-2 text-grey">{{ item.pronunciation }}</div>
+            </div>
+          </template>
 
-        <!-- Meaning column -->
-        <template v-slot:item.meaning="{ item }">
-          <div class="text-body-2">{{ item.meaning }}</div>
-        </template>
+          <!-- Meaning column -->
+          <template v-slot:item.meaning="{ item }">
+            <div class="text-body-2">{{ item.meaning }}</div>
+          </template>
 
-        <!-- Example column -->
-        <template v-slot:item.example="{ item }">
-          <div v-if="item.example" class="example-container">
-            <div class="mb-1 font-italic text-body-2">{{ item.example }}</div>
-            <div class="text-grey text-caption">{{ item.exampleMeaning }}</div>
-          </div>
-          <div v-else class="text-caption text-grey text-center font-italic">
-            <v-icon size="small" color="grey" class="mr-1">mdi-minus-circle</v-icon>
-            Không có ví dụ
-          </div>
-        </template>
+          <!-- Example column -->
+          <template v-slot:item.example="{ item }">
+            <div v-if="item.example" class="example-container">
+              <div class="mb-1 font-italic text-body-2">{{ item.example }}</div>
+              <div class="text-grey text-caption">{{ item.exampleMeaning }}</div>
+            </div>
+            <div v-else class="text-caption text-grey text-center font-italic">
+              <v-icon size="small" color="grey" class="mr-1">mdi-minus-circle</v-icon>
+              Không có ví dụ
+            </div>
+          </template>
 
-        <!-- Topic column -->
-        <template v-slot:item.topicName="{ item }">
-          <v-chip
-            size="small"
-            color="info"
-            variant="tonal"
-            class="topic-chip"
-          >
-            <v-icon size="x-small" class="mr-1">mdi-tag</v-icon>
-            {{ item.topicName }}
-          </v-chip>
-        </template>
-
-        <!-- JLPT Level column -->
-        <template v-slot:item.jlptLevel="{ item }">
-          <v-chip
-            size="small"
-            :color="getJlptLevelColor(item.jlptLevel)"
-            variant="tonal"
-            class="jlpt-chip"
-          >
-            {{ item.jlptLevel }}
-          </v-chip>
-        </template>
-
-        <!-- Actions column -->
-        <template v-slot:item.actions="{ item }">
-          <div class="d-flex justify-center">
-            <v-btn
-              icon
+          <!-- Topic column -->
+          <template v-slot:item.topicName="{ item }">
+            <v-chip
               size="small"
-              color="primary"
-              variant="text"
-              class="mr-2"
-              @click="openEditDialog(item)"
+              color="info"
+              variant="tonal"
+              class="topic-chip"
             >
-              <v-icon>mdi-pencil</v-icon>
-              <v-tooltip activator="parent" location="top">Chỉnh sửa</v-tooltip>
-            </v-btn>
-            <v-btn
-              icon
-              size="small"
-              color="error"
-              variant="text"
-              @click="confirmDelete(item)"
-            >
-              <v-icon>mdi-delete</v-icon>
-              <v-tooltip activator="parent" location="top">Xóa</v-tooltip>
-            </v-btn>
-          </div>
-        </template>
+              <v-icon size="x-small" class="mr-1">mdi-tag</v-icon>
+              {{ item.topicName }}
+            </v-chip>
+          </template>
 
-        <!-- No data template -->
-        <template v-slot:no-data>
-          <div class="text-center pa-5">
-            <v-icon size="large" icon="mdi-text-box-search-outline" class="mb-2"></v-icon>
-            <div v-if="error" class="text-body-1 text-error">{{ error }}</div>
-            <div v-else-if="loading" class="text-body-1">Đang tải dữ liệu...</div>
-            <div v-else class="text-body-1">Không tìm thấy từ vựng nào</div>
-          </div>
-        </template>
-      </v-data-table>
+          <!-- JLPT Level column -->
+          <template v-slot:item.jlptLevel="{ item }">
+            <v-chip
+              size="small"
+              :color="getJlptLevelColor(item.jlptLevel)"
+              variant="tonal"
+              class="jlpt-chip"
+            >
+              {{ item.jlptLevel }}
+            </v-chip>
+          </template>
+
+          <!-- Actions column -->
+          <template v-slot:item.actions="{ item }">
+            <div class="d-flex justify-center">
+              <v-btn
+                icon
+                size="small"
+                color="primary"
+                variant="text"
+                class="mr-2"
+                @click="openEditDialog(item)"
+              >
+                <v-icon>mdi-pencil</v-icon>
+                <v-tooltip activator="parent" location="top">Chỉnh sửa</v-tooltip>
+              </v-btn>
+              <v-btn
+                icon
+                size="small"
+                color="error"
+                variant="text"
+                @click="confirmDelete(item)"
+              >
+                <v-icon>mdi-delete</v-icon>
+                <v-tooltip activator="parent" location="top">Xóa</v-tooltip>
+              </v-btn>
+            </div>
+          </template>
+
+          <!-- No data template -->
+          <template v-slot:no-data>
+            <div class="text-center pa-5">
+              <v-icon size="large" icon="mdi-text-box-search-outline" class="mb-2"></v-icon>
+              <div v-if="error" class="text-body-1 text-error">{{ error }}</div>
+              <div v-else-if="loading" class="text-body-1">Đang tải dữ liệu...</div>
+              <div v-else class="text-body-1">Không tìm thấy từ vựng nào</div>
+            </div>
+          </template>
+        </v-data-table>
+      </div>
     </v-card>
 
     <!-- Edit/Add Dialog -->
@@ -628,8 +630,6 @@ onMounted(async () => {
 }
 
 .example-container {
-  max-height: 80px;
-  overflow-y: auto;
   padding: 4px;
   border-left: 2px solid #e0e0e0;
 }
@@ -687,5 +687,17 @@ onMounted(async () => {
   .search-field, .topic-select, .jlpt-select {
     margin-bottom: 8px;
   }
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure table takes full width inside the scrollable container */
+.table-responsive :deep(.v-data-table) {
+  min-width: 800px;
+  width: 100%;
 }
 </style>

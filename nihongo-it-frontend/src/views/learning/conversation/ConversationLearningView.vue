@@ -160,9 +160,6 @@
                     </template>
                     <v-card-title class="text-h6 font-weight-bold mb-1 d-flex align-center">
                       {{ conversation.title }}
-                      <v-chip :color="getJlptColor(conversation.jlptLevel)" size="small" class="ml-2 font-weight-bold">
-                        {{ conversation.jlptLevel }}
-                      </v-chip>
                     </v-card-title>
                     <v-card-subtitle class="text-body-2">
                       {{ getDescription(conversation) }}
@@ -946,6 +943,17 @@ onMounted(() => {
   .main-content-column {
     padding: 12px;
   }
+
+  .conversation-card {
+    .v-card-title {
+      font-size: 1.1rem !important;
+      line-height: 1.3;
+
+      .v-chip {
+        font-size: 0.7rem;
+      }
+    }
+  }
 }
 
 @media (max-width: 768px) {
@@ -964,6 +972,20 @@ onMounted(() => {
       padding: 16px;
       justify-content: flex-end !important;
     }
+
+    .v-card-title {
+      font-size: 1rem !important;
+    }
+
+    .conversation-meta {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .meta-item {
+        margin-right: 0;
+        margin-bottom: 6px;
+      }
+    }
   }
 }
 
@@ -971,6 +993,28 @@ onMounted(() => {
   .conversation-card {
     .conversation-content {
       padding: 8px;
+    }
+
+    .v-card-title {
+      font-size: 0.95rem !important;
+      flex-wrap: wrap;
+
+      .v-chip {
+        margin-top: 4px;
+        margin-left: 0 !important;
+        font-size: 0.65rem;
+      }
+    }
+
+    .conversation-avatar {
+      width: 42px;
+      height: 42px;
+    }
+
+    .conversation-meta {
+      .text-body-2 {
+        font-size: 0.8rem !important;
+      }
     }
   }
 }

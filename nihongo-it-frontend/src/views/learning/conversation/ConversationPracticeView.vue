@@ -692,12 +692,6 @@ const processRecording = async (index: number) => {
       const isUnrelatedTranscription = !hasCommonCharacters(transcription, referenceText);
 
       if (isUnrelatedTranscription) {
-        // Hiển thị thông báo lỗi nhận dạng
-        toast.warning('Không nhận dạng được phát âm, vui lòng thử lại', {
-          position: 'top',
-          duration: 3000
-        });
-
         isProcessing.value = false;
         return; // Dừng và không gửi API
       }
@@ -798,7 +792,7 @@ const hasCommonCharacters = (str1: string, str2: string, threshold: number = 0.1
   return ratio >= threshold;
 }
 
-// Cập nhật hàm startRecording để xử lý lỗi từ Azure Speech
+// Cập nhật hàm startRecording để xử lý lỗi từ Azure Speech đúng cách
 const startRecording = async (index: number) => {
   try {
     // Reset recording state
@@ -829,15 +823,19 @@ const startRecording = async (index: number) => {
             }
           }
         },
-        // Xử lý lỗi
+        // Xử lý lỗi - chỉ hiển thị khi đang ghi âm
         (error) => {
           console.error('Speech recognition error:', error);
-          // Nếu lỗi là "No speech could be recognized", hiển thị thông báo
-          if (error && error.includes && error.includes("No speech could be recognized")) {
-            toast.warning('Không nhận dạng được phát âm, vui lòng thử lại', {
-              position: 'top',
-              duration: 3000
-            });
+          // Chỉ hiển thị thông báo lỗi khi đang ghi âm
+          if (isRecording.value && activeLineIndex.value === index) {
+            if (error && error.includes && error.includes("No speech could be recognized")) {
+              toast.warning('Không nhận dạng được phát âm, vui lòng thử lại', {
+                position: 'top',
+                duration: 3000
+              });
+              stopRecordingAndProcess()
+              return;
+            }
           }
         }
       );
@@ -885,23 +883,6 @@ const startRecording = async (index: number) => {
         recordedAudioBlobs.value[index] = audioBlob;
         recordedAudioUrls.value[index] = URL.createObjectURL(audioBlob);
 
-        // Kiểm tra lỗi nhận dạng giọng nói từ Azure trước khi xử lý
-        // Nếu có lỗi "No speech could be recognized" thì không gọi processRecording
-        const hasRecognitionError =
-          interimText.value === '' &&
-          speechRecognitionService.isServiceInitialized() &&
-          (!lineAnalysisResults.value[index]?.transcription ||
-           (lineAnalysisResults.value[index]?.transcription &&
-            lineAnalysisResults.value[index]?.transcription.trim() === ''));
-
-        if (hasRecognitionError) {
-          toast.warning('Không nhận dạng được phát âm, vui lòng thử lại', {
-            position: 'top',
-            duration: 3000
-          });
-          return;
-        }
-
         processRecording(index);
       };
 
@@ -924,8 +905,9 @@ const startRecording = async (index: number) => {
   }
 }
 
+// Cập nhật hàm stopRecording để đảm bảo dừng hoàn toàn nhận dạng
 const stopRecording = async () => {
-  // Dừng nhận dạng giọng nói nếu đang chạy
+  // Đảm bảo dừng nhận dạng trước khi dừng ghi âm
   if (speechRecognitionService.isServiceInitialized()) {
     try {
       await speechRecognitionService.stopRecognition();
@@ -1288,12 +1270,6 @@ const stopRecordingWithoutProcessing = () => {
     if (audioStream) {
       audioStream.getTracks().forEach(track => track.stop());
     }
-
-    // Hiển thị thông báo
-    toast.warning('Không phát hiện giọng nói, vui lòng thử lại', {
-      position: 'top',
-      duration: 2000
-    });
   }
 }
 
@@ -1465,7 +1441,9 @@ onUnmounted(() => {
 
   // Cleanup Azure Speech Recognizer
   if (speechRecognitionService.isServiceInitialized()) {
-    speechRecognitionService.stopRecognition();
+    speechRecognitionService.stopRecognition().catch(error => {
+      console.error('Error stopping speech recognition on unmount:', error);
+    });
   }
 })
 </script>

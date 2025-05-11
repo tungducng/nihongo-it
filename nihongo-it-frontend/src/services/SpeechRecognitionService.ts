@@ -4,6 +4,7 @@ class SpeechRecognitionService {
   private speechConfig: sdk.SpeechConfig | null = null;
   private recognizer: sdk.SpeechRecognizer | null = null;
   private isInitialized = false;
+  private isRecognizing = false;
 
   // Khởi tạo service với key và region
   public initialize(speechKey: string, serviceRegion: string): boolean {
@@ -29,6 +30,13 @@ class SpeechRecognitionService {
       return;
     }
 
+    // Đảm bảo dừng bất kỳ phiên nhận dạng nào đang chạy
+    if (this.isRecognizing && this.recognizer) {
+      this.stopRecognition().catch(error => {
+        console.error('Error stopping previous recognition:', error);
+      });
+    }
+
     try {
       const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
       this.recognizer = new sdk.SpeechRecognizer(this.speechConfig, audioConfig);
@@ -43,7 +51,10 @@ class SpeechRecognitionService {
         if (e.result.reason === sdk.ResultReason.RecognizedSpeech) {
           onRecognized(e.result.text);
         } else if (e.result.reason === sdk.ResultReason.NoMatch) {
-          onError('No speech could be recognized');
+          // Chỉ báo lỗi nếu đang trong quá trình nhận dạng
+          if (this.isRecognizing) {
+            onError('No speech could be recognized');
+          }
         }
       };
 
@@ -51,38 +62,87 @@ class SpeechRecognitionService {
         if (e.reason === sdk.CancellationReason.Error) {
           onError(`Error: ${e.errorCode} ${e.errorDetails}`);
         }
+        // Dừng nhận dạng khi có lỗi hủy
+        this.isRecognizing = false;
+      };
+
+      // Thêm xử lý sự kiện khi phiên làm việc kết thúc
+      this.recognizer.sessionStopped = (_, __) => {
+        console.log('Speech recognition session stopped');
+        this.isRecognizing = false;
+        this.cleanupRecognizer();
       };
 
       this.recognizer.startContinuousRecognitionAsync(
-        () => console.log('Speech recognition started'),
-        (error) => onError(error)
+        () => {
+          console.log('Speech recognition started');
+          this.isRecognizing = true;
+        },
+        (error) => {
+          onError(error);
+          this.isRecognizing = false;
+        }
       );
     } catch (error) {
       onError(error);
+      this.isRecognizing = false;
     }
   }
 
   // Dừng nhận dạng giọng nói
   public stopRecognition(): Promise<void> {
     return new Promise((resolve, reject) => {
-      if (!this.recognizer) {
+      if (!this.recognizer || !this.isRecognizing) {
+        this.isRecognizing = false;
+        this.cleanupRecognizer();
         resolve();
         return;
       }
 
-      this.recognizer.stopContinuousRecognitionAsync(
-        () => {
-          this.recognizer = null;
-          resolve();
-        },
-        (error) => reject(error)
-      );
+      try {
+        this.recognizer.stopContinuousRecognitionAsync(
+          () => {
+            console.log('Speech recognition stopped successfully');
+            this.isRecognizing = false;
+            this.cleanupRecognizer();
+            resolve();
+          },
+          (error) => {
+            console.error('Error stopping recognition:', error);
+            this.isRecognizing = false;
+            this.cleanupRecognizer();
+            reject(error);
+          }
+        );
+      } catch (error) {
+        console.error('Exception during stopRecognition:', error);
+        this.isRecognizing = false;
+        this.cleanupRecognizer();
+        reject(error);
+      }
     });
+  }
+
+  // Làm sạch và giải phóng tài nguyên của recognizer
+  private cleanupRecognizer(): void {
+    if (this.recognizer) {
+      try {
+        this.recognizer.close();
+      } catch (error) {
+        console.error('Error closing recognizer:', error);
+      }
+      this.recognizer = null;
+    }
   }
 
   // Kiểm tra xem service đã được khởi tạo chưa
   public isServiceInitialized(): boolean {
     return this.isInitialized;
+  }
+
+  // Kiểm tra xem service có đang nhận dạng giọng nói không
+  public isCurrentlyRecognizing(): boolean {
+    return this.isRecognizing;
   }
 }
 

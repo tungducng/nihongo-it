@@ -1,302 +1,250 @@
 <template>
-  <div class="dashboard">
-    <!-- Search Bar -->
-    <div class="search-bar py-3">
-    <v-container>
-        <v-row align="center">
-          <v-col cols="12" sm="8" md="6" lg="5" class="mx-auto">
-            <v-card variant="outlined" class="search-card">
-              <v-text-field
-                v-model="searchQuery"
-                prepend-inner-icon="mdi-magnify"
-                placeholder="Tìm kiếm bằng tiếng Việt hoặc tiếng Nhật"
-                hide-details
-                variant="plain"
-                density="comfortable"
-                class="search-input"
-                @keyup.enter="searchVocabulary"
-              ></v-text-field>
-              <v-btn color="primary" @click="searchVocabulary" class="search-btn">Tìm</v-btn>
+  <div class="home-page">
+    <!-- Hero Section -->
+    <section class="hero-section text-center py-16">
+      <v-container>
+        <h1 class="hero-title display-2 font-weight-bold mb-4">Chinh phục Tiếng Nhật IT</h1>
+        <p class="hero-subtitle headline mb-8">Nền tảng toàn diện giúp bạn tự tin giao tiếp và làm việc trong ngành CNTT tại Nhật Bản.</p>
+        <v-btn color="primary" large to="/learning-path" class="mx-2">Bắt đầu lộ trình</v-btn>
+        <v-btn color="secondary" large to="/vocabulary" class="mx-2">Khám phá từ vựng</v-btn>
+      </v-container>
+    </section>
+
+    <!-- User Dashboard Summary (If logged in) -->
+    <section v-if="isLoggedIn" class="user-dashboard-summary py-10">
+      <v-container>
+        <v-row>
+          <v-col cols="12">
+            <h2 class="section-heading text-h5 font-weight-bold mb-3">Chào mừng trở lại, {{ username }}!</h2>
+          </v-col>
+        </v-row>
+        <v-row>
+          <v-col cols="12" md="4">
+            <v-card class="pa-4 fill-height d-flex flex-column">
+              <v-card-title>Tiến độ của bạn</v-card-title>
+              <v-card-text class="flex-grow-1">
+                <p>Trình độ hiện tại: <strong>{{ currentLevel }}</strong></p>
+                <v-progress-linear :model-value="dailyGoalProgress" color="success" height="20" rounded class="my-2">
+                  <strong>{{ dailyGoalProgress }}% mục tiêu ngày</strong>
+                </v-progress-linear>
+                <p>{{ dailyProgress.minutesStudied }} / {{ studyPlan.dailyGoalMinutes }} phút đã học</p>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn color="primary" block to="/learning-path">Tiếp tục học</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="8">
+            <v-card class="pa-4 fill-height">
+              <v-card-title>Gợi ý cho hôm nay</v-card-title>
+              <v-card-text v-if="suggestedLessons.length > 0">
+                <v-list-item :to="`/${suggestedLessons[0].type}?lessonId=${suggestedLessons[0].id}`">
+                  <v-list-item-content>
+                    <v-list-item-title class="font-weight-medium">{{ suggestedLessons[0].title }}</v-list-item-title>
+                    <v-list-item-subtitle>{{ suggestedLessons[0].description }}</v-list-item-subtitle>
+                  </v-list-item-content>
+                  <v-list-item-action>
+                    <v-icon>mdi-arrow-right</v-icon>
+                  </v-list-item-action>
+                </v-list-item>
+                 <v-divider class="my-2" v-if="suggestedLessons.length > 1"></v-divider>
+                 <v-list-item v-if="suggestedLessons.length > 1" :to="`/${suggestedLessons[1].type}?lessonId=${suggestedLessons[1].id}`">
+                   <v-list-item-content>
+                    <v-list-item-title class="font-weight-medium">{{ suggestedLessons[1].title }}</v-list-item-title>
+                  </v-list-item-content>
+                  <v-list-item-action>
+                    <v-icon>mdi-arrow-right</v-icon>
+                  </v-list-item-action>
+                 </v-list-item>
+              </v-card-text>
+              <v-card-text v-else>
+                  <p>Không có bài học nào được đề xuất hôm nay. Hãy khám phá các chủ đề khác!</p>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn text color="primary" to="/lessons">Xem tất cả bài học</v-btn>
+              </v-card-actions>
             </v-card>
           </v-col>
         </v-row>
       </v-container>
-    </div>
+    </section>
 
-    <v-container class="main-content">
-      <!-- Welcome Section -->
-      <v-row class="mt-6">
-        <v-col cols="12">
-          <h1 class="welcome-header">
-            Xin chào, {{ username }}!
-            <small>Chào mừng bạn đến với hành trình học tiếng Nhật IT</small>
-          </h1>
-        </v-col>
-      </v-row>
+    <!-- Features Highlight Section -->
+    <section class="features-highlight py-12 bg-grey-lighten-4">
+      <v-container>
+        <h2 class="section-heading text-h5 font-weight-bold text-center mb-10">Công cụ & Tài nguyên Ưu Việt</h2>
+        <v-row>
+          <v-col cols="12" md="4">
+            <v-card class="text-center pa-5 fill-height feature-item-card">
+              <v-icon size="50" color="primary" class="mb-3">mdi-book-open-page-variant-outline</v-icon>
+              <h3 class="text-h6 mb-2">Từ vựng IT Chuyên sâu</h3>
+              <p>Học và tra cứu hàng ngàn thuật ngữ IT tiếng Nhật.</p>
+              <v-btn color="primary" variant="outlined" to="/vocabulary">Khám phá Từ vựng</v-btn>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card class="text-center pa-5 fill-height feature-item-card">
+              <v-icon size="50" color="primary" class="mb-3">mdi-translate</v-icon>
+              <h3 class="text-h6 mb-2">Dịch thuật Thông minh</h3>
+              <p>Dịch Việt-Nhật & Nhật-Việt nhanh chóng, chính xác.</p>
+              <v-btn color="primary" variant="outlined" @click="scrollToTranslation">Thử Dịch ngay</v-btn>
+            </v-card>
+          </v-col>
+          <v-col cols="12" md="4">
+            <v-card class="text-center pa-5 fill-height feature-item-card">
+              <v-icon size="50" color="primary" class="mb-3">mdi-alphabet-japanese</v-icon>
+              <h3 class="text-h6 mb-2">Tạo Furigana Tức thì</h3>
+              <p>Dễ dàng thêm Furigana vào bất kỳ văn bản tiếng Nhật nào.</p>
+              <v-btn color="primary" variant="outlined" to="/furigana">Tạo Furigana</v-btn>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
+    </section>
 
+    <!-- Main Content Area (Lessons, Vocab, Tools) -->
+    <v-container class="main-content py-10">
       <v-row>
-        <!-- Progress & Level Section -->
-        <v-col cols="12" md="4">
-          <v-card class="daily-progress">
-            <v-card-title>Tiến độ hôm nay</v-card-title>
-            <v-card-text>
-              <v-progress-circular
-                :model-value="dailyGoalProgress"
-                :size="100"
-                :width="10"
-                color="success"
-              >
-                {{ dailyGoalProgress }}%
-              </v-progress-circular>
-
-              <div class="progress-details mt-4">
-                <p>
-                  <strong>{{ dailyProgress.minutesStudied }} phút</strong>
-                  đã học hôm nay
-                </p>
-                <p>
-                  Mục tiêu hàng ngày:
-                  <strong>{{ studyPlan.dailyGoalMinutes }} phút</strong>
-                </p>
-              </div>
-            </v-card-text>
-          </v-card>
-        </v-col>
-
+        <!-- Left Column: Main tools and content -->
         <v-col cols="12" md="8">
-          <v-card class="current-level">
-            <v-card-title>Trình độ hiện tại: {{ currentLevel }}</v-card-title>
-            <v-card-text>
-              <p>Bắt đầu hành trình chinh phục thuật ngữ IT tiếng Nhật!</p>
-              <v-btn color="primary" to="/learning-path" class="mt-4">Xem lộ trình học</v-btn>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+            <!-- Search Bar -->
+            <v-card variant="outlined" class="search-card-integrated mb-8">
+              <v-text-field
+                v-model="searchQuery"
+                prepend-inner-icon="mdi-magnify"
+                placeholder="Tìm kiếm từ vựng, bài học..."
+                hide-details
+                variant="solo"
+                density="comfortable"
+                class="search-input"
+                @keyup.enter="searchVocabulary"
+              ></v-text-field>
+              <v-btn color="primary" @click="searchVocabulary" class="search-btn-integrated">Tìm</v-btn>
+            </v-card>
 
-      <!-- Two Column Layout -->
-      <v-row class="mt-6">
-        <!-- Left Column - Translation Box -->
-        <v-col cols="12" md="8">
-          <!-- Add Translation Box -->
-          <v-card class="translation-card mb-6">
-            <v-card-title class="translation-title">
-              <div class="d-flex align-center">
-                <v-icon color="amber-darken-2" class="me-2">mdi-translate</v-icon>
-                Công cụ dịch thuật
-              </div>
-            </v-card-title>
-            <v-card-text class="pa-0">
-              <div class="translation-container">
-                <div class="translation-options pa-2">
-                  <div class="d-flex">
+          <!-- Translation Box (can be ref'd for scrolling) -->
+          <div ref="translationSection">
+             <v-card class="translation-card mb-8">
+                 <v-card-title class="translation-title">
+                    <div class="d-flex align-center">
+                        <v-icon color="amber-darken-2" class="me-2">mdi-translate</v-icon>
+                        Công cụ dịch thuật
+                    </div>
+                </v-card-title>
+                <v-card-text class="pa-0">
+                <div class="translation-container">
+                    <div class="translation-options pa-3">
                     <v-btn-toggle
-                      v-model="translationDirection"
-                      mandatory
-                      density="comfortable"
-                      color="primary"
-                      class="mb-2"
+                        v-model="translationDirection"
+                        mandatory
+                        density="comfortable"
+                        color="primary"
+                        variant="outlined"
+                        divided
+                        class="w-100"
                     >
-                      <v-btn value="vn-to-jp" size="small">
-                        <v-icon size="small">mdi-arrow-right</v-icon>
-                        Tiếng Việt → Tiếng Nhật
-                      </v-btn>
-                      <v-btn value="jp-to-vn" size="small">
-                        <v-icon size="small">mdi-arrow-right</v-icon>
-                        Tiếng Nhật → Tiếng Việt
-                      </v-btn>
+                        <v-btn value="vn-to-jp" class="flex-grow-1">Tiếng Việt → Tiếng Nhật</v-btn>
+                        <v-btn value="jp-to-vn" class="flex-grow-1">Tiếng Nhật → Tiếng Việt</v-btn>
                     </v-btn-toggle>
-                  </div>
+                    </div>
+
+                    <v-textarea
+                    v-model="translationText"
+                    :label="translationDirection === 'vn-to-jp' ? 'Nhập văn bản tiếng Việt' : 'Nhập văn bản tiếng Nhật'"
+                    placeholder="Nhập văn bản cần dịch..."
+                    variant="filled"
+                    rows="4"
+                    class="translation-input pa-3"
+                    hide-details
+                    ></v-textarea>
+
+                    <div class="translation-actions pa-3 d-flex justify-end">
+                    <v-btn color="primary" @click="goToTranslationPage" :disabled="!translationText.trim()">
+                        Dịch & Xem chi tiết
+                    </v-btn>
+                    </div>
                 </div>
-
-                <v-textarea
-                  v-model="translationText"
-                  :label="translationDirection === 'vn-to-jp' ? 'Nhập văn bản tiếng Việt' : 'Nhập văn bản tiếng Nhật'"
-                  placeholder="Nhập văn bản cần dịch ở đây..."
-                  variant="outlined"
-                  rows="5"
-                  class="translation-input px-3"
-                  hide-details
-                ></v-textarea>
-
-                <div class="translation-actions px-3 py-2 d-flex justify-end">
-                  <v-btn
-                    color="primary"
-                    @click="goToTranslationPage"
-                  >
-                    Dịch ngay
-                  </v-btn>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
-
-          <!-- Feature Card -->
-          <v-card class="feature-card mb-6" color="primary" variant="outlined">
-            <v-card-title>Công cụ tạo Furigana mới!</v-card-title>
-            <v-card-text>
-              <p>Tạo furigana cho bất kỳ văn bản tiếng Nhật nào. Hoàn hảo để học cách phát âm kanji và tạo tài liệu học tập.</p>
-            </v-card-text>
-            <v-card-actions>
-              <v-btn to="/furigana" color="primary" variant="flat">
-                Thử ngay
-                <v-icon end>mdi-arrow-right</v-icon>
-              </v-btn>
-            </v-card-actions>
-          </v-card>
-
-          <!-- Translation Results Section (conditionally shown) -->
-          <v-card v-if="translationResult" class="mb-6 translation-result-card">
-            <v-card-title class="d-flex justify-space-between align-center">
-              <span>Kết quả dịch</span>
-              <v-btn icon size="small" @click="clearTranslation">
-                <v-icon>mdi-close</v-icon>
-              </v-btn>
-            </v-card-title>
-            <v-divider></v-divider>
-            <v-card-text>
-              <div class="result-container">
-                <div class="original-text mb-4">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    {{ translationDirection === 'vn-to-jp' ? 'Tiếng Việt:' : 'Tiếng Nhật:' }}
-                  </div>
-                  <div class="original-content pa-3 bg-grey-lighten-4 rounded">
-                    {{ translationText }}
-                  </div>
-                </div>
-
-                <div class="translated-text">
-                  <div class="text-caption text-medium-emphasis mb-1">
-                    {{ translationDirection === 'vn-to-jp' ? 'Tiếng Nhật:' : 'Tiếng Việt:' }}
-                  </div>
-                  <div class="translated-content pa-3 bg-indigo-lighten-5 rounded japanese-text">
-                    {{ translationResult }}
-                  </div>
-                </div>
-
-                <div class="translation-footer d-flex justify-end mt-3">
-                  <v-btn
-                    size="small"
-                    variant="text"
-                    prepend-icon="mdi-content-copy"
-                    @click="copyTranslation"
-                  >
-                    Sao chép
-                  </v-btn>
-                  <v-btn
-                    size="small"
-                    variant="text"
-                    color="primary"
-                    prepend-icon="mdi-share-variant"
-                    :to="`/translations?text=${encodeURIComponent(translationText)}&dir=${translationDirection}&result=${encodeURIComponent(translationResult)}`"
-                  >
-                    Xem chi tiết
-                  </v-btn>
-                </div>
-              </div>
-            </v-card-text>
-          </v-card>
+                </v-card-text>
+             </v-card>
+          </div>
 
           <!-- Recommended Lessons -->
-          <h2 class="section-title mb-4">Bài học đề xuất hôm nay</h2>
-
+          <h2 class="section-heading text-h5 font-weight-bold mb-4 mt-6">Bài học Cho Bạn</h2>
           <v-row>
-            <v-col v-for="lesson in suggestedLessons" :key="lesson.id" cols="12" sm="6">
-              <v-card class="lesson-card">
-                <v-card-title class="lesson-title">{{ lesson.title }}</v-card-title>
-            <v-card-subtitle>
-              <v-chip
-                size="small"
-                :color="
-                  lesson.type === 'vocabulary'
-                    ? 'info'
-                    : lesson.type === 'conversation'
-                      ? 'success'
-                      : 'warning'
-                "
-              >
-                    {{ lesson.type === 'vocabulary' ? 'Từ vựng' : lesson.type === 'conversation' ? 'Hội thoại' : 'Ngữ pháp' }}
-              </v-chip>
-              <v-chip size="small" class="ml-2">{{ lesson.level }}</v-chip>
-                  <span class="ml-2">{{ lesson.estimatedMinutes }} phút</span>
-            </v-card-subtitle>
-            <v-card-text>
-              {{ lesson.description }}
-            </v-card-text>
-            <v-card-actions>
-              <v-btn :to="`/${lesson.type}?lessonId=${lesson.id}`" color="primary" variant="tonal">
-                    Bắt đầu học
-                  </v-btn>
+            <v-col v-for="lesson in suggestedLessons.slice(0, 2)" :key="lesson.id" cols="12" sm="6">
+              <v-card class="lesson-card fill-height d-flex flex-column">
+                <v-card-title class="lesson-title text-subtitle-1 font-weight-medium">{{ lesson.title }}</v-card-title>
+                <v-card-subtitle>
+                  <v-chip size="small" :color="getLessonChipColor(lesson.type)" class="me-2">{{ getLessonTypeText(lesson.type) }}</v-chip>
+                  <v-chip size="small" class="me-2">{{ lesson.level }}</v-chip>
+                  <span>{{ lesson.estimatedMinutes }} phút</span>
+                </v-card-subtitle>
+                <v-card-text class="flex-grow-1">
+                  {{ lesson.description }}
+                </v-card-text>
+                <v-card-actions>
+                  <v-btn :to="`/${lesson.type}?lessonId=${lesson.id}`" color="primary" variant="tonal">Bắt đầu học</v-btn>
                 </v-card-actions>
               </v-card>
             </v-col>
           </v-row>
+           <div class="text-center mt-4" v-if="suggestedLessons.length > 2">
+                <v-btn color="secondary" to="/lessons">Xem tất cả bài học</v-btn>
+            </div>
+        </v-col>
 
+        <!-- Right Column: Supplementary content -->
+        <v-col cols="12" md="4">
           <!-- Recent Vocabulary Section -->
-          <h2 class="section-title mb-4 mt-6">Từ vựng mới thêm gần đây</h2>
-          <v-card variant="outlined" class="recent-vocab-card">
-            <v-list class="recent-vocab-list">
+          <h3 class="section-heading text-h6 font-weight-medium mb-3">Từ vựng Mới</h3>
+          <v-card variant="outlined" class="recent-vocab-card mb-6">
+            <v-list class="recent-vocab-list py-0">
               <v-list-item
-                v-for="(vocab, index) in recentVocabulary"
-                :key="vocab.id"
+                v-for="(vocab) in recentVocabulary.slice(0,5)" :key="vocab.id"
                 :to="`/vocabulary/${vocab.id}`"
                 class="vocab-item"
               >
-                <div class="d-flex align-center w-100">
-                  <div>
-                    <div class="d-flex align-center">
-                      <span class="vocab-text">{{ vocab.kanji || vocab.hiragana }}</span>
-                      <v-chip size="x-small" color="primary" variant="outlined" class="ms-2">
-                        {{ vocab.level }}
-                      </v-chip>
+                <template v-slot:prepend>
+                    <v-icon color="primary" class="me-3">mdi-label-outline</v-icon>
+                </template>
+                <div class="w-100">
+                    <div class="d-flex align-center justify-space-between">
+                        <span class="vocab-text font-weight-medium">{{ vocab.kanji || vocab.hiragana }}</span>
+                        <v-chip size="x-small" color="primary" variant="tonal">{{ vocab.level }}</v-chip>
                     </div>
-                    <div class="vocab-meaning">{{ vocab.meaning }}</div>
-                  </div>
-                  <v-spacer></v-spacer>
-                  <v-btn icon size="small" variant="text" color="primary">
-                    <v-icon>mdi-arrow-right</v-icon>
-                  </v-btn>
+                    <div class="vocab-meaning text-caption">{{ vocab.meaning }}</div>
                 </div>
+                 <template v-slot:append>
+                    <v-icon>mdi-chevron-right</v-icon>
+                 </template>
               </v-list-item>
             </v-list>
-            <div class="text-center pa-3">
-              <v-btn color="primary" variant="text" to="/vocabulary">
-                Xem tất cả từ vựng
-              </v-btn>
-            </div>
+            <v-card-actions class="justify-center pa-2">
+              <v-btn color="primary" variant="text" to="/vocabulary">Xem tất cả từ vựng</v-btn>
+            </v-card-actions>
           </v-card>
-        </v-col>
 
-        <!-- Right Column - Search Ranking (moved from left to right) -->
-        <v-col cols="12" md="4">
+          <!-- Trending Searches Section -->
+           <h3 class="section-heading text-h6 font-weight-medium mb-3">Tìm kiếm Phổ biến</h3>
           <v-card class="search-ranking-card">
-            <v-card-title class="search-ranking-title">
-              <div class="d-flex align-center w-100">
-                <v-icon color="grey-darken-3" size="large" class="me-3">mdi-magnify</v-icon>
-                <span class="ranking-title-text">Từ khóa tìm kiếm phổ biến</span>
-              </div>
-            </v-card-title>
-            <v-card-text class="pa-0">
-              <v-list class="ranking-list" density="compact">
-                <v-list-item
-                  v-for="(term, index) in trendingSearches"
-                  :key="index"
-                  :to="`/vocabulary/search?keyword=${term.keyword}`"
-                  class="ranking-item"
-                  density="compact"
-                >
-                  <template v-slot:prepend>
-                    <div class="ranking-number" :class="index < 3 ? 'top-rank' : ''">{{ index + 1 }}</div>
-                  </template>
-                  <v-list-item-title class="ranking-item-text">{{ term.keyword }}</v-list-item-title>
-                </v-list-item>
-              </v-list>
-              <div class="text-center pa-3">
-                <v-btn size="small" variant="text" color="primary" to="/vocabulary/trending">
-                  Xem thêm
-                </v-btn>
-              </div>
-            </v-card-text>
+            <v-list density="compact" class="py-0">
+              <v-list-item
+                v-for="(term, index) in trendingSearches.slice(0,5)" :key="index"
+                :to="`/vocabulary/search?keyword=${term.keyword}`"
+                class="ranking-item"
+              >
+                <template v-slot:prepend>
+                  <div class="ranking-number-new" :class="index < 3 ? 'top-rank' : ''">{{ index + 1 }}</div>
+                </template>
+                <v-list-item-title class="ranking-item-text">{{ term.keyword }}</v-list-item-title>
+                 <template v-slot:append>
+                    <v-icon size="small">mdi-magnify</v-icon>
+                 </template>
+              </v-list-item>
+            </v-list>
+             <v-card-actions class="justify-center pa-2">
+              <v-btn size="small" variant="text" color="primary" to="/vocabulary/trending">Xem thêm xu hướng</v-btn>
+            </v-card-actions>
           </v-card>
         </v-col>
       </v-row>
@@ -311,7 +259,7 @@ import { useAuthStore } from '@/stores'
 interface Lesson {
   id: string
   title: string
-  type: string
+  type: string // 'vocabulary', 'conversation', 'grammar'
   level: string
   estimatedMinutes: number
   description: string
@@ -334,38 +282,41 @@ interface TrendingSearch {
   name: 'HomeView'
 })
 export default class HomeView extends Vue {
-  // User data
   searchQuery = ''
-
-  // Translation data
   translationDirection = 'vn-to-jp'
   translationText = ''
-  translationResult = ''
-  translating = false
 
-  // Get user info from auth store
   private authStore = useAuthStore()
 
+  get isLoggedIn(): boolean {
+    // Ensure this matches how your authStore exposes login state
+    return !!this.authStore.user // Common pattern: user object exists if logged in
+  }
+
   get username(): string {
-    return this.authStore.user?.fullName || 'Guest'
+    return this.authStore.user?.fullName || 'Người dùng'
   }
 
   get currentLevel(): string {
-    return this.authStore.user?.currentLevel || 'N5'
+    return this.authStore.user?.currentLevel || 'N/A'
   }
 
-  // Static progress data
   dailyProgress = {
-    minutesStudied: 25,
+    minutesStudied: 25, // Example data
   }
 
   studyPlan = {
-    dailyGoalMinutes: 60,
+    dailyGoalMinutes: 60, // Example data
   }
 
-  dailyGoalProgress = 42 // Static percentage
+  get dailyGoalProgress(): number {
+    if (!this.studyPlan.dailyGoalMinutes || this.studyPlan.dailyGoalMinutes === 0) {
+      return 0
+    }
+    const progress = (this.dailyProgress.minutesStudied / this.studyPlan.dailyGoalMinutes) * 100
+    return Math.min(Math.round(progress), 100)
+  }
 
-  // Trending searches
   trendingSearches: TrendingSearch[] = [
     { keyword: 'プログラミング', count: 243 },
     { keyword: 'データベース', count: 198 },
@@ -379,7 +330,6 @@ export default class HomeView extends Vue {
     { keyword: 'コーディング', count: 98 }
   ]
 
-  // Recent vocabulary
   recentVocabulary: VocabularyItem[] = [
     { id: '1', kanji: 'プログラム', hiragana: 'ぷろぐらむ', meaning: 'Program', level: 'N3' },
     { id: '2', kanji: 'データ', hiragana: 'でーた', meaning: 'Data', level: 'N4' },
@@ -388,7 +338,6 @@ export default class HomeView extends Vue {
     { id: '5', kanji: 'アップロード', hiragana: 'あっぷろーど', meaning: 'Upload', level: 'N3' }
   ]
 
-  // Mock suggested lessons
   suggestedLessons: Lesson[] = [
     {
       id: '1',
@@ -424,7 +373,6 @@ export default class HomeView extends Vue {
     }
   ]
 
-  // Search method
   searchVocabulary() {
     if (this.searchQuery.trim()) {
       this.$router.push({
@@ -434,11 +382,8 @@ export default class HomeView extends Vue {
     }
   }
 
-  // Translation methods
   goToTranslationPage() {
     if (!this.translationText.trim()) return;
-
-    // Navigate to the translations page with the text and direction as query parameters
     this.$router.push({
       path: '/translations',
       query: {
@@ -448,275 +393,295 @@ export default class HomeView extends Vue {
     });
   }
 
-  async translateText() {
-    if (!this.translationText.trim()) return;
-
-    this.translating = true;
-
-    try {
-      // Get the backend API URL
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-      // Call the translation API
-      const response = await fetch(`${apiUrl}/api/v1/ai/translate?direction=${this.translationDirection}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'text/plain',
-          'Accept': 'application/json'
-        },
-        body: this.translationText
-      });
-
-      if (!response.ok) {
-        throw new Error(`Translation failed: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      this.translationResult = data.translation;
-    } catch (error) {
-      console.error('Translation error:', error);
-      // Create a user-friendly error message
-      this.translationResult = 'Sorry, an error occurred during translation. Please try again later.';
-    } finally {
-      this.translating = false;
+  scrollToTranslation() {
+    const translationEl = this.$refs.translationSection as HTMLElement;
+    if (translationEl) {
+      translationEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }
 
-  clearTranslation() {
-    this.translationResult = '';
+  getLessonChipColor(type: string): string {
+    switch (type) {
+      case 'vocabulary': return 'info';
+      case 'conversation': return 'success';
+      case 'grammar': return 'warning';
+      default: return 'grey';
+    }
   }
 
-  copyTranslation() {
-    navigator.clipboard.writeText(this.translationResult)
-      .then(() => {
-        // Optional: Show a success message
-        alert('Copied to clipboard!');
-      })
-      .catch(err => {
-        console.error('Failed to copy text: ', err);
-      });
+  getLessonTypeText(type: string): string {
+    switch (type) {
+      case 'vocabulary': return 'Từ vựng';
+      case 'conversation': return 'Hội thoại';
+      case 'grammar': return 'Ngữ pháp';
+      default: return 'Bài học';
+    }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.search-bar {
-  background-color: #f5f5f5;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+// General Page Styles
+.home-page {
+  // background-color: #f9f9f9; // A very light grey for the overall page if desired
 }
 
-.search-card {
-  display: flex;
-  border-radius: 8px;
+.section-heading {
+  color: #2c3e50; // Darker, more professional text color
 }
 
-.search-input {
-  flex-grow: 1;
-}
-
-.search-btn {
-  border-radius: 0 8px 8px 0;
+.fill-height {
   height: 100%;
 }
 
-.welcome-header {
-  margin-bottom: 1.5rem;
-  font-weight: bold;
-  color: #333;
-
-  small {
-    display: block;
-    font-size: 1rem;
-    font-weight: normal;
-    color: rgba(0, 0, 0, 0.7);
-    margin-top: 0.5rem;
-  }
-}
-
-.daily-progress {
-  text-align: center;
-  border-radius: 10px;
-
-  .v-card-text {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-}
-
-.progress-details {
-  text-align: center;
-
-  p {
-    margin: 0.5rem 0;
-  }
-}
-
-.current-level {
-  border-radius: 10px;
-}
-
-.section-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #333;
-  margin-top: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.search-ranking-card {
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-}
-
-.search-ranking-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  background-color: #f5f5f5;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  align-items: center;
-}
-
-.ranking-list {
-  padding: 0;
-  background-color: #fff;
-}
-
-.ranking-item {
-  border-bottom: 1px solid #f0f0f0;
-  transition: background-color 0.2s;
-  padding: 8px 16px;
-
-  &:hover {
-    background-color: #f9f9f9;
-  }
-}
-
-.ranking-number {
-  min-width: 28px;
-  height: 28px;
-  border-radius: 4px;
-  background-color: #757575;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  font-weight: bold;
+// Hero Section
+.hero-section {
+  background: linear-gradient(135deg, #3f51b5 0%, #2196f3 100%); // Indigo to Blue gradient
   color: white;
-  margin-right: 12px;
+  padding-top: 4rem !important; // Vuetify py-16 might be too much with navbar
+  padding-bottom: 4rem !important;
 
-  &.top-rank {
-    background-color: #3949ab;
+  .hero-title {
+    font-size: 2.8rem !important; // Adjusted for responsiveness
+    font-weight: 700 !important;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+  }
+  .hero-subtitle {
+    font-size: 1.2rem !important;
+    opacity: 0.9;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .v-btn {
+    padding: 0.75rem 1.8rem !important;
+    font-size: 0.95rem !important;
+    font-weight: 500;
+    text-transform: none; // Keep button text normal case
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
 }
 
-.lesson-card {
-  border-radius: 10px;
-  height: 100%;
-  transition: transform 0.2s, box-shadow 0.2s;
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+// User Dashboard Summary
+.user-dashboard-summary {
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0; // Subtle separator
+  .v-card {
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+    border-radius: 12px;
+    border: none; // Remove default card border if any
+  }
+  .v-progress-linear {
+    strong {
+      color: white;
+      font-size: 0.75rem;
+    }
+  }
+  .v-card-title {
+    font-weight: 600;
+    color: #333;
   }
 }
 
-.lesson-title {
-  font-size: 1.1rem;
-  font-weight: 600;
+// Features Highlight Section
+.features-highlight {
+   background-color: #f8f9fa; // Lighter than default grey
+   .feature-item-card {
+     border-radius: 12px;
+     transition: transform 0.3s ease, box-shadow 0.3s ease;
+     border: 1px solid #e0e0e0;
+     background-color: #fff;
+     &:hover {
+       transform: translateY(-6px);
+       box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+     }
+     .v-icon {
+       transition: transform 0.3s ease;
+     }
+     &:hover .v-icon {
+       transform: scale(1.1);
+     }
+     h3 {
+       color: #3f51b5; // Theme color for feature titles
+       font-weight: 600;
+     }
+     p {
+       font-size: 0.9rem;
+       color: #555;
+     }
+     .v-btn {
+       text-transform: none;
+       font-weight: 500;
+       border-radius: 6px;
+     }
+   }
 }
 
-.recent-vocab-card {
-  border-radius: 10px;
-  overflow: hidden;
-}
+// Main Content Area
+.main-content {
+  .search-card-integrated {
+    display: flex;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #ccc; // Softer border for solo field
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    .search-input { // class on v-text-field
+      // Overriding solo style for seamless integration
+      ::v-deep .v-input__control .v-field {
+        background-color: #fff !important;
+        box-shadow: none !important;
+      }
+    }
+    .search-btn-integrated { // class on v-btn
+      border-radius: 0 8px 8px 0;
+      height: auto;
+      align-self: stretch;
+      box-shadow: none;
+      border-left: 1px solid #ccc;
+    }
+  }
 
-.recent-vocab-list {
-  padding: 0;
-}
+  .translation-card {
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+    border: 1px solid #e0e0e0;
+     .translation-title {
+        font-weight: 600;
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 12px 16px;
+        font-size: 1.05rem; // Slightly smaller
+    }
+    .v-btn-toggle .v-btn { // Ensure buttons in toggle take full width if needed
+        // flex-grow: 1; // This is already on the button in template
+    }
+    .v-textarea ::v-deep .v-field__field {
+        font-size: 0.95rem;
+    }
+  }
 
-.vocab-item {
-  border-bottom: 1px solid #f0f0f0;
-  padding: 10px 16px;
-  transition: background-color 0.2s;
+  .lesson-card {
+    border-radius: 12px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+    border: 1px solid #e0e0e0;
+    &:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    }
+    .lesson-title {
+      color: #333;
+      line-height: 1.3;
+    }
+    .v-card-subtitle {
+      padding-top: 0.5rem;
+    }
+    .v-card-actions .v-btn {
+      text-transform: none;
+      font-weight: 500;
+    }
+  }
 
-  &:hover {
-    background-color: #f9f9f9;
+  .recent-vocab-card, .search-ranking-card {
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.07);
+    border: 1px solid #e0e0e0;
+    background-color: #fff;
+    .v-list-item {
+      border-bottom: 1px solid #f0f0f0;
+      padding: 10px 12px;
+      transition: background-color 0.2s;
+      &:last-child {
+        border-bottom: none;
+      }
+      &:hover {
+        background-color: #f5f5f5;
+      }
+    }
+    .v-card-actions .v-btn {
+        text-transform: none;
+        font-size: 0.9rem;
+    }
+  }
+
+  .vocab-text {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 1rem; // Slightly reduced
+    color: #2c3e50;
+  }
+  .vocab-meaning {
+    color: #555;
+    font-size: 0.8rem;
+  }
+
+  .ranking-number-new {
+    min-width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #495057;
+    margin-right: 10px;
+    &.top-rank {
+      background-color: #3f51b5;
+      color: white;
+    }
+  }
+  .ranking-item-text {
+    font-size: 0.9rem;
+    color: #333;
   }
 }
 
-.vocab-text {
-  font-family: 'Noto Sans JP', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 500;
-}
-
-.vocab-meaning {
-  color: #666;
-  font-size: 0.85rem;
-  margin-top: 2px;
-}
-
-.feature-card {
-  border-radius: 10px;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: translateY(-3px);
+// Responsive adjustments
+@media (max-width: 960px) { // md breakpoint
+  .hero-section {
+    padding-top: 3rem !important;
+    padding-bottom: 3rem !important;
+    .hero-title {
+      font-size: 2.2rem !important;
+    }
+    .hero-subtitle {
+      font-size: 1.1rem !important;
+    }
+  }
+  .features-highlight .feature-item-card {
+    margin-bottom: 1.5rem; // Add space between cards on smaller screens when they stack
+    &:last-child {
+        margin-bottom: 0;
+    }
   }
 }
 
-// Translation box styles
-.translation-card {
-  border-radius: 10px;
-  overflow: hidden;
-  border: 1px solid #e0e0e0;
-}
-
-.translation-title {
-  font-weight: 600;
-  background-color: #f8f8f8;
-  border-bottom: 1px solid #e0e0e0;
-  padding: 12px 16px;
-  font-size: 1.1rem;
-}
-
-.translation-options {
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.translation-input {
-  border-radius: 0;
-}
-
-.translation-result-card {
-  border-radius: 10px;
-  border: 1px solid #e0e0e0;
-}
-
-.original-content,
-.translated-content {
-  white-space: pre-wrap;
-  word-break: break-word;
-  min-height: 60px;
-}
-
-.japanese-text {
-  font-family: 'Noto Sans JP', sans-serif;
-  line-height: 1.6;
-}
-
-.ranking-title-text {
-  font-weight: 600;
-  font-size: 1.1rem;
-}
-
-.ranking-item-text {
-  font-size: 0.95rem;
+@media (max-width: 600px) { // sm breakpoint
+  .hero-section {
+    .hero-title {
+      font-size: 1.8rem !important;
+    }
+    .hero-subtitle {
+      font-size: 1rem !important;
+    }
+    .v-btn {
+      padding: 0.6rem 1.2rem !important;
+      font-size: 0.9rem !important;
+      margin-top: 0.5rem;
+    }
+    .v-btn + .v-btn { // Add margin between buttons if they stack
+        margin-left: 0 !important;
+    }
+  }
+  .user-dashboard-summary .v-card-title,
+  .main-content .section-heading.text-h5 {
+    font-size: 1.25rem !important; // Adjust heading sizes for smaller screens
+  }
+  .main-content .section-heading.text-h6 {
+    font-size: 1.1rem !important;
+  }
 }
 </style>

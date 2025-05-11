@@ -754,7 +754,6 @@ function navigateToDetail(term: string) {
   router.push({
     name: 'vocabularyDetail',
     params: {
-      id: topicParam.value,
       term: encodeURIComponent(term)
     }
   });

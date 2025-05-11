@@ -128,7 +128,7 @@
           <!-- Table Header -->
           <div class="custom-header">
             <div class="d-flex px-4 py-3 text-subtitle-2 font-weight-bold w-100">
-              <div class="header-cell column-border" style="width: 80px;">Trình độ</div>
+              <div class="header-cell column-border" style="width: 95px;">Trình độ</div>
               <div class="header-cell column-border" style="width: 450px;">Từ vựng</div>
               <div class="header-cell column-border" style="width: 200px;">Cách đọc</div>
               <div class="header-cell column-border" style="width: 150px;">Chủ đề</div>
@@ -143,11 +143,12 @@
             class="vocabulary-item"
             :data-vocab-id="item.vocabId"
             @click="toggleExpand(item.vocabId)"
+            density="compact"
           >
             <!-- Main Row Content -->
             <div class="d-flex align-center w-100 vocabulary-row">
               <!-- JLPT Level -->
-              <div class="content-cell text-center column-border" style="width: 80px;">
+              <div class="content-cell text-center column-border" style="width: 95px;">
                 <v-chip
                   :color="getJlptColor(item.jlptLevel)"
                   size="small"
@@ -426,13 +427,19 @@
   </v-container>
 </template>
 
-<script lang="ts">
-import { Component, Vue } from 'vue-facing-decorator'
+<script lang="ts" setup>
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useToast } from 'vue-toast-notification'
+import { useRouter, useRoute } from 'vue-router'
 import vocabularyService from '@/services/vocabulary.service'
 import authService from '@/services/auth.service'
 import type { VocabularyItem, VocabularyFilter, ExampleSentence, ChatMessage } from '@/services/vocabulary.service'
 import axios from 'axios'
+
+// Router và route
+const router = useRouter()
+const route = useRoute()
+const toast = useToast()
 
 // Extended interface for examples with typing animation
 interface AnimatedExample {
@@ -442,699 +449,692 @@ interface AnimatedExample {
   vietnameseDisplayed?: string;
 }
 
-@Component({
-  name: 'VocabularyView'
+// State
+const vocabulary = ref<VocabularyItem[]>([])
+const loading = ref(false)
+const currentPage = ref(1)
+const totalPages = ref(0)
+const totalItems = ref(0)
+const expandedItems = ref<string[]>([])
+const chatGPTItems = ref<string[]>([])
+const loadingChatGPT = ref<string | null>(null)
+const chatInputs = ref<Record<string, string>>({})
+const playingAudioId = ref<string | null>(null)
+const playingExampleAudioId = ref<string | null>(null)
+const typingInProgress = ref<string | null>(null)
+const displayedText = ref<Record<string, string>>({})
+const typingSpeed = ref(20) // ms between characters
+const typingExamples = ref<Record<string, number>>({}) // Track which example is currently being animated
+
+const filters = reactive({
+  keyword: null as string | null,
+  jlptLevel: null as string | null,
+  topicName: null as string | null,
+  page: 0,
+  size: 10
+} as VocabularyFilter)
+
+// Filter options
+const jlptLevels = ref(['N1', 'N2', 'N3', 'N4', 'N5'])
+const topics = ref<any[]>([])
+
+// Computed Properties
+const hasActiveFilters = computed(() => {
+  return !!(
+    filters.keyword ||
+    filters.jlptLevel ||
+    filters.topicName
+  )
 })
-export default class VocabularyView extends Vue {
-  // Data
-  vocabulary: VocabularyItem[] = []
-  loading = false
-  currentPage = 1
-  totalPages = 0
-  totalItems = 0
-  expandedItems: string[] = []
-  chatGPTItems: string[] = []
-  loadingChatGPT: string | null = null
-  chatInputs: Record<string, string> = {}
-  playingAudioId: string | null = null
-  playingExampleAudioId: string | null = null
-  typingInProgress: string | null = null
-  displayedText: Record<string, string> = {}
-  typingSpeed = 20 // ms between characters
-  typingExamples: Record<string, number> = {} // Track which example is currently being animated
 
-  filters = {
-    keyword: null as string | null,
-    jlptLevel: null as string | null,
-    topicName: null as string | null,
-    page: 0,
-    size: 10
-  } as VocabularyFilter
+// Methods
+const toggleExpand = (vocabId: string) => {
+  const index = expandedItems.value.indexOf(vocabId);
 
-  // Filter options
-  jlptLevels = ['N1', 'N2', 'N3', 'N4', 'N5']
-  topics: any[] = []
-
-  // Computed Properties
-  get hasActiveFilters(): boolean {
-    return !!(
-      this.filters.keyword ||
-      this.filters.jlptLevel ||
-      this.filters.topicName
-    )
+  if (index >= 0) {
+    // If already expanded, collapse it
+    expandedItems.value.splice(index, 1);
+  } else {
+    // If not expanded, expand it
+    expandedItems.value.push(vocabId);
   }
+}
 
-  // Lifecycle Hooks
-  async mounted() {
-    await this.fetchVocabulary();
-    await this.fetchTopics();
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return 'Unknown';
+
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (e) {
+    return dateString;
   }
+}
 
-  // Methods
-  toggleExpand(vocabId: string) {
-    const index = this.expandedItems.indexOf(vocabId);
+const fetchVocabulary = async () => {
+  loading.value = true;
 
-    if (index >= 0) {
-      // If already expanded, collapse it
-      this.expandedItems.splice(index, 1);
+  try {
+    console.log('Fetching vocabulary with filters:', filters);
+    const response = await vocabularyService.getVocabulary(filters);
+    console.log('Vocabulary response:', response);
+
+    if (response && Array.isArray(response.content)) {
+      vocabulary.value = response.content;
+      totalPages.value = response.totalPages;
+      totalItems.value = response.totalElements;
+      console.log('Processed vocabulary items:', vocabulary.value.length);
     } else {
-      // If not expanded, expand it
-      this.expandedItems.push(vocabId);
-    }
-  }
-
-  formatDate(dateString?: string): string {
-    if (!dateString) return 'Unknown';
-
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      });
-    } catch (e) {
-      return dateString;
-    }
-  }
-
-  async fetchVocabulary() {
-    this.loading = true;
-
-    try {
-      console.log('Fetching vocabulary with filters:', this.filters);
-      const response = await vocabularyService.getVocabulary(this.filters);
-      console.log('Vocabulary response:', response);
-
-      if (response && Array.isArray(response.content)) {
-        this.vocabulary = response.content;
-        this.totalPages = response.totalPages;
-        this.totalItems = response.totalElements;
-        console.log('Processed vocabulary items:', this.vocabulary.length);
-      } else {
-        console.error('Invalid response format:', response);
-        this.vocabulary = [];
-        this.totalPages = 0;
-        this.totalItems = 0;
-        const toast = useToast();
-        toast.error('Received invalid data format from server', {
-          position: 'top',
-          duration: 3000
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching vocabulary:', error);
-      this.vocabulary = [];
-      this.totalPages = 0;
-      this.totalItems = 0;
-      const toast = useToast();
-      toast.error('Failed to load vocabulary items', {
-        position: 'top',
-        duration: 3000
-      });
-    } finally {
-      this.loading = false;
-    }
-  }
-
-  debounceSearch = this.debounce(() => {
-    this.fetchVocabulary()
-  }, 500)
-
-  debounce(fn: Function, delay: number) {
-    let timeoutId: number | null = null
-    return function(this: any, ...args: any[]) {
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
-      timeoutId = setTimeout(() => {
-        fn.apply(this, args)
-      }, delay)
-    }
-  }
-
-  async fetchTopics() {
-    try {
-      this.topics = await vocabularyService.getTopics();
-    } catch (error) {
-      console.error('Error fetching topics:', error);
-    }
-  }
-
-  changePage(page: number) {
-    this.currentPage = page;
-    this.filters.page = page - 1; // API uses 0-based indexing
-    this.expandedItems = []; // Close all expanded items when changing page
-    this.fetchVocabulary();
-  }
-
-  changeItemsPerPage(size: number) {
-    // Ensure size is a positive number
-    const validSize = size > 0 ? size : 10;
-    this.filters.size = validSize;
-    this.filters.page = 0;
-    this.currentPage = 1;
-    this.expandedItems = []; // Close all expanded items when changing items per page
-    this.fetchVocabulary();
-  }
-
-  clearFilter(filterName: 'keyword' | 'jlptLevel' | 'topicName') {
-    this.filters[filterName] = null;
-    this.fetchVocabulary();
-  }
-
-  clearAllFilters() {
-    this.filters.keyword = null;
-    this.filters.jlptLevel = null;
-    this.filters.topicName = null;
-    this.filters.page = 0;
-    this.currentPage = 1;
-    this.fetchVocabulary();
-  }
-
-  async toggleSave(item: VocabularyItem) {
-    const toast = useToast();
-    try {
-      if (item.isSaved) {
-        await vocabularyService.removeSavedVocabulary(item.vocabId);
-        toast.success('Removed from saved items', {
-          position: 'top',
-          duration: 2000
-        });
-      } else {
-        await vocabularyService.saveVocabulary(item.vocabId);
-        toast.success('Added to saved items', {
-          position: 'top',
-          duration: 2000
-        });
-      }
-
-      // Toggle the state locally
-      item.isSaved = !item.isSaved;
-
-    } catch (error) {
-      console.error('Error toggling save status:', error);
-      toast.error('Failed to update saved status', {
+      console.error('Invalid response format:', response);
+      vocabulary.value = [];
+      totalPages.value = 0;
+      totalItems.value = 0;
+      toast.error('Received invalid data format from server', {
         position: 'top',
         duration: 3000
       });
     }
+  } catch (error) {
+    console.error('Error fetching vocabulary:', error);
+    vocabulary.value = [];
+    totalPages.value = 0;
+    totalItems.value = 0;
+    toast.error('Failed to load vocabulary items', {
+      position: 'top',
+      duration: 3000
+    });
+  } finally {
+    loading.value = false;
   }
+}
 
-  getJlptColor(level: string): string {
-    switch (level) {
-      case 'N1': return 'red';
-      case 'N2': return 'orange';
-      case 'N3': return 'amber';
-      case 'N4': return 'light-green';
-      case 'N5': return 'green';
-      default: return 'grey';
+// Debounce function
+const debounce = (fn: Function, delay: number) => {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+  return function(this: any, ...args: any[]) {
+    if (timeoutId) {
+      clearTimeout(timeoutId);
     }
+    timeoutId = setTimeout(() => {
+      fn.apply(this, args);
+    }, delay);
+  };
+}
+
+const debounceSearch = debounce(() => {
+  fetchVocabulary();
+}, 500);
+
+const fetchTopics = async () => {
+  try {
+    topics.value = await vocabularyService.getTopics();
+  } catch (error) {
+    console.error('Error fetching topics:', error);
   }
+}
 
-  async playAudio(audioPath: string | null, vocabItem?: VocabularyItem, isExampleSentence: boolean = false): Promise<void> {
-    const toast = useToast();
+const changePage = (page: number) => {
+  currentPage.value = page;
+  filters.page = page - 1; // API uses 0-based indexing
+  expandedItems.value = []; // Close all expanded items when changing page
+  fetchVocabulary();
+}
 
-    if (!vocabItem) {
-      toast.error('Could not identify vocabulary item');
-      return;
-    }
+const changeItemsPerPage = (size: number) => {
+  // Ensure size is a positive number
+  const validSize = size > 0 ? size : 10;
+  filters.size = validSize;
+  filters.page = 0;
+  currentPage.value = 1;
+  expandedItems.value = []; // Close all expanded items when changing items per page
+  fetchVocabulary();
+}
 
-    // Set loading state based on whether it's a word or example
-    if (isExampleSentence) {
-      this.playingExampleAudioId = vocabItem.vocabId;
+const clearFilter = (filterName: 'keyword' | 'jlptLevel' | 'topicName') => {
+  filters[filterName] = null;
+  fetchVocabulary();
+}
+
+const clearAllFilters = () => {
+  filters.keyword = null;
+  filters.jlptLevel = null;
+  filters.topicName = null;
+  filters.page = 0;
+  currentPage.value = 1;
+  fetchVocabulary();
+}
+
+const toggleSave = async (item: VocabularyItem) => {
+  try {
+    if (item.isSaved) {
+      await vocabularyService.removeSavedVocabulary(item.vocabId);
+      toast.success('Removed from saved items', {
+        position: 'top',
+        duration: 2000
+      });
     } else {
-      this.playingAudioId = vocabItem.vocabId;
-    }
-
-    try {
-      if (audioPath) {
-        // If there's an existing audio path, use it
-        const audio = new Audio(audioPath);
-        await audio.play();
-      } else {
-        // Verify authentication before proceeding
-        const authToken = authService.getToken();
-        if (!authToken) {
-          toast.error('Please log in to use text-to-speech', {
-            position: 'top',
-            duration: 4000
-          });
-          // Redirect to login page after a short delay
-          setTimeout(() => {
-            this.$router.push({
-              name: 'login',
-              query: { redirect: this.$route.fullPath }
-            });
-          }, 1500);
-          return;
-        }
-
-        // No audio path available, use TTS API
-        // Get the item either from the parameter or by finding it in the vocabulary array
-        const currentItem = vocabItem || this.getCurrentItemFromEvent();
-
-        if (!currentItem) {
-          toast.warning('Could not identify vocabulary item', {
+      await vocabularyService.saveVocabulary(item.vocabId);
+      toast.success('Added to saved items', {
         position: 'top',
-        duration: 3000
+        duration: 2000
       });
-      return;
     }
 
-        // Determine which text to use for speech
-        let textToSpeak = '';
+    // Toggle the state locally
+    item.isSaved = !item.isSaved;
 
-        if (isExampleSentence && currentItem.example) {
-          // Use example sentence if requested and available
-          textToSpeak = currentItem.example;
-        } else {
-          // Use term for vocabulary pronunciation
-          textToSpeak = currentItem.term;
-        }
+  } catch (error) {
+    console.error('Error toggling save status:', error);
+    toast.error('Failed to update saved status', {
+      position: 'top',
+      duration: 3000
+    });
+  }
+}
 
-        // Show loading indicator
-        toast.info('Generating audio...', {
-          position: 'top',
-          duration: 2000
-        });
+const getJlptColor = (level: string): string => {
+  switch (level) {
+    case 'N1': return 'red';
+    case 'N2': return 'orange';
+    case 'N3': return 'amber';
+    case 'N4': return 'light-green';
+    case 'N5': return 'green';
+    default: return 'grey';
+  }
+}
 
-        // Get the backend API URL
-        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const playAudio = async (audioPath: string | null, vocabItem?: VocabularyItem, isExampleSentence: boolean = false): Promise<void> => {
+  if (!vocabItem) {
+    toast.error('Could not identify vocabulary item');
+    return;
+  }
 
-        // Set speed: 0.9 for vocabulary, 1.0 for example sentences
-        const speed = isExampleSentence ? 1.0 : 0.9;
+  // Set loading state based on whether it's a word or example
+  if (isExampleSentence) {
+    playingExampleAudioId.value = vocabItem.vocabId;
+  } else {
+    playingAudioId.value = vocabItem.vocabId;
+  }
 
-        // Call the TTS API with Authorization header
-        const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
-          headers: {
-            'Content-Type': 'text/plain; charset=UTF-8',
-            'Accept-Language': 'ja-JP',
-            'X-Speech-Speed': speed.toString(),
-            'X-Content-Language': 'ja',
-            'X-Content-Type': isExampleSentence ? 'example' : 'vocabulary',
-            'Authorization': `Bearer ${authToken}`,
-            'Accept': 'audio/mpeg'
-          },
-          responseType: 'arraybuffer'
-        });
-
-        // Convert response to blob and create audio URL
-        const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-
-        // Play the audio
-        const audio = new Audio(audioUrl);
-        audio.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-          if (isExampleSentence) {
-            this.playingExampleAudioId = null;
-          } else {
-            this.playingAudioId = null;
-          }
-        };
-
+  try {
+    if (audioPath) {
+      // If there's an existing audio path, use it
+      const audio = new Audio(audioPath);
       await audio.play();
-      }
-    } catch (error) {
-      console.error('Error generating or playing TTS audio:', error);
-
-      // Special handling for 401 errors to prevent logout
-      if (axios.isAxiosError(error) && error.response?.status === 401) {
-        toast.error('TTS service requires authentication. Please log in again when convenient.', {
-          position: 'top',
-          duration: 3000
-        });
-      } else {
-        toast.error(error instanceof Error ? error.message : 'Failed to generate speech', {
-        position: 'top',
-        duration: 3000
-      });
-    }
-    } finally {
-      // Reset loading state if no audio was played (in case of error)
-      // For successful audio playback, the onended event will handle this
-      if (!audioPath) {
-        setTimeout(() => {
-          if (isExampleSentence) {
-            this.playingExampleAudioId = null;
-          } else {
-            this.playingAudioId = null;
-          }
-        }, 3000);
-      } else {
-        if (isExampleSentence) {
-          this.playingExampleAudioId = null;
-        } else {
-          this.playingAudioId = null;
-        }
-      }
-    }
-  }
-
-  // Helper method to get current item from event context
-  getCurrentItemFromEvent(): VocabularyItem | null {
-    // This relies on the event coming from a button inside a list item
-    // The list item has the vocab ID
-    const button = event?.target as HTMLElement;
-    const listItem = button?.closest('.vocabulary-item');
-    const vocabId = listItem?.getAttribute('data-vocab-id');
-
-    if (vocabId) {
-      return this.vocabulary.find(item => item.vocabId === vocabId) || null;
-    }
-
-    return null;
-  }
-
-  viewDetails(item: VocabularyItem) {
-    // Navigate to detail page using the term
-    this.$router.push(`/vocabulary/term/${item.term}`);
-  }
-
-  openAddDialog() {
-    // To be implemented - open dialog to add new vocabulary
-    // This is a placeholder for future functionality
-  }
-
-  toggleChatGPT(vocabId: string) {
-    const index = this.chatGPTItems.indexOf(vocabId);
-
-    if (index >= 0) {
-      // If already open, close it
-      this.chatGPTItems.splice(index, 1);
     } else {
-      // Start loading state
-      this.loadingChatGPT = vocabId;
-
-      // Find the vocabulary item by ID
-      const vocabItem = this.vocabulary.find(item => item.vocabId === vocabId);
-
-      if (!vocabItem) {
-        console.error('Vocabulary item not found');
-        this.loadingChatGPT = null;
+      // Verify authentication before proceeding
+      const authToken = authService.getToken();
+      if (!authToken) {
+        toast.error('Please log in to use text-to-speech', {
+          position: 'top',
+          duration: 4000
+        });
+        // Redirect to login page after a short delay
+        setTimeout(() => {
+          router.push({
+            name: 'login',
+            query: { redirect: route.fullPath }
+          });
+        }, 1500);
         return;
       }
 
-        // Initialize chat input for this item if not exists
-        if (!this.chatInputs[vocabId]) {
-          this.chatInputs[vocabId] = '';
-        }
+      // No audio path available, use TTS API
+      // Get the item either from the parameter or by finding it in the vocabulary array
+      const currentItem = vocabItem || getCurrentItemFromEvent();
 
-      // Get the backend API URL
-      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-
-      // Query the AI for vocabulary explanation
-      axios.post(`${apiUrl}/api/v1/ai/vocabulary/explain`, null, {
-        params: {
-          term: vocabItem.term || '',
-          pronunciation: vocabItem.pronunciation || '',
-          meaning: vocabItem.meaning || '',
-          topicName: vocabItem.topicName || '',
-          example: vocabItem.example || ''
-        }
-      })
-      .then(response => {
-        // Store the AI response for this vocabulary
-        const vocabIndex = this.vocabulary.findIndex(item => item.vocabId === vocabId);
-        if (vocabIndex !== -1) {
-          let data = response.data;
-          // If data is a string, try to parse it as JSON
-          if (typeof data === 'string') {
-            try {
-              // Clean string by removing markdown code blocks if present
-              const cleanedString = data
-                .replace(/```json/g, '')
-                .replace(/```/g, '')
-                .trim();
-
-              data = JSON.parse(cleanedString);
-            } catch (error) {
-              console.error('Failed to parse response as JSON:', error);
-              // If parsing fails, create a fallback object
-              data = {
-                explanation: data, // Use the raw string as explanation
-                examples: []
-              };
-            }
-          }
-
-          // Add AI response data to the vocabulary item
-          this.vocabulary[vocabIndex].aiExplanation = data.explanation;
-          this.vocabulary[vocabIndex].aiExamples = data.examples || [];
-
-          // Initialize the displayed text as empty
-          this.displayedText[vocabId] = '';
-
-          // Add to visible chatGPT items
-          this.chatGPTItems.push(vocabId);
-
-          // Start the typing animation
-          this.animateTyping(vocabId, data.explanation);
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching AI explanation:', error);
-        const toast = useToast();
-        toast.error('Failed to fetch AI explanation', {
+      if (!currentItem) {
+        toast.warning('Could not identify vocabulary item', {
           position: 'top',
           duration: 3000
         });
-      })
-      .finally(() => {
-        this.loadingChatGPT = null;
-      });
-    }
-  }
+        return;
+      }
 
-  animateTyping(vocabId: string, text: string) {
-    this.typingInProgress = vocabId;
-    let currentIndex = 0;
-    this.displayedText[vocabId] = '';
+      // Determine which text to use for speech
+      let textToSpeak = '';
 
-    const typeNextChar = () => {
-      if (currentIndex < text.length) {
-        this.displayedText[vocabId] += text.charAt(currentIndex);
-        currentIndex++;
-        setTimeout(typeNextChar, this.typingSpeed);
+      if (isExampleSentence && currentItem.example) {
+        // Use example sentence if requested and available
+        textToSpeak = currentItem.example;
       } else {
-        // Start animating examples after main text is complete
-        const vocabItem = this.vocabulary.find(item => item.vocabId === vocabId);
-        if (vocabItem?.aiExamples && vocabItem.aiExamples.length > 0) {
-          this.typingExamples[vocabId] = 0;
-          this.animateExamples(vocabId, vocabItem.aiExamples);
-        } else {
-          this.typingInProgress = null;
-        }
+        // Use term for vocabulary pronunciation
+        textToSpeak = currentItem.term;
       }
-    };
 
-    typeNextChar();
-  }
-
-  animateExamples(vocabId: string, examples: any[]) {
-    if (!examples || examples.length === 0 || this.typingExamples[vocabId] >= examples.length) {
-      this.typingExamples[vocabId] = -1; // All examples are displayed
-      this.typingInProgress = null;
-      return;
-    }
-
-    const currentExampleIndex = this.typingExamples[vocabId];
-    const example = examples[currentExampleIndex] as AnimatedExample;
-
-    // Animate Japanese text first
-    this.animateExampleText(vocabId, 'japanese', example.japanese, () => {
-      // Then animate Vietnamese text
-      this.animateExampleText(vocabId, 'vietnamese', example.vietnamese, () => {
-        // Move to next example
-        this.typingExamples[vocabId]++;
-        setTimeout(() => {
-          this.animateExamples(vocabId, examples);
-        }, 300); // Pause between examples
+      // Show loading indicator
+      toast.info('Generating audio...', {
+        position: 'top',
+        duration: 2000
       });
-    });
-  }
 
-  animateExampleText(vocabId: string, field: string, text: string, callback: () => void) {
-    let currentIndex = 0;
-    const exampleIndex = this.typingExamples[vocabId];
-
-    // Initialize the example text if needed
-    const vocabIndex = this.vocabulary.findIndex(item => item.vocabId === vocabId);
-    if (vocabIndex !== -1 && this.vocabulary[vocabIndex].aiExamples) {
-      const example = this.vocabulary[vocabIndex].aiExamples[exampleIndex] as any;
-      if (!example[field + 'Displayed']) {
-        example[field + 'Displayed'] = '';
-      }
-    }
-
-    const typeNextChar = () => {
-      if (currentIndex < text.length) {
-        const vocabIndex = this.vocabulary.findIndex(item => item.vocabId === vocabId);
-        if (vocabIndex !== -1 && this.vocabulary[vocabIndex].aiExamples) {
-          const example = this.vocabulary[vocabIndex].aiExamples[exampleIndex] as any;
-          example[field + 'Displayed'] = text.substring(0, currentIndex + 1);
-        }
-        currentIndex++;
-        setTimeout(typeNextChar, this.typingSpeed);
-      } else {
-        callback();
-      }
-    };
-
-    typeNextChar();
-  }
-
-  async sendChatMessage(vocabId: string) {
-    if (!this.chatInputs[vocabId]) return;
-
-    const message = this.chatInputs[vocabId];
-    this.chatInputs[vocabId] = ''; // Clear input immediately for better UX
-
-    const vocabItem = this.vocabulary.find(item => item.vocabId === vocabId);
-    if (!vocabItem) {
-      console.error('Vocabulary item not found');
-      return;
-    }
-
-    // Create a local copy to maintain reactivity
-    const localMessageHistory = vocabItem.chatHistory || [];
-
-    // Add user message to history
-    localMessageHistory.push({
-      role: 'user',
-      content: message
-    });
-
-    // Update the vocabulary item with the new message
-    const vocabIndex = this.vocabulary.findIndex(item => item.vocabId === vocabId);
-    if (vocabIndex !== -1) {
-      // Ensure chatHistory exists and is an array
-      if (!this.vocabulary[vocabIndex].chatHistory) {
-        this.vocabulary[vocabIndex].chatHistory = [];
-      }
-      this.vocabulary[vocabIndex].chatHistory = [...localMessageHistory];
-    }
-
-    // Fetch AI response for the user message
-    try {
       // Get the backend API URL
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
-      const vocabWord = vocabItem.term || '';
+      // Set speed: 0.9 for vocabulary, 1.0 for example sentences
+      const speed = isExampleSentence ? 1.0 : 0.9;
 
-      const response = await axios.post(`${apiUrl}/api/v1/ai/vocabulary/chat`, null, {
-        params: {
-          vocabWord: vocabWord,
-          userMessage: message
-        }
+      // Call the TTS API with Authorization header
+      const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
+        headers: {
+          'Content-Type': 'text/plain; charset=UTF-8',
+          'Accept-Language': 'ja-JP',
+          'X-Speech-Speed': speed.toString(),
+          'X-Content-Language': 'ja',
+          'X-Content-Type': isExampleSentence ? 'example' : 'vocabulary',
+          'Authorization': `Bearer ${authToken}`,
+          'Accept': 'audio/mpeg'
+        },
+        responseType: 'arraybuffer'
       });
 
-      // Process the response data
-      let data = response.data;
-      // If data is a string, try to parse it as JSON
-      if (typeof data === 'string') {
-        try {
-          // Clean string by removing markdown code blocks if present
-          const cleanedString = data
-            .replace(/```json/g, '')
-            .replace(/```/g, '')
-            .trim();
+      // Convert response to blob and create audio URL
+      const audioBlob = new Blob([response.data], { type: 'audio/mpeg' });
+      const audioUrl = URL.createObjectURL(audioBlob);
 
-          data = JSON.parse(cleanedString);
-        } catch (error) {
-          console.error('Failed to parse chat response as JSON:', error);
-          // If parsing fails, create a fallback object with raw string as message
-          data = {
-            message: data
-          };
+      // Play the audio
+      const audio = new Audio(audioUrl);
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        if (isExampleSentence) {
+          playingExampleAudioId.value = null;
+        } else {
+          playingAudioId.value = null;
         }
-      }
+      };
 
-      // Add AI response to chat history
-      if (vocabIndex !== -1) {
-        // Ensure chatHistory exists and is an array
-        if (!this.vocabulary[vocabIndex].chatHistory) {
-          this.vocabulary[vocabIndex].chatHistory = [];
-        }
+      await audio.play();
+    }
+  } catch (error) {
+    console.error('Error generating or playing TTS audio:', error);
 
-        // Use the message from the parsed data, or a fallback message
-        const responseMessage = data && data.message
-          ? data.message
-          : "I'm sorry, I don't have a specific response for that. Could you try asking something else?";
-
-        // Add empty response message first (for typing animation)
-        const aiMessageIndex = this.vocabulary[vocabIndex].chatHistory!.length;
-        this.vocabulary[vocabIndex].chatHistory!.push({
-          role: 'assistant',
-          content: '' // Empty content initially
-        });
-
-        // Start typing animation for the response
-        this.animateTypingChatResponse(vocabId, responseMessage, vocabIndex, aiMessageIndex);
-      }
-    } catch (error) {
-      console.error('Error sending chat message:', error);
-
-      const toast = useToast();
-      toast.error('Failed to get AI response', {
+    // Special handling for 401 errors to prevent logout
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      toast.error('TTS service requires authentication. Please log in again when convenient.', {
         position: 'top',
         duration: 3000
       });
-
-      // Add error message to chat history
-      if (vocabIndex !== -1) {
-        // Ensure chatHistory exists and is an array
-        if (!this.vocabulary[vocabIndex].chatHistory) {
-          this.vocabulary[vocabIndex].chatHistory = [];
+    } else {
+      toast.error(error instanceof Error ? error.message : 'Failed to generate speech', {
+        position: 'top',
+        duration: 3000
+      });
+    }
+  } finally {
+    // Reset loading state if no audio was played (in case of error)
+    // For successful audio playback, the onended event will handle this
+    if (!audioPath) {
+      setTimeout(() => {
+        if (isExampleSentence) {
+          playingExampleAudioId.value = null;
+        } else {
+          playingAudioId.value = null;
         }
-        this.vocabulary[vocabIndex].chatHistory!.push({
-          role: 'assistant',
-          content: 'Sorry, I encountered an error processing your request. Please try again.'
-        });
+      }, 3000);
+    } else {
+      if (isExampleSentence) {
+        playingExampleAudioId.value = null;
+      } else {
+        playingAudioId.value = null;
       }
     }
   }
+}
 
-  animateTypingChatResponse(vocabId: string, text: string, vocabIndex: number, messageIndex: number) {
-    this.typingInProgress = vocabId;
-    let currentIndex = 0;
+// Helper method to get current item from event context
+const getCurrentItemFromEvent = (): VocabularyItem | null => {
+  // This relies on the event coming from a button inside a list item
+  // The list item has the vocab ID
+  const button = event?.target as HTMLElement;
+  const listItem = button?.closest('.vocabulary-item');
+  const vocabId = listItem?.getAttribute('data-vocab-id');
 
-    const typeNextChar = () => {
-      if (currentIndex < text.length) {
-        if (this.vocabulary[vocabIndex]?.chatHistory &&
-            this.vocabulary[vocabIndex].chatHistory![messageIndex]) {
-          this.vocabulary[vocabIndex].chatHistory![messageIndex].content =
-            text.substring(0, currentIndex + 1);
-        }
-        currentIndex++;
-        setTimeout(typeNextChar, this.typingSpeed);
-      } else {
-        this.typingInProgress = null;
+  if (vocabId) {
+    return vocabulary.value.find(item => item.vocabId === vocabId) || null;
+  }
+
+  return null;
+}
+
+const viewDetails = (item: VocabularyItem) => {
+  router.push({
+    name: 'vocabularyDetail',
+    params: {
+      term: encodeURIComponent(item.term)
+    }
+  });
+}
+
+const openAddDialog = () => {
+  // To be implemented - open dialog to add new vocabulary
+  // This is a placeholder for future functionality
+}
+
+const toggleChatGPT = (vocabId: string) => {
+  const index = chatGPTItems.value.indexOf(vocabId);
+
+  if (index >= 0) {
+    // If already open, close it
+    chatGPTItems.value.splice(index, 1);
+  } else {
+    // Start loading state
+    loadingChatGPT.value = vocabId;
+
+    // Find the vocabulary item by ID
+    const vocabItem = vocabulary.value.find(item => item.vocabId === vocabId);
+
+    if (!vocabItem) {
+      console.error('Vocabulary item not found');
+      loadingChatGPT.value = null;
+      return;
+    }
+
+    // Initialize chat input for this item if not exists
+    if (!chatInputs.value[vocabId]) {
+      chatInputs.value[vocabId] = '';
+    }
+
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+    // Query the AI for vocabulary explanation
+    axios.post(`${apiUrl}/api/v1/ai/vocabulary/explain`, null, {
+      params: {
+        term: vocabItem.term || '',
+        pronunciation: vocabItem.pronunciation || '',
+        meaning: vocabItem.meaning || '',
+        topicName: vocabItem.topicName || '',
+        example: vocabItem.example || ''
       }
-    };
+    })
+    .then(response => {
+      // Store the AI response for this vocabulary
+      const vocabIndex = vocabulary.value.findIndex(item => item.vocabId === vocabId);
+      if (vocabIndex !== -1) {
+        let data = response.data;
+        // If data is a string, try to parse it as JSON
+        if (typeof data === 'string') {
+          try {
+            // Clean string by removing markdown code blocks if present
+            const cleanedString = data
+              .replace(/```json/g, '')
+              .replace(/```/g, '')
+              .trim();
 
-    typeNextChar();
-  }
+            data = JSON.parse(cleanedString);
+          } catch (error) {
+            console.error('Failed to parse response as JSON:', error);
+            // If parsing fails, create a fallback object
+            data = {
+              explanation: data, // Use the raw string as explanation
+              examples: []
+            };
+          }
+        }
 
-  // Helper method to safely access example display properties
-  getExampleProperty(example: any, property: string): string {
-    return example && example[property] ? example[property] : '';
-  }
+        // Add AI response data to the vocabulary item
+        vocabulary.value[vocabIndex].aiExplanation = data.explanation;
+        vocabulary.value[vocabIndex].aiExamples = data.examples || [];
 
-  // Check if example has complete Japanese text
-  isJapaneseComplete(example: any): boolean {
-    return example &&
-           example.japaneseDisplayed &&
-           example.japanese &&
-           example.japaneseDisplayed.length === example.japanese.length;
-  }
+        // Initialize the displayed text as empty
+        displayedText.value[vocabId] = '';
 
-  // Check if Vietnamese display has started
-  hasVietnameseStarted(example: any): boolean {
-    return example && example.vietnameseDisplayed ? true : false;
+        // Add to visible chatGPT items
+        chatGPTItems.value.push(vocabId);
+
+        // Start the typing animation
+        animateTyping(vocabId, data.explanation);
+      }
+    })
+    .catch(error => {
+      console.error('Error fetching AI explanation:', error);
+      toast.error('Failed to fetch AI explanation', {
+        position: 'top',
+        duration: 3000
+      });
+    })
+    .finally(() => {
+      loadingChatGPT.value = null;
+    });
   }
 }
+
+const animateTyping = (vocabId: string, text: string) => {
+  typingInProgress.value = vocabId;
+  let currentIndex = 0;
+  displayedText.value[vocabId] = '';
+
+  const typeNextChar = () => {
+    if (currentIndex < text.length) {
+      displayedText.value[vocabId] += text.charAt(currentIndex);
+      currentIndex++;
+      setTimeout(typeNextChar, typingSpeed.value);
+    } else {
+      // Start animating examples after main text is complete
+      const vocabItem = vocabulary.value.find(item => item.vocabId === vocabId);
+      if (vocabItem?.aiExamples && vocabItem.aiExamples.length > 0) {
+        typingExamples.value[vocabId] = 0;
+        animateExamples(vocabId, vocabItem.aiExamples);
+      } else {
+        typingInProgress.value = null;
+      }
+    }
+  };
+
+  typeNextChar();
+}
+
+const animateExamples = (vocabId: string, examples: any[]) => {
+  if (!examples || examples.length === 0 || typingExamples.value[vocabId] >= examples.length) {
+    typingExamples.value[vocabId] = -1; // All examples are displayed
+    typingInProgress.value = null;
+    return;
+  }
+
+  const currentExampleIndex = typingExamples.value[vocabId];
+  const example = examples[currentExampleIndex] as AnimatedExample;
+
+  // Animate Japanese text first
+  animateExampleText(vocabId, 'japanese', example.japanese, () => {
+    // Then animate Vietnamese text
+    animateExampleText(vocabId, 'vietnamese', example.vietnamese, () => {
+      // Move to next example
+      typingExamples.value[vocabId]++;
+      setTimeout(() => {
+        animateExamples(vocabId, examples);
+      }, 300); // Pause between examples
+    });
+  });
+}
+
+const animateExampleText = (vocabId: string, field: string, text: string, callback: () => void) => {
+  let currentIndex = 0;
+  const exampleIndex = typingExamples.value[vocabId];
+
+  // Initialize the example text if needed
+  const vocabIndex = vocabulary.value.findIndex(item => item.vocabId === vocabId);
+  if (vocabIndex !== -1 && vocabulary.value[vocabIndex].aiExamples) {
+    const example = vocabulary.value[vocabIndex].aiExamples[exampleIndex] as any;
+    if (!example[field + 'Displayed']) {
+      example[field + 'Displayed'] = '';
+    }
+  }
+
+  const typeNextChar = () => {
+    if (currentIndex < text.length) {
+      const vocabIndex = vocabulary.value.findIndex(item => item.vocabId === vocabId);
+      if (vocabIndex !== -1 && vocabulary.value[vocabIndex].aiExamples) {
+        const example = vocabulary.value[vocabIndex].aiExamples[exampleIndex] as any;
+        example[field + 'Displayed'] = text.substring(0, currentIndex + 1);
+      }
+      currentIndex++;
+      setTimeout(typeNextChar, typingSpeed.value);
+    } else {
+      callback();
+    }
+  };
+
+  typeNextChar();
+}
+
+const sendChatMessage = async (vocabId: string) => {
+  if (!chatInputs.value[vocabId]) return;
+
+  const message = chatInputs.value[vocabId];
+  chatInputs.value[vocabId] = ''; // Clear input immediately for better UX
+
+  const vocabItem = vocabulary.value.find(item => item.vocabId === vocabId);
+  if (!vocabItem) {
+    console.error('Vocabulary item not found');
+    return;
+  }
+
+  // Create a local copy to maintain reactivity
+  const localMessageHistory = vocabItem.chatHistory || [];
+
+  // Add user message to history
+  localMessageHistory.push({
+    role: 'user',
+    content: message
+  });
+
+  // Update the vocabulary item with the new message
+  const vocabIndex = vocabulary.value.findIndex(item => item.vocabId === vocabId);
+  if (vocabIndex !== -1) {
+    // Ensure chatHistory exists and is an array
+    if (!vocabulary.value[vocabIndex].chatHistory) {
+      vocabulary.value[vocabIndex].chatHistory = [];
+    }
+    vocabulary.value[vocabIndex].chatHistory = [...localMessageHistory];
+  }
+
+  // Fetch AI response for the user message
+  try {
+    // Get the backend API URL
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+
+    const vocabWord = vocabItem.term || '';
+
+    const response = await axios.post(`${apiUrl}/api/v1/ai/vocabulary/chat`, null, {
+      params: {
+        vocabWord: vocabWord,
+        userMessage: message
+      }
+    });
+
+    // Process the response data
+    let data = response.data;
+    // If data is a string, try to parse it as JSON
+    if (typeof data === 'string') {
+      try {
+        // Clean string by removing markdown code blocks if present
+        const cleanedString = data
+          .replace(/```json/g, '')
+          .replace(/```/g, '')
+          .trim();
+
+        data = JSON.parse(cleanedString);
+      } catch (error) {
+        console.error('Failed to parse chat response as JSON:', error);
+        // If parsing fails, create a fallback object with raw string as message
+        data = {
+          message: data
+        };
+      }
+    }
+
+    // Add AI response to chat history
+    if (vocabIndex !== -1) {
+      // Ensure chatHistory exists and is an array
+      if (!vocabulary.value[vocabIndex].chatHistory) {
+        vocabulary.value[vocabIndex].chatHistory = [];
+      }
+
+      // Use the message from the parsed data, or a fallback message
+      const responseMessage = data && data.message
+        ? data.message
+        : "I'm sorry, I don't have a specific response for that. Could you try asking something else?";
+
+      // Add empty response message first (for typing animation)
+      const aiMessageIndex = vocabulary.value[vocabIndex].chatHistory!.length;
+      vocabulary.value[vocabIndex].chatHistory!.push({
+        role: 'assistant',
+        content: '' // Empty content initially
+      });
+
+      // Start typing animation for the response
+      animateTypingChatResponse(vocabId, responseMessage, vocabIndex, aiMessageIndex);
+    }
+  } catch (error) {
+    console.error('Error sending chat message:', error);
+
+    toast.error('Failed to get AI response', {
+      position: 'top',
+      duration: 3000
+    });
+
+    // Add error message to chat history
+    if (vocabIndex !== -1) {
+      // Ensure chatHistory exists and is an array
+      if (!vocabulary.value[vocabIndex].chatHistory) {
+        vocabulary.value[vocabIndex].chatHistory = [];
+      }
+      vocabulary.value[vocabIndex].chatHistory!.push({
+        role: 'assistant',
+        content: 'Sorry, I encountered an error processing your request. Please try again.'
+      });
+    }
+  }
+}
+
+const animateTypingChatResponse = (vocabId: string, text: string, vocabIndex: number, messageIndex: number) => {
+  typingInProgress.value = vocabId;
+  let currentIndex = 0;
+
+  const typeNextChar = () => {
+    if (currentIndex < text.length) {
+      if (vocabulary.value[vocabIndex]?.chatHistory &&
+          vocabulary.value[vocabIndex].chatHistory![messageIndex]) {
+        vocabulary.value[vocabIndex].chatHistory![messageIndex].content =
+          text.substring(0, currentIndex + 1);
+      }
+      currentIndex++;
+      setTimeout(typeNextChar, typingSpeed.value);
+    } else {
+      typingInProgress.value = null;
+    }
+  };
+
+  typeNextChar();
+}
+
+// Helper method to safely access example display properties
+const getExampleProperty = (example: any, property: string): string => {
+  return example && example[property] ? example[property] : '';
+}
+
+// Check if example has complete Japanese text
+const isJapaneseComplete = (example: any): boolean => {
+  return example &&
+         example.japaneseDisplayed &&
+         example.japanese &&
+         example.japaneseDisplayed.length === example.japanese.length;
+}
+
+// Check if Vietnamese display has started
+const hasVietnameseStarted = (example: any): boolean => {
+  return example && example.vietnameseDisplayed ? true : false;
+}
+
+// Lifecycle hooks
+onMounted(async () => {
+  await fetchVocabulary();
+  await fetchTopics();
+})
 </script>
 
 <style lang="sass" scoped>
@@ -1146,6 +1146,7 @@ export default class VocabularyView extends Vue {
 .vocabulary-card
   border-radius: 8px
   overflow: hidden
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06)
 
 .custom-vocabulary-list
   padding: 0
@@ -1153,6 +1154,32 @@ export default class VocabularyView extends Vue {
 .custom-header
   background-color: #f0f4f8
   border-bottom: 1px solid rgba(0, 0, 0, 0.12)
+  position: sticky
+  top: 0
+  z-index: 2
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05)
+
+.custom-header .d-flex > div:nth-child(1)
+  min-width: 95px
+  width: 95px
+
+.custom-header .d-flex > div:nth-child(2)
+  min-width: 450px
+  width: 450px
+  text-align: left
+  justify-content: flex-start
+
+.custom-header .d-flex > div:nth-child(3)
+  min-width: 200px
+  width: 200px
+
+.custom-header .d-flex > div:nth-child(4)
+  min-width: 150px
+  width: 150px
+
+.custom-header .d-flex > div:nth-child(5)
+  min-width: 220px
+  flex-grow: 1
 
 .header-cell
   text-align: center
@@ -1165,6 +1192,7 @@ export default class VocabularyView extends Vue {
   text-transform: uppercase
   font-size: 0.8rem
   letter-spacing: 0.5px
+  height: 48px
 
 .column-border
   border-right: 1px solid rgba(0, 0, 0, 0.08)
@@ -1172,21 +1200,45 @@ export default class VocabularyView extends Vue {
     border-right: none
 
 .content-cell
-  padding: 2px 8px
+  padding: 4px 8px
   overflow: hidden
+  display: flex
+  align-items: center
+  justify-content: center
+
+.vocabulary-row
+  display: flex
+  align-items: stretch
+  padding: 8px 16px
+  min-height: 62px
+  width: 100%
+  transition: background-color 0.15s ease
 
 .vocabulary-cell
-  padding: 2px 12px
+  padding: 4px 12px
   min-height: 60px
   display: flex
   flex-direction: column
   justify-content: center
+  align-items: flex-start
+  width: 100%
 
-.text-wrap
-  word-break: break-word
-  white-space: normal
-  overflow-wrap: break-word
-  max-width: 100%
+  .text-wrap
+    max-width: 430px
+    width: 100%
+
+  .meaning-text
+    font-style: italic
+    color: rgba(0, 0, 0, 0.6)
+    margin-top: 4px
+    max-width: 430px
+    width: 100%
+    white-space: normal
+    overflow: hidden
+    text-overflow: ellipsis
+    display: -webkit-box
+    -webkit-line-clamp: 2
+    -webkit-box-orient: vertical
 
 .vocabulary-item
   padding: 0
@@ -1195,12 +1247,13 @@ export default class VocabularyView extends Vue {
   transition: background-color 0.2s ease
 
   &:hover
-    background-color: rgba(0, 0, 0, 0.02)
+    background-color: rgba(0, 0, 0, 0.03)
 
-.vocabulary-row
-  padding: 8px 16px
-  min-height: 54px
-  width: 100%
+  &:nth-child(even)
+    background-color: rgba(240, 244, 248, 0.4)
+
+    &:hover
+      background-color: rgba(240, 244, 248, 0.6)
 
 .japanese-text
   font-family: 'Noto Sans JP', sans-serif
@@ -1213,45 +1266,88 @@ export default class VocabularyView extends Vue {
   color: rgba(0, 0, 0, 0.85)
   font-weight: 600
 
-.meaning-text
-  font-style: italic
-  color: rgba(0, 0, 0, 0.6)
-
 .expanded-content
   background-color: #f8fafd
   border-top: 1px dashed rgba(0, 0, 0, 0.08)
   padding: 6px 16px
+  margin-top: 4px
+  border-radius: 0 0 8px 8px
+  transition: all 0.3s ease
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.03)
 
 .example-sentence
-  padding: 8px 10px
-  background-color: rgba(0, 0, 0, 0.02)
-  border-radius: 6px
+  padding: 12px 14px
+  background-color: rgba(255, 255, 255, 0.7)
+  border-radius: 8px
   border-left: 3px solid rgba(0, 0, 0, 0.1)
   font-style: italic
-  margin: 6px 0
+  margin: 8px 0
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05)
 
 .example-translation
   color: rgba(0, 0, 0, 0.6)
   font-style: italic
+  margin-top: 4px
 
 .level-chip
   min-width: 40px
   font-size: 0.75rem
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1)
+  font-weight: 600
+  letter-spacing: 0.2px
 
 .category-chip
   font-size: 0.65rem
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05)
+  letter-spacing: 0.2px
+  padding: 0 6px
+
+// Adjust JLPT color opacity for better visual
+:deep(.v-chip)
+  &.v-theme--light.red
+    background-color: rgba(244, 67, 54, 0.85) !important
+
+  &.v-theme--light.orange
+    background-color: rgba(255, 152, 0, 0.85) !important
+
+  &.v-theme--light.amber
+    background-color: rgba(255, 193, 7, 0.85) !important
+
+  &.v-theme--light.light-green
+    background-color: rgba(139, 195, 74, 0.85) !important
+
+  &.v-theme--light.green
+    background-color: rgba(76, 175, 80, 0.85) !important
 
 .action-btn
   opacity: 0.8
   transition: all 0.2s ease
+  border-radius: 50%
+  margin: 0 2px
 
   &:hover
     opacity: 1
     transform: scale(1.1)
+    background-color: rgba(0, 0, 0, 0.04)
+
+  &:active
+    transform: scale(0.95)
 
 .pagination-footer
   background-color: #f9fafc
   border-top: 1px solid rgba(0, 0, 0, 0.05)
+  padding: 12px 16px
+
+:deep(.v-pagination__item)
+  transition: all 0.2s ease
+  font-weight: 500
+
+:deep(.v-pagination__item--active)
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1)
+  transform: scale(1.05)
+
+:deep(.v-pagination__item:hover)
+  background-color: rgba(0, 0, 0, 0.05)
 
 .action-cell
   display: flex
@@ -1286,10 +1382,16 @@ export default class VocabularyView extends Vue {
   height: 28px
   opacity: 0.9
   transition: all 0.2s ease
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1)
 
   &:hover
     opacity: 1
     transform: scale(1.05)
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15)
+
+  &:active
+    transform: scale(0.98)
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1)
 
 .additional-info
   display: flex
@@ -1301,7 +1403,7 @@ export default class VocabularyView extends Vue {
 
 // Japanese text styling similar to Jisho
 .japanese-text
-  font-size: 1.2rem
+  font-size: 1rem
   line-height: 1.6
 
 // Example sentence styling
@@ -1332,4 +1434,52 @@ export default class VocabularyView extends Vue {
     opacity: 1
   50%
     opacity: 0
+
+.text-wrap
+  word-break: break-word
+  white-space: normal
+  overflow-wrap: break-word
+  max-width: 100%
+
+// Level cell specific styles
+.vocabulary-row > div:nth-child(1)
+  width: 95px
+  justify-content: center
+  min-width: 95px
+
+// Vocabulary term cell specific styles
+.vocabulary-row > div:nth-child(2)
+  width: 450px
+  justify-content: flex-start
+  min-width: 450px
+
+// Pronunciation cell specific styles
+.vocabulary-row > div:nth-child(3)
+  width: 200px
+  justify-content: center
+  min-width: 200px
+
+// Topic cell specific styles
+.vocabulary-row > div:nth-child(4)
+  width: 150px
+  justify-content: center
+  min-width: 150px
+
+// Action cell specific styles
+.vocabulary-row > div:nth-child(5)
+  flex-grow: 1
+  justify-content: center
+  min-width: 220px
+
+// Cải thiện hiển thị của bảng và hàng
+.custom-vocabulary-list
+  margin: 0 !important
+  padding: 0 !important
+
+.v-list-item__content
+  padding: 0 !important
+
+.v-list-item
+  min-height: auto !important
+  padding: 0 !important
 </style>

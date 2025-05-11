@@ -114,7 +114,7 @@ const authRoutes = [
 // Routes học từ vựng
 const vocabularyRoutes = [
   {
-    path: `${PATH_PREFIX.LEARNING}/vocabulary`,
+    path: `${PATH_PREFIX.LEARNING}/vocabulary/all`,
     name: 'vocabulary',
     component: () => import('@/views/learning/vocabulary/VocabularyView.vue'),
     meta: {
@@ -150,7 +150,7 @@ const vocabularyRoutes = [
     }
   },
   {
-    path: `${PATH_PREFIX.LEARNING}/vocabulary/details/:id/:term`,
+    path: `${PATH_PREFIX.LEARNING}/vocabulary/details/:term`,
     name: 'vocabularyDetail',
     component: () => import('@/views/learning/vocabulary/VocabularyDetailView.vue'),
     meta: {

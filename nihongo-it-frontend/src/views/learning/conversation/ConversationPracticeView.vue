@@ -38,6 +38,18 @@
               </div>
             </div>
             <v-spacer></v-spacer>
+
+            <!-- Furigana Toggle Button -->
+            <v-switch
+              v-model="showFurigana"
+              label="Furigana"
+              color="primary"
+              hide-details
+              density="compact"
+              class="mini-switch mr-2"
+              inset
+            ></v-switch>
+
             <!-- <v-btn
               :icon="conversation.isSaved ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
               size="small"
@@ -112,7 +124,20 @@
                         <span v-else-if="line.speaker === 'user' && lineCompletionStatus[i] && lineAnalysisResults[i]">
                           <span v-html="formatJapaneseWithHighlights(line.japanese, lineAnalysisResults[i])"></span>
                         </span>
-                        <span v-else>{{ line.japanese }}</span>
+                        <span v-else-if="showFurigana && line.furiganaTokens && Array.isArray(line.furiganaTokens) && line.furiganaTokens.length > 0"
+                          :title="`Furigana available: ${JSON.stringify(line.furiganaTokens)}`"
+                          @click="console.log('Furigana tokens:', line.furiganaTokens)">
+                          <ruby v-for="(token, tokenIndex) in line.furiganaTokens" :key="`${i}-${tokenIndex}`" class="ruby-text">
+                            {{ token.text }}
+                            <rt v-if="token.reading && token.isKanji">{{ token.reading }}</rt>
+                          </ruby>
+                        </span>
+                        <span v-else>
+                          {{ line.japanese }}
+                          <small v-if="showFurigana" class="text-caption text-disabled ml-1">
+                            (no furigana)
+                          </small>
+                        </span>
                       </div>
                       <!-- Audio Button for all messages -->
                       <v-btn
@@ -249,11 +274,18 @@ import * as speechsdk from 'microsoft-cognitiveservices-speech-sdk'
 import speechRecognitionService from '@/services/SpeechRecognitionService'
 
 // Define types
+interface FuriganaToken {
+  text: string;
+  reading?: string;
+  isKanji: boolean;
+}
+
 interface ConversationLine {
   speaker: 'user' | 'bot';
   japanese: string;
   meaning: string;
   audioUrl?: string;
+  furiganaTokens?: FuriganaToken[];
 }
 
 interface Conversation {
@@ -306,6 +338,9 @@ const isSilent = ref(false)
 const silenceTimeout = ref<number | null>(null)
 const silenceDetectionDuration = 2000 //  giây im lặng sau khi nói sẽ tự động gửi
 const hasSpoken = ref(false) // Biến để theo dõi xem người dùng đã nói gì chưa
+
+// Thêm trạng thái cho Furigana
+const showFurigana = ref(true) // Mặc định hiển thị furigana
 
 // Audio stream
 let audioStream: MediaStream | null = null
@@ -642,7 +677,7 @@ const fetchConversationData = async () => {
       conversation.value.dialogue = sortedLines.map(line => ({
         speaker: line.speaker === 'user' ? 'user' : 'bot' as 'user' | 'bot',
         japanese: line.japaneseText || '',
-        meaning: line.vietnameseTranslation || ''
+        meaning: line.vietnameseTranslation || '',
       }));
     }
 
@@ -670,6 +705,9 @@ const fetchConversationData = async () => {
     if (dialogueLength > 0) {
       typeTextEffect(conversation.value.dialogue[0].japanese);
     }
+
+    // Lấy dữ liệu furigana cho các dòng hội thoại
+    await initializeFurigana();
 
   } catch (err) {
     console.error('Error fetching conversation data:', err);
@@ -909,7 +947,7 @@ const startRecording = async (index: number) => {
         duration: 2000
       });
 
-      // Đặt thời gian tối đa cho phiên ghi âm là 10 giây
+      // Đặt thời gian tối đa cho phiên ghi âm là 7 giây
       setTimeout(() => {
         if (isRecording.value && mediaRecorder.value && mediaRecorder.value.state === 'recording') {
           if (!hasSpoken.value) {
@@ -1388,6 +1426,113 @@ const isLineVisible = (index: number) => {
   return visibleLineIndices.value.includes(index);
 }
 
+// Fetch furigana for Japanese text
+const fetchFurigana = async (text: string): Promise<FuriganaToken[]> => {
+  try {
+    console.log('Fetching furigana for text:', text);
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+    console.log('API URL:', apiUrl);
+
+    // Thêm token xác thực nếu có
+    const authToken = authService.getToken();
+    const headers: any = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    // Gọi API với thêm header xác thực
+    const response = await axios.get(`${apiUrl}/api/v1/furigana`, {
+      params: { text },
+      headers
+    });
+
+    console.log('Furigana API response:', response.data);
+
+    // Chuyển đổi dữ liệu API nếu cần
+    if (Array.isArray(response.data)) {
+      return response.data as FuriganaToken[];
+    } else if (response.data.tokens) {
+      return response.data.tokens as FuriganaToken[];
+    } else {
+      // Fallback nếu API trả về định dạng khác
+      console.log('Using fallback furigana generation');
+      return generateFallbackFurigana(text);
+    }
+  } catch (error) {
+    console.error('Error generating furigana:', error);
+    // Return fallback formatting if API fails
+    console.log('API failed, using fallback furigana generation');
+    return generateFallbackFurigana(text);
+  }
+}
+
+// Khởi tạo furigana cho tất cả các dòng hội thoại
+const initializeFurigana = async () => {
+  if (!conversation.value || !conversation.value.dialogue) return;
+
+  console.log('Initializing furigana for conversation lines...');
+
+  for (let i = 0; i < conversation.value.dialogue.length; i++) {
+    const line = conversation.value.dialogue[i];
+    if (line.japanese) {
+      try {
+        console.log(`Fetching furigana for line ${i}: ${line.japanese}`);
+        const tokens = await fetchFurigana(line.japanese);
+        console.log(`Received furigana tokens:`, tokens);
+
+        // Cập nhật dòng hội thoại với dữ liệu furigana
+        // Sử dụng phương thức splice để thay đổi mảng gốc
+        const updatedLine = { ...line, furiganaTokens: tokens };
+        conversation.value.dialogue.splice(i, 1, updatedLine);
+      } catch (err) {
+        console.error(`Error initializing furigana for line ${i}:`, err);
+      }
+    }
+  }
+
+  console.log('Furigana initialization completed. Dialogue:', conversation.value.dialogue);
+}
+
+// Tạo dữ liệu furigana giả lập cho trường hợp API không hoạt động
+const generateFallbackFurigana = (text: string): FuriganaToken[] => {
+  // Danh sách các ký tự kanji phổ biến và cách đọc
+  const kanjiMap: Record<string, string> = {
+    '日': 'に', '本': 'ほん', '語': 'ご', '勉': 'べん', '強': 'きょう',
+    '私': 'わたし', '僕': 'ぼく', '食': 'た', '飲': 'の', '行': 'い',
+    '来': 'く', '帰': 'かえ', '見': 'み', '聞': 'き', '読': 'よ',
+    '書': 'か', '話': 'はな', '会': 'あ', '分': 'わ', '好': 'す',
+    '大': 'だい', '小': 'しょう', '新': 'しん', '古': 'ふる', '高': 'たか',
+    '安': 'やす', '長': 'なが', '短': 'みじか', '多': 'おお', '少': 'すく',
+    '友': 'とも', '達': 'たち', '人': 'ひと', '男': 'おとこ', '女': 'おんな',
+    '子': 'こ', '水': 'みず', '火': 'ひ', '風': 'かぜ', '雨': 'あめ'
+  };
+
+  // Tách mỗi ký tự trong text
+  const result: FuriganaToken[] = [];
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+
+    // Kiểm tra xem có phải là kanji không dựa vào unicode range
+    const isKanji = /[\u4e00-\u9faf\u3400-\u4dbf]/.test(char);
+
+    if (isKanji) {
+      result.push({
+        text: char,
+        reading: kanjiMap[char] || '', // Trả về reading nếu có trong map
+        isKanji: true
+      });
+    } else {
+      result.push({
+        text: char,
+        isKanji: false
+      });
+    }
+  }
+
+  return result;
+}
+
 onUnmounted(() => {
   // Clean up resources when component is destroyed
   if (isRecording.value) {
@@ -1433,6 +1578,33 @@ onUnmounted(() => {
         font-weight: 600;
         text-shadow: 0 0 1px rgba(76, 175, 80, 0.3);
       }
+    }
+
+    .ruby-text {
+      margin: 0 1px;
+      text-align: center;
+      position: relative;
+    }
+
+    ruby {
+      position: relative;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.8;
+    }
+
+    rt {
+      position: absolute;
+      top: -0.8em;
+      font-size: 0.55rem;
+      color: #2196F3;
+      font-weight: 400;
+      text-align: center;
+      line-height: 1;
+      white-space: nowrap;
+      letter-spacing: 0.05em;
+      opacity: 0.9;
     }
   }
 
@@ -1596,6 +1768,8 @@ onUnmounted(() => {
     z-index: 0;
     will-change: contents;
     contain: content;
+
+    padding-top: 12px !important;
   }
 
   .user-controls {
@@ -1620,6 +1794,20 @@ onUnmounted(() => {
     padding: 4px 8px;
     border-radius: 4px;
     margin-top: 4px;
+  }
+
+  .mini-switch {
+    margin-top: 0;
+    margin-bottom: 0;
+
+    :deep(.v-switch__track) {
+      opacity: 0.5;
+      transform: scale(0.75);
+    }
+
+    :deep(.v-switch__thumb) {
+      transform: scale(0.75);
+    }
   }
 }
 </style>

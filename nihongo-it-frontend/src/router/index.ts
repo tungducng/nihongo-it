@@ -98,12 +98,6 @@ const routes = [
     // No requiresAuth - publicly accessible for translations
   },
   {
-    path: '/kaiwa',
-    name: 'kaiwa',
-    component: () => import('@/views/learning/KaiwaView.vue'),
-    // No requiresAuth - publicly accessible for demo
-  },
-  {
     path: '/account/forgot-password',
     name: 'forgotPassword',
     component: () => import('@/views/auth/ForgotPasswordView.vue'),
@@ -200,6 +194,28 @@ const routes = [
     name: 'conversationPractice',
     component: () => import('../views/learning/conversation/ConversationPracticeView.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/admin/conversations',
+    name: 'admin-conversations',
+    component: () => import('@/views/admin/ConversationManagementView.vue'),
+    meta: {
+      title: 'Quản lý hội thoại',
+      requiresAuth: true,
+      requiresAdmin: true
+    }
+  },
+  {
+    path: '/admin/conversations/:id',
+    name: 'admin-conversation-detail',
+    component: () => import('@/views/admin/ConversationDetailView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
+  },
+  {
+    path: '/admin/conversations/:id/edit',
+    name: 'admin-conversation-edit',
+    component: () => import('@/views/admin/ConversationLinesEditView.vue'),
+    meta: { requiresAuth: true, requiresAdmin: true }
   }
 ]
 

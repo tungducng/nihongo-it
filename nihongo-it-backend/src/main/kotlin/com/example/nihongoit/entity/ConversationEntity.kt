@@ -9,46 +9,29 @@ import java.util.UUID
 data class ConversationEntity(
     @Id
     @GeneratedValue(generator = "UUID")
-    @Column(name = "conversation_id", updatable = false, nullable = false)
-    val conversationId: UUID? = null,
-
-    @Column(name = "title", nullable = false)
-    val title: String,
-
-    @Column(name = "description", columnDefinition = "text")
-    val description: String,
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "jlpt_level", nullable = false)
-    val jlptLevel: JlptLevel,
-
-    @Column(name = "it_context", nullable = false)
-    val itContext: String, // e.g., "Job Interview", "Code Review", "Team Meeting"
-
-    @Column(name = "main_vocabulary_theme")
-    val mainVocabularyTheme: String? = null,
-
-    @Column(name = "audio_url")
-    val audioUrl: String? = null,
-
-    @Column(name = "transcript_url")
-    val transcriptUrl: String? = null,
-
-    @Column(name = "scenario_setup", columnDefinition = "text")
-    val scenarioSetup: String,
-
-    @OneToMany(mappedBy = "conversation", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val lines: MutableList<ConversationLineEntity> = mutableListOf(),
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "created_by")
-    val createdBy: UserEntity,
-
-    @Column(name = "created_at")
-    val createdAt: LocalDateTime = LocalDateTime.now(),
-
-    @Column(name = "updated_at")
-    val updatedAt: LocalDateTime = LocalDateTime.now()
+    @Column(name = "conv_id", updatable = false, nullable = false)
+    val convId: UUID? = null,
+    
+    @Column(nullable = false)
+    var title: String,
+    
+    @Column(nullable = true, columnDefinition = "TEXT")
+    var description: String? = null,
+    
+    @Column(name = "jlpt_level", nullable = true)
+    var jlptLevel: String? = null,
+    
+    @Column(nullable = true)
+    var unit: Int? = null,
+    
+    @OneToMany(mappedBy = "conversation", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
+    var lines: MutableList<ConversationLineEntity> = mutableListOf(),
+    
+    @Column(name = "created_at", nullable = false)
+    var createdAt: LocalDateTime = LocalDateTime.now(),
+    
+    @Column(name = "updated_at", nullable = false)
+    var updatedAt: LocalDateTime = LocalDateTime.now()
 )
 
 

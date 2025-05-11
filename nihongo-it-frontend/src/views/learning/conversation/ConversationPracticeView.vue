@@ -327,35 +327,8 @@ const azureSpeechRegion = ref(import.meta.env.VITE_AZURE_SPEECH_REGION || '');
 const hasAzureSpeechConfig = computed(() => azureSpeechKey.value && azureSpeechRegion.value);
 const azureSpeechRecognizer = ref<speechsdk.SpeechRecognizer | null>(null);
 
-// Khởi tạo Azure Speech Recognition
-const initializeAzureSpeech = (): boolean => {
-  if (!hasAzureSpeechConfig.value) return false;
-
-  try {
-    const speechConfig = speechsdk.SpeechConfig.fromSubscription(
-      azureSpeechKey.value,
-      azureSpeechRegion.value
-    );
-    speechConfig.speechRecognitionLanguage = 'ja-JP';
-
-    // Thiết lập cấu hình âm thanh
-    const audioConfig = speechsdk.AudioConfig.fromDefaultMicrophoneInput();
-    azureSpeechRecognizer.value = new speechsdk.SpeechRecognizer(speechConfig, audioConfig);
-
-    // Xử lý sự kiện đang nhận dạng (cập nhật real-time)
-    azureSpeechRecognizer.value.recognizing = (_, e) => {
-      if (e.result.reason === speechsdk.ResultReason.RecognizingSpeech) {
-        interimText.value = e.result.text;
-        console.log('Azure recognizing:', e.result.text);
-      }
-    };
-
-    return true;
-  } catch (error) {
-    console.error('Error initializing Azure Speech Recognition:', error);
-    return false;
-  }
-};
+// Cập nhật biến để theo dõi trạng thái đang phát âm
+const isPlayingAudio = ref(false);
 
 // Computed
 const isConversationCompleted = computed(() => {
@@ -423,9 +396,11 @@ const toggleSave = () => {
 }
 
 const playAudio = async (line: ConversationLine) => {
-  if (!line.japanese) return;
+  if (!line.japanese || isPlayingAudio.value) return;
 
   try {
+    isPlayingAudio.value = true;
+
     // Verify authentication before proceeding
     const authToken = authService.getToken()
     if (!authToken) {
@@ -440,6 +415,7 @@ const playAudio = async (line: ConversationLine) => {
           query: { redirect: router.currentRoute.value.fullPath }
         })
       }, 1500)
+      isPlayingAudio.value = false;
       return
     }
 
@@ -486,6 +462,7 @@ const playAudio = async (line: ConversationLine) => {
         const audio = new Audio(audioUrl);
         audio.onended = () => {
           URL.revokeObjectURL(audioUrl);
+          isPlayingAudio.value = false;
         };
         await audio.play();
         return;
@@ -528,10 +505,12 @@ const playAudio = async (line: ConversationLine) => {
     const audio = new Audio(audioUrl)
     audio.onended = () => {
       URL.revokeObjectURL(audioUrl)
+      isPlayingAudio.value = false;
     }
     await audio.play()
   } catch (error) {
     console.error('Error generating or playing TTS audio:', error)
+    isPlayingAudio.value = false;
 
     // Special handling for 401 errors
     if (error instanceof AxiosError && error.response?.status === 401) {
@@ -963,6 +942,7 @@ const playRecordedAudio = (index: number) => {
   }
 }
 
+// Hàm markAsComplete cải tiến để tự động phát âm thanh của Nihongo IT khi hiển thị dòng tiếp theo
 const markAsComplete = (index: number) => {
   lineCompletionStatus.value[index] = true;
 
@@ -990,6 +970,15 @@ const markAsComplete = (index: number) => {
 
         // Cuộn xuống dòng mới nhất - không cần đợi animation kết thúc
         scrollToLatestMessage();
+
+        // Tự động phát âm thanh của Nihongo IT sau khi hiển thị
+        const nextLine = conversation.value?.dialogue[nextIndex];
+        if (nextLine && nextLine.speaker !== 'user') {
+          // Đợi một chút để hiệu ứng hiển thị hoàn tất
+          setTimeout(() => {
+            playAudio(nextLine);
+          }, 500);
+        }
 
         // Sau khi hiển thị dòng Nihongo IT, tiếp tục hiển thị dòng người dùng kế tiếp (nếu có)
         const nextUserIndex = nextIndex + 1;
@@ -1332,6 +1321,21 @@ const typeTextEffect = (text: string) => {
   // Sử dụng requestAnimationFrame để đồng bộ với refresh rate màn hình
   if (!text || text.length === 0) {
     isTyping.value = false;
+
+    // Kiểm tra dòng hiện tại - nếu là của Nihongo IT, phát âm thanh
+    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+    if (conversation.value && lastVisibleIndex < conversation.value.dialogue.length) {
+      const currentLine = conversation.value.dialogue[lastVisibleIndex];
+      if (currentLine.speaker !== 'user') {
+        // Đợi một chút sau khi typing kết thúc
+        setTimeout(() => {
+          if (!isPlayingAudio.value) {
+            playAudio(currentLine);
+          }
+        }, 200);
+      }
+    }
+
     return;
   }
 
@@ -1366,11 +1370,20 @@ const typeTextEffect = (text: string) => {
   } else {
     isTyping.value = false;
 
-    // Lấy dòng hiện tại đang typin
+    // Lấy dòng hiện tại đang typing
     const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
     if (!conversation.value || lastVisibleIndex >= conversation.value.dialogue.length) return;
 
     const currentLine = conversation.value.dialogue[lastVisibleIndex];
+
+    // Phát âm thanh ngay sau khi typing xong nếu là câu của Nihongo IT
+    if (currentLine.speaker !== 'user') {
+      setTimeout(() => {
+        if (!isPlayingAudio.value) {
+          playAudio(currentLine);
+        }
+      }, 200);
+    }
 
     // Chỉ hiển thị mờ dòng tiếp theo nếu là dòng của Nihongo IT
     const nextIndex = lastVisibleIndex + 1;
@@ -1424,6 +1437,14 @@ const startTypingNextLine = () => {
         typeTextEffect(nextLine.japanese);
         // Cuộn sau khi bắt đầu hiệu ứng typing nhưng không chờ hoàn thành
         scrollToLatestMessage();
+
+        // Nếu là câu của Nihongo IT, tự động phát âm thanh sau khi hiệu ứng typing hoàn tất
+        if (nextLine.speaker !== 'user') {
+          let typingDuration = nextLine.japanese.length * typeSpeed.value + 200;
+          setTimeout(() => {
+            playAudio(nextLine);
+          }, typingDuration);
+        }
       }, 50);
     });
   }

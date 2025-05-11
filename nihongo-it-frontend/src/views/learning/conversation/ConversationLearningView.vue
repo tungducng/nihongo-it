@@ -8,13 +8,47 @@
         <p>Tính năng này giúp bạn thực hành các cuộc hội thoại hằng ngày bằng tiếng Nhật. Chọn một cuộc hội thoại để bắt đầu luyện tập.</p>
       </v-alert>
 
-      <div class="conversation-list">
+      <!-- Loading Skeleton -->
+      <div v-if="loading">
+        <v-skeleton-loader
+          v-for="i in 3"
+          :key="i"
+          type="card, divider, list-item-avatar-two-line"
+          class="mb-4"
+        ></v-skeleton-loader>
+      </div>
+
+      <!-- Error Alert -->
+      <v-alert
+        v-else-if="error"
+        type="error"
+        variant="tonal"
+        class="mb-6"
+      >
+        {{ errorMessage }}
+        <v-btn class="mt-2" color="error" variant="text" @click="fetchConversations">
+          Thử lại
+        </v-btn>
+      </v-alert>
+
+      <!-- No Conversations Found -->
+      <v-alert
+        v-else-if="conversations.length === 0"
+        type="info"
+        variant="tonal"
+        class="mb-6"
+      >
+        Không tìm thấy cuộc hội thoại nào. Vui lòng quay lại sau.
+      </v-alert>
+
+      <!-- Conversation List -->
+      <div v-else class="conversation-list">
         <v-card
           v-for="conversation in conversations"
-          :key="conversation.id"
+          :key="conversation.conversationId"
           class="mb-4 conversation-card"
           variant="outlined"
-          @click="navigateToConversation(conversation.id)"
+          @click="navigateToConversation(conversation.conversationId)"
         >
           <v-card-item>
             <template v-slot:prepend>
@@ -36,12 +70,12 @@
           <v-card-text>
             <div class="d-flex align-center">
               <v-icon size="small" color="info" class="mr-2">mdi-message-text</v-icon>
-              <span class="text-body-2">{{ conversation.lineCount }} dòng hội thoại</span>
+              <span class="text-body-2">{{ getLineCount(conversation) }} dòng hội thoại</span>
 
               <v-spacer></v-spacer>
 
-              <v-chip label size="small" :color="conversation.difficulty === 'Dễ' ? 'success' : conversation.difficulty === 'Trung bình' ? 'warning' : 'error'">
-                {{ conversation.difficulty }}
+              <v-chip label size="small" :color="getDifficultyColor(conversation.jlptLevel)">
+                {{ getDifficultyText(conversation.jlptLevel) }}
               </v-chip>
             </div>
           </v-card-text>
@@ -57,73 +91,44 @@
           </v-card-actions>
         </v-card>
       </div>
+
+      <!-- Pagination -->
+      <div v-if="!loading && !error && totalPages > 1" class="d-flex justify-center mt-6">
+        <v-pagination
+          v-model="currentPage"
+          :length="totalPages"
+          @update:model-value="handlePageChange"
+          rounded
+        ></v-pagination>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import conversationService from '@/services/conversation.service'
+import type { Conversation, PagedResponse } from '@/services/conversation.service'
+import { useToast } from 'vue-toast-notification'
 
-// Router
+// Router and toast
 const router = useRouter()
+const toast = useToast()
 
-// Mock data
-interface ConversationPreview {
-  id: string;
-  title: string;
-  description: string;
-  jlptLevel: string;
-  lineCount: number;
-  difficulty: 'Dễ' | 'Trung bình' | 'Khó';
-}
-
-// Mock conversations
-const conversations = ref<ConversationPreview[]>([
-  {
-    id: '1',
-    title: 'Chào hỏi và giới thiệu bản thân',
-    description: 'Hội thoại cơ bản về giới thiệu bản thân trong tiếng Nhật',
-    jlptLevel: 'N5',
-    lineCount: 8,
-    difficulty: 'Dễ'
-  },
-  {
-    id: '2',
-    title: 'Tại nhà hàng',
-    description: 'Hội thoại khi đi ăn tại nhà hàng Nhật Bản',
-    jlptLevel: 'N5',
-    lineCount: 12,
-    difficulty: 'Dễ'
-  },
-  {
-    id: '3',
-    title: 'Hỏi đường',
-    description: 'Hội thoại khi cần hỏi đường trong thành phố',
-    jlptLevel: 'N4',
-    lineCount: 10,
-    difficulty: 'Trung bình'
-  },
-  {
-    id: '4',
-    title: 'Phỏng vấn xin việc',
-    description: 'Hội thoại khi tham gia phỏng vấn tuyển dụng bằng tiếng Nhật',
-    jlptLevel: 'N3',
-    lineCount: 14,
-    difficulty: 'Khó'
-  },
-  {
-    id: '5',
-    title: 'Đi mua sắm',
-    description: 'Hội thoại khi đi mua sắm tại cửa hàng quần áo',
-    jlptLevel: 'N4',
-    lineCount: 8,
-    difficulty: 'Trung bình'
-  }
-])
+// State variables
+const conversations = ref<Conversation[]>([])
+const loading = ref(true)
+const error = ref(false)
+const errorMessage = ref('Đã xảy ra lỗi khi tải dữ liệu hội thoại.')
+const currentPage = ref(1) // 1-based for v-pagination
+const totalPages = ref(0)
+const pageSize = ref(10)
 
 // Methods
-const getJlptColor = (level: string): string => {
+const getJlptColor = (level: string | undefined): string => {
+  if (!level) return 'grey'
+
   const colors: Record<string, string> = {
     'N1': 'red',
     'N2': 'orange',
@@ -134,12 +139,101 @@ const getJlptColor = (level: string): string => {
   return colors[level] || 'grey'
 }
 
-const navigateToConversation = (id: string) => {
+const getDifficultyText = (jlptLevel: string | undefined): string => {
+  if (!jlptLevel) return 'Không xác định'
+
+  const difficulties: Record<string, string> = {
+    'N1': 'Khó',
+    'N2': 'Khó',
+    'N3': 'Trung bình',
+    'N4': 'Trung bình',
+    'N5': 'Dễ'
+  }
+  return difficulties[jlptLevel] || 'Không xác định'
+}
+
+const getDifficultyColor = (jlptLevel: string | undefined): string => {
+  if (!jlptLevel) return 'grey'
+
+  const difficultyText = getDifficultyText(jlptLevel)
+  if (difficultyText === 'Dễ') return 'success'
+  if (difficultyText === 'Trung bình') return 'warning'
+  if (difficultyText === 'Khó') return 'error'
+  return 'grey'
+}
+
+const getLineCount = (conversation: Conversation): number => {
+  return conversation.lines?.length || 0
+}
+
+const navigateToConversation = (id: string | undefined) => {
+  if (!id) {
+    toast.error('ID cuộc hội thoại không hợp lệ', {
+      position: 'top',
+      duration: 3000
+    })
+    return
+  }
+
   router.push({
     name: 'conversationPractice',
     params: { id }
   })
 }
+
+const handlePageChange = (page: number) => {
+  currentPage.value = page
+  fetchConversations()
+}
+
+// Fetch conversations from API
+const fetchConversations = async () => {
+  loading.value = true
+  error.value = false
+
+  try {
+    // Chuyển đổi currentPage từ 1-based sang 0-based cho API
+    const apiPage = currentPage.value - 1
+
+    // Sử dụng API public thay vì API admin vì API public đã được triển khai
+    const response = await conversationService.getConversations(
+      apiPage,
+      pageSize.value,
+      '', // search
+      'title', // sortBy
+      'asc' // sortDir
+    )
+
+    // Lấy dữ liệu từ response
+    const data: PagedResponse<Conversation> = response.data
+
+    conversations.value = data.content
+    totalPages.value = data.totalPages
+
+    if (conversations.value.length === 0 && currentPage.value > 1) {
+      // Nếu trang hiện tại không có dữ liệu và không phải trang đầu tiên, quay lại trang trước
+      currentPage.value--
+      await fetchConversations()
+    }
+  } catch (err) {
+    console.error('Error fetching conversations:', err)
+    error.value = true
+    errorMessage.value = 'Đã xảy ra lỗi khi tải dữ liệu hội thoại. Vui lòng thử lại sau.'
+
+    // Show error toast
+    toast.error('Không thể tải danh sách hội thoại', {
+      position: 'top',
+      duration: 3000
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+// Initial data fetch
+onMounted(() => {
+  fetchConversations()
+})
 </script>
 
 <style scoped lang="scss">

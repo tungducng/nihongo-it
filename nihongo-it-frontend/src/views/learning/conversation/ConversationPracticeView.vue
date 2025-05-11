@@ -244,6 +244,7 @@ import { useToast } from 'vue-toast-notification'
 import { useAuthStore } from '@/stores'
 import axios, { AxiosError } from 'axios'
 import authService from '@/services/auth.service'
+import conversationService from '@/services/conversation.service'
 import * as speechsdk from 'microsoft-cognitiveservices-speech-sdk'
 import speechRecognitionService from '@/services/SpeechRecognitionService'
 
@@ -383,16 +384,34 @@ const getVietnameseFeedback = (score: number): string => {
   }
 }
 
-const toggleSave = () => {
-  if (!conversation.value) return;
+const toggleSave = async () => {
+  if (!conversation.value || !conversation.value.id) return;
 
-  // Toggle saved status (demo only)
-  conversation.value.isSaved = !conversation.value.isSaved;
-
-  toast.success(conversation.value.isSaved ? 'Đã lưu hội thoại' : 'Đã bỏ lưu hội thoại', {
-    position: 'top',
-    duration: 2000
-  });
+  try {
+    if (conversation.value.isSaved) {
+      // Bỏ lưu hội thoại
+      await conversationService.unsaveConversation(conversation.value.id);
+      conversation.value.isSaved = false;
+      toast.success('Đã bỏ lưu hội thoại', {
+        position: 'top',
+        duration: 2000
+      });
+    } else {
+      // Lưu hội thoại
+      await conversationService.saveConversation(conversation.value.id);
+      conversation.value.isSaved = true;
+      toast.success('Đã lưu hội thoại', {
+        position: 'top',
+        duration: 2000
+      });
+    }
+  } catch (error) {
+    console.error('Error toggling saved status:', error);
+    toast.error('Không thể thay đổi trạng thái lưu. Vui lòng thử lại sau.', {
+      position: 'top',
+      duration: 3000
+    });
+  }
 }
 
 const playAudio = async (line: ConversationLine) => {
@@ -556,66 +575,84 @@ const canInteractWith = (index: number): boolean => {
 // Khởi tạo Azure Speech trước thay vì mỗi lần ghi âm
 onMounted(() => {
   loading.value = true;
+  fetchConversationData();
 
-  // Demo data loading
-  setTimeout(() => {
-    // Mock conversation data
+  // Thêm watcher để tự động cuộn xuống khi có dòng mới
+  watch(visibleLineIndices, () => {
+    scrollToLatestMessage();
+  }, { deep: true });
+
+  // Khởi tạo Speech Recognition Service nếu có cấu hình
+  if (azureSpeechKey.value && azureSpeechRegion.value) {
+    speechRecognitionService.initialize(azureSpeechKey.value, azureSpeechRegion.value);
+    console.log('Speech Recognition Service initialized');
+  }
+})
+
+// Hàm lấy dữ liệu hội thoại từ API
+const fetchConversationData = async () => {
+  try {
+    const conversationId = route.params.id;
+    if (!conversationId) {
+      error.value = 'Không tìm thấy ID hội thoại trong URL';
+      loading.value = false;
+      return;
+    }
+
+    // Gọi API để lấy dữ liệu hội thoại
+    const response = await conversationService.getConversationById(conversationId as string);
+
+    // Kiểm tra dữ liệu hợp lệ
+    if (!response || !response.data) {
+      error.value = 'Không thể tải dữ liệu hội thoại';
+      loading.value = false;
+      return;
+    }
+
+    const conversationData = response.data;
+
+    // Chuyển đổi dữ liệu từ API sang định dạng sử dụng trong component
     conversation.value = {
-      id: '1',
-      title: 'Chào hỏi và giới thiệu bản thân',
-      description: 'Hội thoại cơ bản về giới thiệu bản thân trong tiếng Nhật',
-      jlptLevel: 'N5',
-      isSaved: false,
-      dialogue: [
-        {
-          speaker: 'bot',
-          japanese: 'こんにちは、はじめまして。',
-          meaning: 'Xin chào, rất vui được gặp bạn.'
-        },
-        {
-          speaker: 'user',
-          japanese: 'こんにちは、はじめまして。',
-          meaning: 'Xin chào, rất vui được gặp bạn.'
-        },
-        {
-          speaker: 'bot',
-          japanese: 'お名前は何ですか？',
-          meaning: 'Tên bạn là gì?'
-        },
-        {
-          speaker: 'user',
-          japanese: '私の名前は鈴木です。',
-          meaning: 'Tên tôi là ___.'
-        },
-        {
-          speaker: 'bot',
-          japanese: 'どうぞよろしくお願いします。',
-          meaning: 'Rất hân hạnh được gặp bạn.'
-        },
-        {
-          speaker: 'user',
-          japanese: 'どうぞよろしくお願いします。',
-          meaning: 'Rất hân hạnh được gặp bạn.'
-        },
-        {
-          speaker: 'bot',
-          japanese: 'ご出身はどちらですか？',
-          meaning: 'Bạn đến từ đâu?'
-        },
-        {
-          speaker: 'user',
-          japanese: 'ベトナムから来ました。',
-          meaning: 'Tôi đến từ Việt Nam.'
-        }
-      ]
+      id: conversationData.conversationId || '',
+      title: conversationData.title || '',
+      description: conversationData.description || '',
+      jlptLevel: conversationData.jlptLevel || '',
+      isSaved: false, // Mặc định là chưa lưu
+      dialogue: []
     };
 
+    // Kiểm tra trạng thái lưu của hội thoại
+    if (conversationData.conversationId) {
+      try {
+        const savedResponse = await conversationService.checkSavedConversation(conversationData.conversationId);
+        if (savedResponse && savedResponse.data) {
+          conversation.value.isSaved = savedResponse.data.saved;
+        }
+      } catch (error) {
+        console.error('Error checking saved status:', error);
+        // Không hiển thị thông báo lỗi cho người dùng vì đây không phải lỗi quan trọng
+      }
+    }
+
+    // Chuyển đổi lines từ API sang dialogue
+    if (conversationData.lines && Array.isArray(conversationData.lines)) {
+      // Sắp xếp các dòng theo orderIndex
+      const sortedLines = [...conversationData.lines].sort((a, b) => a.orderIndex - b.orderIndex);
+
+      conversation.value.dialogue = sortedLines.map(line => ({
+        speaker: line.speaker === 'user' ? 'user' : 'bot' as 'user' | 'bot',
+        japanese: line.japaneseText || '',
+        meaning: line.vietnameseTranslation || ''
+      }));
+    }
+
     // Initialize arrays based on dialogue length
-    recordedAudioUrls.value = new Array(conversation.value.dialogue.length).fill(null);
-    recordedAudioBlobs.value = new Array(conversation.value.dialogue.length).fill(null);
-    pronunciationScores.value = new Array(conversation.value.dialogue.length).fill(0);
-    lineCompletionStatus.value = new Array(conversation.value.dialogue.length).fill(false);
-    lineAnalysisResults.value = new Array(conversation.value.dialogue.length).fill(null);
+    const dialogueLength = conversation.value.dialogue.length;
+    recordedAudioUrls.value = new Array(dialogueLength).fill(null);
+    recordedAudioBlobs.value = new Array(dialogueLength).fill(null);
+    pronunciationScores.value = new Array(dialogueLength).fill(0);
+    lineCompletionStatus.value = new Array(dialogueLength).fill(false);
+    lineAnalysisResults.value = new Array(dialogueLength).fill(null);
 
     // Đặt lại visibleLineIndices
     visibleLineIndices.value = [0];
@@ -625,29 +662,22 @@ onMounted(() => {
     currentTypeIndex.value = 0;
 
     // Kiểm tra xem dòng thứ 2 có phải của Nihongo IT không để hiển thị mờ
-    if (conversation.value.dialogue.length > 1 && conversation.value.dialogue[1].speaker !== 'user') {
+    if (dialogueLength > 1 && conversation.value.dialogue[1].speaker !== 'user') {
       dimmedLineIndices.value.push(1);
     }
 
     // Bắt đầu hiệu ứng typing cho tin nhắn đầu tiên
-    if (conversation.value && conversation.value.dialogue.length > 0) {
+    if (dialogueLength > 0) {
       typeTextEffect(conversation.value.dialogue[0].japanese);
     }
 
-    // Thêm watcher để tự động cuộn xuống khi có dòng mới
-    watch(visibleLineIndices, () => {
-      scrollToLatestMessage();
-    }, { deep: true });
-
-    // Khởi tạo Speech Recognition Service nếu có cấu hình
-    if (azureSpeechKey.value && azureSpeechRegion.value) {
-      speechRecognitionService.initialize(azureSpeechKey.value, azureSpeechRegion.value);
-      console.log('Speech Recognition Service initialized');
-    }
-
+  } catch (err) {
+    console.error('Error fetching conversation data:', err);
+    error.value = 'Đã xảy ra lỗi khi tải dữ liệu hội thoại. Vui lòng thử lại sau.';
+  } finally {
     loading.value = false;
-  }, 1000);
-})
+  }
+};
 
 // Cập nhật hàm processRecording để kiểm tra lỗi nhận dạng giọng nói
 const processRecording = async (index: number) => {

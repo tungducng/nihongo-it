@@ -134,6 +134,30 @@ const conversationService = {
       { text: 'Nihongo IT', value: 'bot' },
       { text: 'Người dùng', value: 'user' }
     ];
+  },
+
+  // Lưu hội thoại vào danh sách của người dùng
+  saveConversation(conversationId: string): Promise<AxiosResponse<any>> {
+    return api.post(`/api/v1/user/saved-conversations/${conversationId}`);
+  },
+
+  // Bỏ lưu hội thoại
+  unsaveConversation(conversationId: string): Promise<AxiosResponse<any>> {
+    return api.delete(`/api/v1/user/saved-conversations/${conversationId}`);
+  },
+
+  // Kiểm tra hội thoại đã được lưu hay chưa
+  checkSavedConversation(conversationId: string): Promise<AxiosResponse<{ saved: boolean }>> {
+    return api.get(`/api/v1/user/saved-conversations/check/${conversationId}`);
+  },
+
+  // Lấy danh sách hội thoại đã lưu
+  getSavedConversations(page: number = 0, size: number = 10): Promise<AxiosResponse<PagedResponse<Conversation>>> {
+    const params = new URLSearchParams();
+    params.append('page', page.toString());
+    params.append('size', size.toString());
+
+    return api.get(`/api/v1/user/saved-conversations?${params.toString()}`);
   }
 };
 

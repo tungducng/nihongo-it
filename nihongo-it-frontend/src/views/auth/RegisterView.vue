@@ -104,7 +104,7 @@ import { reactive, ref } from 'vue'
 })
 export default class RegisterView extends Vue {
   private authStore = useAuthStore()
-  private $toast = useToast()
+  private toast = useToast()
 
   @Ref('form') readonly form!: any
 
@@ -186,7 +186,7 @@ export default class RegisterView extends Vue {
 
     if (errors.length > 0) {
       errors.forEach(error => {
-        this.$toast.error(error, {
+        this.toast.error(error, {
           position: 'top',
           duration: 3000
         })
@@ -205,20 +205,20 @@ export default class RegisterView extends Vue {
       const success = await this.authStore.register(this.formData)
 
       if (success) {
-        this.$toast.success('Registration successful! Please login.', {
+        this.toast.success('Registration successful! Please login.', {
           position: 'top',
           duration: 3000
         })
         this.$router.push({ name: 'login' })
       } else if (this.authStore.error) {
-        this.$toast.error(this.authStore.error, {
+        this.toast.error(this.authStore.error, {
           position: 'top',
           duration: 5000
         })
       }
     } catch (error) {
       console.error('Registration error:', error)
-      this.$toast.error('Registration failed. Please try again.', {
+      this.toast.error('Registration failed. Please try again.', {
         position: 'top',
         duration: 5000
       })

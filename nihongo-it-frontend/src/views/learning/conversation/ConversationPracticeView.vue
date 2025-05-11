@@ -119,7 +119,7 @@
                         icon
                         density="comfortable"
                         size="x-small"
-                        @click="playAudio(line, true)"
+                        @click="playAudio(line)"
                         color="info"
                         variant="text"
                         title="Nghe phát âm mẫu"
@@ -330,9 +330,6 @@ const azureSpeechRecognizer = ref<speechsdk.SpeechRecognizer | null>(null);
 // Cập nhật biến để theo dõi trạng thái đang phát âm
 const isPlayingAudio = ref(false);
 
-// Thêm biến để theo dõi việc phát âm thanh tự động đã xảy ra hay chưa
-const hasAutoPlayedAudio = ref(false);
-
 // Computed
 const isConversationCompleted = computed(() => {
   const userLines = conversation.value?.dialogue.filter(line => line.speaker === 'user') || [];
@@ -398,22 +395,11 @@ const toggleSave = () => {
   });
 }
 
-const playAudio = async (line: ConversationLine, forcePlay = false) => {
+const playAudio = async (line: ConversationLine) => {
   if (!line.japanese || isPlayingAudio.value) return;
-
-  // Nếu không phải là forcePlay (nghĩa là do người dùng nhấn nút), kiểm tra xem đã tự động phát audio chưa
-  if (!forcePlay && hasAutoPlayedAudio.value) {
-    // Đã tự động phát audio trước đó, không phát nữa để tránh phát lại nhiều lần
-    return;
-  }
 
   try {
     isPlayingAudio.value = true;
-
-    // Nếu là phát tự động, đánh dấu đã phát
-    if (!forcePlay) {
-      hasAutoPlayedAudio.value = true;
-    }
 
     // Verify authentication before proceeding
     const authToken = authService.getToken()
@@ -570,9 +556,6 @@ const canInteractWith = (index: number): boolean => {
 // Khởi tạo Azure Speech trước thay vì mỗi lần ghi âm
 onMounted(() => {
   loading.value = true;
-
-  // Reset cờ khi component được tạo
-  hasAutoPlayedAudio.value = false;
 
   // Demo data loading
   setTimeout(() => {
@@ -983,7 +966,7 @@ const markAsComplete = (index: number) => {
         if (nextLine && nextLine.speaker !== 'user') {
           // Đợi một chút để hiệu ứng hiển thị hoàn tất
           setTimeout(() => {
-            playAudio(nextLine, false);
+            playAudio(nextLine);
           }, 500);
         }
 
@@ -1048,8 +1031,39 @@ const formatJapaneseWithHighlights = (text: string, analysis: SpeechAnalysisResu
     return text;
   }
 
+  //
+
+  // Cách 2: Sử dụng transcription để tìm các phần phát âm được
+  if (analysis.transcription) {
+    // Thực hiện phân tích từng ký tự trong transcription và highlight
+    // vào văn bản gốc nếu tìm thấy ký tự trùng khớp
+    const transcribedChars = analysis.transcription
+      .replace(/\s+/g, '') // Loại bỏ khoảng trắng
+      .split('');
+
+    console.log("Transcribed chars:", transcribedChars);
+
+    if (transcribedChars.length > 0) {
+      let formattedText = '';
+      const originalChars = text.split('');
+
+      // Map mỗi ký tự trong văn bản gốc
+      originalChars.forEach(char => {
+        if (transcribedChars.includes(char)) {
+          // Ký tự này đã được phát âm
+          formattedText += `<span style="color: #4CAF50; font-weight: bold;">${char}</span>`;
+        } else {
+          // Ký tự này không được phát âm hoặc phát âm sai
+          formattedText += char;
+        }
+      });
+
+      return formattedText;
+    }
+  }
+
   // Cách 1: Dựa trên danh sách words từ API
-  if (analysis.words && analysis.words.length > 0) {
+  else if(analysis.words && analysis.words.length > 0) {
     // Tạo bản sao của chuỗi gốc
     let formattedText = text;
 
@@ -1076,35 +1090,6 @@ const formatJapaneseWithHighlights = (text: string, analysis: SpeechAnalysisResu
           formattedText = formattedText.replace(regex, `<span style="color: #4CAF50; font-weight: bold;">${word}</span>`);
         } catch (e) {
           console.error(`Error replacing word ${word}:`, e);
-        }
-      });
-
-      return formattedText;
-    }
-  }
-
-  // Cách 2: Sử dụng transcription để tìm các phần phát âm được
-  if (analysis.transcription) {
-    // Thực hiện phân tích từng ký tự trong transcription và highlight
-    // vào văn bản gốc nếu tìm thấy ký tự trùng khớp
-    const transcribedChars = analysis.transcription
-      .replace(/\s+/g, '') // Loại bỏ khoảng trắng
-      .split('');
-
-    console.log("Transcribed chars:", transcribedChars);
-
-    if (transcribedChars.length > 0) {
-      let formattedText = '';
-      const originalChars = text.split('');
-
-      // Map mỗi ký tự trong văn bản gốc
-      originalChars.forEach(char => {
-        if (transcribedChars.includes(char)) {
-          // Ký tự này đã được phát âm
-          formattedText += `<span style="color: #4CAF50; font-weight: bold;">${char}</span>`;
-        } else {
-          // Ký tự này không được phát âm hoặc phát âm sai
-          formattedText += char;
         }
       });
 
@@ -1177,6 +1162,7 @@ const scrollToLatestMessage = () => {
 
 // Hiệu ứng typing cải tiến cho văn bản
 const typeTextEffect = (text: string) => {
+  // Sử dụng requestAnimationFrame để đồng bộ với refresh rate màn hình
   if (!text || text.length === 0) {
     isTyping.value = false;
 
@@ -1188,7 +1174,7 @@ const typeTextEffect = (text: string) => {
         // Đợi một chút sau khi typing kết thúc
         setTimeout(() => {
           if (!isPlayingAudio.value) {
-            playAudio(currentLine, false);
+            playAudio(currentLine);
           }
         }, 200);
       }
@@ -1238,7 +1224,7 @@ const typeTextEffect = (text: string) => {
     if (currentLine.speaker !== 'user') {
   setTimeout(() => {
         if (!isPlayingAudio.value) {
-          playAudio(currentLine, false);
+          playAudio(currentLine);
         }
       }, 200);
     }
@@ -1300,7 +1286,7 @@ const startTypingNextLine = () => {
         if (nextLine.speaker !== 'user') {
           let typingDuration = nextLine.japanese.length * typeSpeed.value + 200;
           setTimeout(() => {
-            playAudio(nextLine, false);
+            playAudio(nextLine);
           }, typingDuration);
         }
       }, 50);
@@ -1389,11 +1375,6 @@ onUnmounted(() => {
     });
   }
 })
-
-// Thêm hàm resetAutoPlayState để cho phép reset trạng thái khi cần
-const resetAutoPlayState = () => {
-  hasAutoPlayedAudio.value = false;
-}
 </script>
 
 <style scoped lang="scss">

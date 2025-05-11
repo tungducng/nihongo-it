@@ -245,6 +245,7 @@ import { useAuthStore } from '@/stores'
 import axios, { AxiosError } from 'axios'
 import authService from '@/services/auth.service'
 import * as speechsdk from 'microsoft-cognitiveservices-speech-sdk'
+import speechRecognitionService from '@/services/SpeechRecognitionService'
 
 // Define types
 interface ConversationLine {
@@ -303,7 +304,6 @@ const audioChunks = ref<Blob[]>([])
 const isSilent = ref(false)
 const silenceTimeout = ref<number | null>(null)
 const silenceDetectionDuration = 3000 //  giây im lặng sau khi nói sẽ tự động gửi
-const hasSpoken = ref(false) // Biến để theo dõi xem người dùng đã nói gì chưa
 
 // Audio stream
 let audioStream: MediaStream | null = null
@@ -573,262 +573,106 @@ const canInteractWith = (index: number): boolean => {
   return line.speaker === 'user';
 }
 
-// Sửa lại hàm startRecording để tích hợp Azure Speech
-const startRecording = async (index: number) => {
-  try {
-    // Reset recording state
-    audioChunks.value = [];
-    activeLineIndex.value = index;
-    isSilent.value = false;
-    hasSpoken.value = false;
-    interimText.value = '';
+// Khởi tạo Azure Speech trước thay vì mỗi lần ghi âm
+onMounted(() => {
+  loading.value = true;
 
-    // Bắt đầu Azure Speech Recognition để nhận dạng text song song
-    if (hasAzureSpeechConfig.value && !azureSpeechRecognizer.value) {
-      initializeAzureSpeech();
-    }
-
-    if (azureSpeechRecognizer.value) {
-      // Bắt đầu nhận dạng liên tục
-      azureSpeechRecognizer.value.startContinuousRecognitionAsync(
-        () => console.log('Azure Speech Recognition started'),
-        (error) => console.error('Error starting Azure Speech Recognition:', error)
-      );
-    } else {
-      // Nếu không có Azure, vẫn hiển thị interim text thường
-      interimText.value = 'Đang nghe...';
-    }
-
-    audioStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      }
-    });
-
-    if (audioStream) {
-      mediaRecorder.value = new MediaRecorder(audioStream);
-
-      mediaRecorder.value.ondataavailable = (event: BlobEvent) => {
-        if (event.data.size > 0) {
-          audioChunks.value.push(event.data);
+  // Demo data loading
+  setTimeout(() => {
+    // Mock conversation data
+    conversation.value = {
+      id: '1',
+      title: 'Chào hỏi và giới thiệu bản thân',
+      description: 'Hội thoại cơ bản về giới thiệu bản thân trong tiếng Nhật',
+      jlptLevel: 'N5',
+      isSaved: false,
+      dialogue: [
+        {
+          speaker: 'bot',
+          japanese: 'こんにちは、はじめまして。',
+          meaning: 'Xin chào, rất vui được gặp bạn.'
+        },
+        {
+          speaker: 'user',
+          japanese: 'こんにちは、はじめまして。',
+          meaning: 'Xin chào, rất vui được gặp bạn.'
+        },
+        {
+          speaker: 'bot',
+          japanese: 'お名前は何ですか？',
+          meaning: 'Tên bạn là gì?'
+        },
+        {
+          speaker: 'user',
+          japanese: 'わたしの名前は＿＿＿です。',
+          meaning: 'Tên tôi là ___.'
+        },
+        {
+          speaker: 'bot',
+          japanese: 'どうぞよろしくお願いします。',
+          meaning: 'Rất hân hạnh được gặp bạn.'
+        },
+        {
+          speaker: 'user',
+          japanese: 'どうぞよろしくお願いします。',
+          meaning: 'Rất hân hạnh được gặp bạn.'
+        },
+        {
+          speaker: 'bot',
+          japanese: 'ご出身はどちらですか？',
+          meaning: 'Bạn đến từ đâu?'
+        },
+        {
+          speaker: 'user',
+          japanese: 'ベトナムから来ました。',
+          meaning: 'Tôi đến từ Việt Nam.'
         }
-      };
-
-      mediaRecorder.value.onstop = () => {
-        const audioBlob = new Blob(audioChunks.value, { type: 'audio/wav' });
-
-        // Chỉ hiện thông báo cảnh báo khi chưa nói gì mà bị dừng do im lặng
-        if (isSilent.value && !hasSpoken.value) {
-          toast.warning('Không phát hiện giọng nói, vui lòng thử lại', {
-            position: 'top',
-            duration: 2000
-          });
-          return;
-        }
-
-        recordedAudioBlobs.value[index] = audioBlob;
-        recordedAudioUrls.value[index] = URL.createObjectURL(audioBlob);
-        processRecording(index);
-      };
-
-      mediaRecorder.value.start();
-      isRecording.value = true;
-      toast.info('Bắt đầu ghi âm - Hãy phát âm câu hội thoại', {
-        position: 'top',
-        duration: 2000
-      });
-
-      // Thiết lập phát hiện âm thanh im lặng
-      setupSilenceDetection(audioStream);
-    }
-  } catch (err) {
-    console.error('Error starting recording:', err);
-    toast.error('Không thể truy cập microphone', {
-      position: 'top',
-      duration: 3000
-    });
-  }
-}
-
-// Sửa hàm setupSilenceDetection để không ghi đè lên văn bản từ Azure
-const setupSilenceDetection = (stream: MediaStream) => {
-  try {
-    // Tạo audio context
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-
-    // Tạo audio source từ stream
-    const source = audioContext.createMediaStreamSource(stream);
-
-    // Tạo analyzer node để phân tích âm thanh
-    const analyzer = audioContext.createAnalyser();
-    analyzer.fftSize = 256;
-    analyzer.smoothingTimeConstant = 0.8;
-    source.connect(analyzer);
-
-    // Bắt đầu theo dõi mức độ âm thanh
-    const bufferLength = analyzer.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    let silenceStart: number | null = null;
-    const silenceThreshold = 20; // Ngưỡng im lặng
-    const speechThreshold = 20; // Ngưỡng để xác định đã nói (cao hơn ngưỡng im lặng)
-
-    // Thêm biến để theo dõi mức âm thanh trước đó
-    let prevLevel = 0;
-    let speakingDuration = 0;
-
-    const checkSilence = () => {
-      if (!isRecording.value) return;
-
-      analyzer.getByteFrequencyData(dataArray);
-
-      // Tính mức độ âm thanh trung bình
-      let sum = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        sum += dataArray[i];
-      }
-      const average = sum / bufferLength;
-
-      // Cập nhật interim text dựa trên mức âm thanh - chỉ khi không có Azure
-      if (average > speechThreshold) {
-        // Đã phát hiện âm thanh, có thể là đang nói
-        if (!hasSpoken.value) {
-          hasSpoken.value = true;
-          console.log('Speech detected');
-          // Cập nhật interim text khi bắt đầu nói - chỉ khi không có Azure
-          if (!azureSpeechRecognizer.value && interimText.value === '') {
-            interimText.value = 'Đang nghe...';
-          }
-        }
-
-        // Nếu mức âm thanh khác nhiều so với trước đó, cập nhật hiển thị - chỉ khi không có Azure
-        if (Math.abs(average - prevLevel) > 10 && !azureSpeechRecognizer.value) {
-          speakingDuration += 100; // Mỗi 100ms
-          // Thay đổi hiển thị theo thời gian nói
-          if (speakingDuration > 1000) {
-            interimText.value = 'Đang phân tích...';
-          } else {
-            interimText.value = 'Đang nghe...';
-          }
-        }
-      }
-
-      prevLevel = average;
-
-      if (average < silenceThreshold) {
-        // Âm thanh im lặng
-        if (silenceStart === null) {
-          silenceStart = Date.now();
-        } else {
-          const silenceDuration = Date.now() - silenceStart;
-
-          if (!hasSpoken.value && silenceDuration > 3000) {
-            // Chưa nói gì và im lặng quá 3 giây -> hủy ghi âm
-            console.log('No speech detected, canceling recording');
-            isSilent.value = true;
-            if (!azureSpeechRecognizer.value) {
-              interimText.value = 'Không phát hiện giọng nói';
-            }
-            stopRecording();
-            return;
-          } else if (hasSpoken.value && silenceDuration > silenceDetectionDuration) {
-            // Đã nói và im lặng quá 3 giây -> tự động kết thúc và gửi đi
-            console.log('Silence after speech detected, auto-submitting');
-            isSilent.value = true;
-            if (!azureSpeechRecognizer.value) {
-              interimText.value = 'Đang xử lý...';
-            }
-            stopRecording();
-            return;
-          } else if (hasSpoken.value && silenceDuration > 1000 && !azureSpeechRecognizer.value) {
-            // Im lặng tạm thời - cập nhật interim text nếu không có Azure
-            interimText.value = 'Đang xử lý...';
-          }
-        }
-      } else {
-        // Có âm thanh, đặt lại thời gian bắt đầu im lặng
-        silenceStart = null;
-      }
-
-      // Tiếp tục kiểm tra
-      silenceTimeout.value = window.setTimeout(checkSilence, 100);
+      ]
     };
 
-    // Bắt đầu kiểm tra im lặng
-    checkSilence();
-  } catch (err) {
-    console.error('Error setting up silence detection:', err);
-    // Tiếp tục ghi âm ngay cả khi không thể thiết lập phát hiện im lặng
-  }
-}
+    // Initialize arrays based on dialogue length
+    recordedAudioUrls.value = new Array(conversation.value.dialogue.length).fill(null);
+    recordedAudioBlobs.value = new Array(conversation.value.dialogue.length).fill(null);
+    pronunciationScores.value = new Array(conversation.value.dialogue.length).fill(0);
+    lineCompletionStatus.value = new Array(conversation.value.dialogue.length).fill(false);
+    lineAnalysisResults.value = new Array(conversation.value.dialogue.length).fill(null);
 
-// Sửa lại hàm stopRecording để dừng Azure Speech
-const stopRecording = () => {
-  // Dừng Azure Speech Recognition nếu đang chạy
-  if (azureSpeechRecognizer.value) {
-    azureSpeechRecognizer.value.stopContinuousRecognitionAsync(
-      () => {
-        console.log('Azure Speech Recognition stopped');
-        // Không xóa interimText để giữ lại transcription đã nhận diện
-      },
-      (error) => console.error('Error stopping Azure Speech Recognition:', error)
-    );
-  }
+    // Đặt lại visibleLineIndices
+    visibleLineIndices.value = [0];
+    dimmedLineIndices.value = [];
+    isTyping.value = true;
+    typedText.value = '';
+    currentTypeIndex.value = 0;
 
-  // Xóa timeout phát hiện im lặng
-  if (silenceTimeout.value !== null) {
-    clearTimeout(silenceTimeout.value);
-    silenceTimeout.value = null;
-  }
-
-  if (mediaRecorder.value && isRecording.value) {
-    // Nếu không dùng Azure, hiển thị "Đang xử lý..."
-    if (!azureSpeechRecognizer.value) {
-      interimText.value = 'Đang xử lý...';
+    // Kiểm tra xem dòng thứ 2 có phải của Nihongo IT không để hiển thị mờ
+    if (conversation.value.dialogue.length > 1 && conversation.value.dialogue[1].speaker !== 'user') {
+      dimmedLineIndices.value.push(1);
+      console.log("Initially showing dimmed next line: 1");
     }
 
-    mediaRecorder.value.stop();
-    isRecording.value = false;
-
-    // Stop all audio tracks
-    if (audioStream) {
-      audioStream.getTracks().forEach(track => track.stop());
+    // Bắt đầu hiệu ứng typing cho tin nhắn đầu tiên
+    if (conversation.value && conversation.value.dialogue.length > 0) {
+      console.log("Starting typing effect for first message");
+      typeTextEffect(conversation.value.dialogue[0].japanese);
     }
-  }
-}
 
-const playRecordedAudio = (index: number) => {
-  if (!recordedAudioUrls.value[index]) return;
+    // Thêm watcher để tự động cuộn xuống khi có dòng mới
+    watch(visibleLineIndices, () => {
+      console.log("Visible lines changed, scrolling to bottom");
+      scrollToLatestMessage();
+    }, { deep: true });
 
-  try {
-    const audio = new Audio(recordedAudioUrls.value[index]);
-    audio.onended = () => {};
-    audio.onerror = () => {
-      console.error('Error playing recorded audio');
-      toast.error('Không thể phát bản ghi âm', {
-        position: 'top',
-        duration: 3000
-      });
-    };
+    // Khởi tạo Speech Recognition Service nếu có cấu hình
+    if (azureSpeechKey.value && azureSpeechRegion.value) {
+      speechRecognitionService.initialize(azureSpeechKey.value, azureSpeechRegion.value);
+      console.log('Speech Recognition Service initialized');
+    }
 
-    audio.play().catch(err => {
-      console.error('Error playing recorded audio:', err);
-      toast.error('Không thể phát bản ghi âm', {
-        position: 'top',
-        duration: 3000
-      });
-    });
-  } catch (err) {
-    console.error('Error playing recorded audio:', err);
-    toast.error('Không thể phát bản ghi âm', {
-      position: 'top',
-      duration: 3000
-    });
-  }
-}
+    loading.value = false;
+  }, 1000);
+})
 
+// Cập nhật hàm processRecording để kiểm tra lỗi nhận dạng giọng nói
 const processRecording = async (index: number) => {
   if (activeLineIndex.value !== index) return;
 
@@ -836,8 +680,29 @@ const processRecording = async (index: number) => {
 
   try {
     // Xóa interim text khi không dùng Azure
-    if (!azureSpeechRecognizer.value) {
+    if (!speechRecognitionService.isServiceInitialized()) {
       interimText.value = '';
+    }
+
+    // Kiểm tra nếu đã có transcription từ Azure nhưng không liên quan đến nội dung
+    if (lineAnalysisResults.value[index]?.transcription) {
+      const transcription = lineAnalysisResults.value[index]?.transcription || '';
+      const referenceText = conversation.value?.dialogue[index]?.japanese || '';
+
+      // Kiểm tra xem transcription có liên quan đến referenceText không
+      // Nếu không chứa ký tự chung nào hoặc quá khác biệt, có thể là lỗi nhận dạng
+      const isUnrelatedTranscription = !hasCommonCharacters(transcription, referenceText);
+
+      if (isUnrelatedTranscription) {
+        // Hiển thị thông báo lỗi nhận dạng
+        toast.warning('Không nhận dạng được phát âm, vui lòng thử lại', {
+          position: 'top',
+          duration: 3000
+        });
+
+        isProcessing.value = false;
+        return; // Dừng và không gửi API
+      }
     }
 
     // Verify authentication before proceeding
@@ -906,7 +771,7 @@ const processRecording = async (index: number) => {
     console.error('Error processing recording:', err);
 
     // Xóa interim text nếu xử lý lỗi và không dùng Azure
-    if (!azureSpeechRecognizer.value) {
+    if (!speechRecognitionService.isServiceInitialized()) {
       interimText.value = '';
     }
 
@@ -923,163 +788,207 @@ const processRecording = async (index: number) => {
   }
 }
 
-// Hàm kiểm tra xem dòng có được hiển thị không
-const isLineVisible = (index: number) => {
-  return visibleLineIndices.value.includes(index);
+// Thêm hàm kiểm tra ký tự chung giữa 2 chuỗi tiếng Nhật
+const hasCommonCharacters = (str1: string, str2: string, threshold: number = 0.1): boolean => {
+  // Bỏ qua khoảng trắng và dấu câu
+  const cleanStr1 = str1.replace(/[\s.,?!。、？！]/g, '');
+  const cleanStr2 = str2.replace(/[\s.,?!。、？！]/g, '');
+
+  // Tạo Set các ký tự
+  const charsSet1 = new Set(cleanStr1.split(''));
+  const charsSet2 = new Set(cleanStr2.split(''));
+
+  // Đếm số ký tự chung
+  let commonCount = 0;
+  for (const char of charsSet1) {
+    if (charsSet2.has(char)) {
+      commonCount++;
+    }
+  }
+
+  // Nếu không có ký tự chung hoặc tỷ lệ quá thấp, return false
+  const ratio = commonCount / Math.min(charsSet1.size, charsSet2.size);
+  return ratio >= threshold;
 }
 
-// Scroll tới tin nhắn mới nhất với hiệu ứng mượt hơn
-const scrollToLatestMessage = () => {
-  // Đợi DOM cập nhật
-  setTimeout(() => {
-    // Lấy dòng hội thoại mới nhất
-    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
-    if (lastVisibleIndex === undefined) return;
+// Cập nhật hàm startRecording để xử lý lỗi từ Azure Speech
+const startRecording = async (index: number) => {
+  try {
+    // Reset recording state
+    audioChunks.value = [];
+    activeLineIndex.value = index;
+    isSilent.value = false;
+    interimText.value = '';
 
-    const lastMessageElement = document.querySelector(`.message-row[data-index="${lastVisibleIndex}"]`);
-    if (lastMessageElement) {
-      // Lấy vị trí của phần tử so với cửa sổ
-      const rect = lastMessageElement.getBoundingClientRect();
-      const targetPosition = window.scrollY + rect.top - 150;
-
-      // Giảm thiểu giật lag bằng cách sử dụng biến delta nhỏ cho mỗi frame
-      const startPosition = window.scrollY;
-      const distance = targetPosition - startPosition;
-
-      // Chỉ cuộn khi khoảng cách đủ lớn để tránh cuộn không cần thiết
-      if (Math.abs(distance) < 20) return;
-
-      const duration = Math.min(Math.abs(distance), 600); // Thời gian tối đa là 600ms, ngắn hơn cho khoảng cách nhỏ
-      let startTime: number | null = null;
-
-      // Hàm animation cuộn với easing function mượt mà hơn
-      function animateScroll(timestamp: number) {
-        if (!startTime) startTime = timestamp;
-        const elapsed = timestamp - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-
-        // Easing function cải tiến (easeOutQuint)
-        const easedProgress = 1 - Math.pow(1 - progress, 3);
-
-        window.scrollTo({
-          top: startPosition + distance * easedProgress,
-          behavior: 'auto' // Sử dụng 'auto' vì chúng ta đang tự xử lý animation
-        });
-
-        if (elapsed < duration) {
-          requestAnimationFrame(animateScroll);
+    // Bắt đầu nhận dạng giọng nói nếu service đã được khởi tạo
+    if (speechRecognitionService.isServiceInitialized()) {
+      speechRecognitionService.startRecognition(
+        // Xử lý văn bản đang nhận dạng (interim)
+        (text) => {
+          interimText.value = text;
+        },
+        // Xử lý văn bản đã nhận dạng xong (final)
+        (text) => {
+          if (text.trim()) {
+            // Lưu kết quả nhận dạng để sử dụng sau khi kết thúc ghi âm
+            if (lineAnalysisResults.value[index]) {
+              lineAnalysisResults.value[index]!.transcription = text;
+            } else {
+              lineAnalysisResults.value[index] = {
+                score: 0,
+                transcription: text
+              };
+            }
+          }
+        },
+        // Xử lý lỗi
+        (error) => {
+          console.error('Speech recognition error:', error);
+          // Nếu lỗi là "No speech could be recognized", hiển thị thông báo
+          if (error && error.includes && error.includes("No speech could be recognized")) {
+            toast.warning('Không nhận dạng được phát âm, vui lòng thử lại', {
+              position: 'top',
+              duration: 3000
+            });
+          }
         }
-      }
-
-      // Bắt đầu animation với requestAnimationFrame để đồng bộ với refresh rate màn hình
-      requestAnimationFrame(animateScroll);
+      );
     }
-  }, 50); // Giảm thời gian chờ từ 100ms xuống 50ms
-}
 
-// Hiệu ứng typing cải tiến cho văn bản
-const typeTextEffect = (text: string) => {
-  // Sử dụng requestAnimationFrame để đồng bộ với refresh rate màn hình
-  if (!text || text.length === 0) {
-    isTyping.value = false;
-    return;
-  }
-
-  if (currentTypeIndex.value < text.length) {
-    // Sử dụng RAF để đồng bộ với refresh rate của màn hình
-    requestAnimationFrame(() => {
-      typedText.value = text.substring(0, currentTypeIndex.value + 1);
-      currentTypeIndex.value++;
-
-      // Xác định thời gian chờ cho ký tự tiếp theo
-      const currentChar = text[currentTypeIndex.value - 1];
-      const pauseChars = ['。', '、', '!', '?', '！', '？', '…', '.', ','];
-
-      // Tăng độ biến thiên cho tốc độ typing để tự nhiên hơn
-      const randomVariation = Math.random() * typingVariation.value * 2 - typingVariation.value;
-      let delay = Math.max(20, typeSpeed.value + randomVariation);
-
-      // Thêm thời gian dừng cho dấu câu hoặc khoảng trắng
-      if (pauseChars.includes(currentChar)) {
-        delay += 250; // Dừng lâu hơn sau dấu câu
-      } else if (currentChar === ' ') {
-        delay += 40; // Dừng nhẹ cho khoảng trắng
+    // Vẫn sử dụng MediaRecorder để ghi âm như trước
+    audioStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
       }
-
-      // Giảm thời gian trễ nếu là ký tự cuối để tránh chờ quá lâu
-      if (currentTypeIndex.value === text.length - 1) {
-        delay = Math.min(delay, 60);
-      }
-
-      setTimeout(() => typeTextEffect(text), delay);
     });
-  } else {
-    isTyping.value = false;
 
-    // Lấy dòng hiện tại đang typin
-    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
-    if (!conversation.value || lastVisibleIndex >= conversation.value.dialogue.length) return;
+    if (audioStream) {
+      mediaRecorder.value = new MediaRecorder(audioStream);
 
-    const currentLine = conversation.value.dialogue[lastVisibleIndex];
+      mediaRecorder.value.ondataavailable = (event: BlobEvent) => {
+        if (event.data.size > 0) {
+          audioChunks.value.push(event.data);
+        }
+      };
 
-    // Chỉ hiển thị mờ dòng tiếp theo nếu là dòng của Nihongo IT
-    const nextIndex = lastVisibleIndex + 1;
-    if (conversation.value && nextIndex < conversation.value.dialogue.length) {
-      const nextLine = conversation.value.dialogue[nextIndex];
+      mediaRecorder.value.onstop = () => {
+        // Nếu im lặng thì không xử lý kết quả
+        if (isSilent.value) {
+          return;
+        }
 
-      // Hiển thị mờ dòng tiếp theo nếu là của Nihongo IT
-      if (nextLine.speaker !== 'user' && !dimmedLineIndices.value.includes(nextIndex) && !visibleLineIndices.value.includes(nextIndex)) {
-        requestAnimationFrame(() => {
-          dimmedLineIndices.value.push(nextIndex);
-        });
-      }
+        const audioBlob = new Blob(audioChunks.value, { type: 'audio/wav' });
+
+        // Kiểm tra kích thước blob để xác định có âm thanh không
+        if (audioBlob.size < 1000) {
+          toast.warning('Không phát hiện giọng nói, vui lòng thử lại', {
+            position: 'top',
+            duration: 2000
+          });
+          return;
+        }
+
+        recordedAudioBlobs.value[index] = audioBlob;
+        recordedAudioUrls.value[index] = URL.createObjectURL(audioBlob);
+
+        // Kiểm tra lỗi nhận dạng giọng nói từ Azure trước khi xử lý
+        // Nếu có lỗi "No speech could be recognized" thì không gọi processRecording
+        const hasRecognitionError =
+          interimText.value === '' &&
+          speechRecognitionService.isServiceInitialized() &&
+          (!lineAnalysisResults.value[index]?.transcription ||
+           (lineAnalysisResults.value[index]?.transcription &&
+            lineAnalysisResults.value[index]?.transcription.trim() === ''));
+
+        if (hasRecognitionError) {
+          toast.warning('Không nhận dạng được phát âm, vui lòng thử lại', {
+            position: 'top',
+            duration: 3000
+          });
+          return;
+        }
+
+        processRecording(index);
+      };
+
+      mediaRecorder.value.start();
+      isRecording.value = true;
+      toast.info('Bắt đầu ghi âm - Hãy phát âm câu hội thoại', {
+        position: 'top',
+        duration: 2000
+      });
+
+      // Thiết lập phát hiện âm thanh im lặng
+      setupSilenceDetection(audioStream);
     }
-
-    // Chỉ tự động hiển thị dòng tiếp theo nếu là dòng đầu tiên của Nihongo IT
-    if (currentLine.speaker !== 'user' && lastVisibleIndex === 0) {
-      setTimeout(() => {
-        startTypingNextLine();
-      }, 800); // Giảm xuống 800ms thay vì 1000ms
-    }
-  }
-}
-
-// Bắt đầu hiệu ứng typing cho dòng tiếp theo
-const startTypingNextLine = () => {
-  if (!conversation.value) return;
-
-  const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
-  const nextIndex = lastVisibleIndex + 1;
-
-  // Kiểm tra xem có dòng tiếp theo không
-  if (nextIndex < conversation.value.dialogue.length) {
-    const nextLine = conversation.value.dialogue[nextIndex];
-
-    // Nếu dòng tiếp theo đang hiển thị mờ, xóa khỏi danh sách hiển thị mờ
-    requestAnimationFrame(() => {
-      if (dimmedLineIndices.value.includes(nextIndex)) {
-        dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextIndex);
-      }
-
-      // Thêm dòng vào danh sách hiển thị
-      visibleLineIndices.value.push(nextIndex);
-
-      // Áp dụng hiệu ứng typing
-      isTyping.value = true;
-      typedText.value = '';
-      currentTypeIndex.value = 0;
-
-      // Đảm bảo tất cả thay đổi DOM đã được áp dụng trước khi bắt đầu typing
-      setTimeout(() => {
-        typeTextEffect(nextLine.japanese);
-        // Cuộn sau khi bắt đầu hiệu ứng typing nhưng không chờ hoàn thành
-        scrollToLatestMessage();
-      }, 50);
+  } catch (err) {
+    console.error('Error starting recording:', err);
+    toast.error('Không thể truy cập microphone', {
+      position: 'top',
+      duration: 3000
     });
   }
 }
 
-// Cập nhật hàm markAsComplete để hiển thị dòng tiếp theo
+const stopRecording = async () => {
+  // Dừng nhận dạng giọng nói nếu đang chạy
+  if (speechRecognitionService.isServiceInitialized()) {
+    try {
+      await speechRecognitionService.stopRecognition();
+    } catch (error) {
+      console.error('Error stopping speech recognition:', error);
+    }
+  }
+
+  // Xóa timeout phát hiện im lặng
+  if (silenceTimeout.value !== null) {
+    clearTimeout(silenceTimeout.value);
+    silenceTimeout.value = null;
+  }
+
+  if (mediaRecorder.value && isRecording.value) {
+    mediaRecorder.value.stop();
+    isRecording.value = false;
+
+    // Stop all audio tracks
+    if (audioStream) {
+      audioStream.getTracks().forEach(track => track.stop());
+    }
+  }
+}
+
+const playRecordedAudio = (index: number) => {
+  if (!recordedAudioUrls.value[index]) return;
+
+  try {
+    const audio = new Audio(recordedAudioUrls.value[index]);
+    audio.onended = () => {};
+    audio.onerror = () => {
+      console.error('Error playing recorded audio');
+      toast.error('Không thể phát bản ghi âm', {
+        position: 'top',
+        duration: 3000
+      });
+    };
+
+    audio.play().catch(err => {
+      console.error('Error playing recorded audio:', err);
+      toast.error('Không thể phát bản ghi âm', {
+        position: 'top',
+        duration: 3000
+      });
+    });
+  } catch (err) {
+    console.error('Error playing recorded audio:', err);
+    toast.error('Không thể phát bản ghi âm', {
+      position: 'top',
+      duration: 3000
+    });
+  }
+}
+
 const markAsComplete = (index: number) => {
   lineCompletionStatus.value[index] = true;
 
@@ -1270,98 +1179,313 @@ const escapeRegExp = (string: string): string => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Thêm vào phần onMounted
-onMounted(() => {
-  loading.value = true;
+// Sửa lại hàm setupSilenceDetection với logic rõ ràng hơn
+const setupSilenceDetection = (stream: MediaStream) => {
+  try {
+    // Tạo audio context
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
 
-  // Demo data loading
-  setTimeout(() => {
-    // Mock conversation data
-    conversation.value = {
-      id: '1',
-      title: 'Chào hỏi và giới thiệu bản thân',
-      description: 'Hội thoại cơ bản về giới thiệu bản thân trong tiếng Nhật',
-      jlptLevel: 'N5',
-      isSaved: false,
-      dialogue: [
-        {
-          speaker: 'bot',
-          japanese: 'こんにちは、はじめまして。',
-          meaning: 'Xin chào, rất vui được gặp bạn.'
-        },
-        {
-          speaker: 'user',
-          japanese: 'こんにちは、はじめまして。',
-          meaning: 'Xin chào, rất vui được gặp bạn.'
-        },
-        {
-          speaker: 'bot',
-          japanese: 'お名前は何ですか？',
-          meaning: 'Tên bạn là gì?'
-        },
-        {
-          speaker: 'user',
-          japanese: 'わたしの名前は＿＿＿です。',
-          meaning: 'Tên tôi là ___.'
-        },
-        {
-          speaker: 'bot',
-          japanese: 'どうぞよろしくお願いします。',
-          meaning: 'Rất hân hạnh được gặp bạn.'
-        },
-        {
-          speaker: 'user',
-          japanese: 'どうぞよろしくお願いします。',
-          meaning: 'Rất hân hạnh được gặp bạn.'
-        },
-        {
-          speaker: 'bot',
-          japanese: 'ご出身はどちらですか？',
-          meaning: 'Bạn đến từ đâu?'
-        },
-        {
-          speaker: 'user',
-          japanese: 'ベトナムから来ました。',
-          meaning: 'Tôi đến từ Việt Nam.'
+    // Tạo audio source từ stream
+    const source = audioContext.createMediaStreamSource(stream);
+
+    // Tạo analyzer node để phân tích âm thanh
+    const analyzer = audioContext.createAnalyser();
+    analyzer.fftSize = 256;
+    analyzer.smoothingTimeConstant = 0.8;
+    source.connect(analyzer);
+
+    // Bắt đầu theo dõi mức độ âm thanh
+    const bufferLength = analyzer.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+
+    let silenceStart: number | null = null;
+    const silenceThreshold = 20; // Ngưỡng im lặng
+
+    // Biến để theo dõi mức âm thanh cao nhất và trạng thái nói
+    let hasSpeechDetected = false;
+
+    const checkSilence = () => {
+      if (!isRecording.value) return;
+
+      analyzer.getByteFrequencyData(dataArray);
+
+      // Tính mức độ âm thanh trung bình
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sum += dataArray[i];
+      }
+      const average = sum / bufferLength;
+
+      // Kiểm tra nếu âm thanh vượt ngưỡng đáng kể
+      if (average > 30) { // Ngưỡng lớn hơn để đảm bảo đó là lời nói thực sự
+        hasSpeechDetected = true;
+      }
+
+      // Kiểm tra nếu có lời nói từ Azure Speech API
+      if (interimText.value.trim()) {
+        hasSpeechDetected = true;
+      }
+
+      if (average < silenceThreshold) {
+        // Âm thanh im lặng
+        if (silenceStart === null) {
+          silenceStart = Date.now();
+        } else {
+          const silenceDuration = Date.now() - silenceStart;
+
+          // Xử lý theo logic mới
+          if (silenceDuration > silenceDetectionDuration) { // Im lặng hơn 3 giây
+            if (hasSpeechDetected) {
+              // Đã nói và im lặng 3 giây -> Dừng và gửi request
+              console.log('Silence after speech detected, stopping and submitting');
+              isSilent.value = false; // Không đánh dấu là im lặng vì đã có lời nói
+              stopRecordingAndProcess();
+            } else {
+              // Chưa nói gì và im lặng 3 giây -> Dừng nhưng không gửi request
+              console.log('No speech detected for 3 seconds, canceling');
+              isSilent.value = true; // Đánh dấu là im lặng để không xử lý
+              stopRecordingWithoutProcessing();
+            }
+            return;
+          }
         }
-      ]
+      } else {
+        // Có âm thanh, đặt lại thời gian bắt đầu im lặng
+        silenceStart = null;
+      }
+
+      // Tiếp tục kiểm tra
+      silenceTimeout.value = window.setTimeout(checkSilence, 100);
     };
 
-    // Initialize arrays based on dialogue length
-    recordedAudioUrls.value = new Array(conversation.value.dialogue.length).fill(null);
-    recordedAudioBlobs.value = new Array(conversation.value.dialogue.length).fill(null);
-    pronunciationScores.value = new Array(conversation.value.dialogue.length).fill(0);
-    lineCompletionStatus.value = new Array(conversation.value.dialogue.length).fill(false);
-    lineAnalysisResults.value = new Array(conversation.value.dialogue.length).fill(null);
+    // Bắt đầu kiểm tra im lặng
+    checkSilence();
+  } catch (err) {
+    console.error('Error setting up silence detection:', err);
+    // Tiếp tục ghi âm ngay cả khi không thể thiết lập phát hiện im lặng
+  }
+}
 
-    // Đặt lại visibleLineIndices
-    visibleLineIndices.value = [0];
-    dimmedLineIndices.value = [];
-    isTyping.value = true;
-    typedText.value = '';
-    currentTypeIndex.value = 0;
+// Hàm dừng ghi âm và xử lý kết quả
+const stopRecordingAndProcess = () => {
+  if (mediaRecorder.value && isRecording.value) {
+    mediaRecorder.value.stop();
+    isRecording.value = false;
 
-    // Kiểm tra xem dòng thứ 2 có phải của Nihongo IT không để hiển thị mờ
-    if (conversation.value.dialogue.length > 1 && conversation.value.dialogue[1].speaker !== 'user') {
-      dimmedLineIndices.value.push(1);
-      console.log("Initially showing dimmed next line: 1");
+    // Dừng nhận dạng giọng nói nếu đang chạy
+    if (speechRecognitionService.isServiceInitialized()) {
+      try {
+        speechRecognitionService.stopRecognition();
+      } catch (error) {
+        console.error('Error stopping speech recognition:', error);
+      }
     }
 
-    // Bắt đầu hiệu ứng typing cho tin nhắn đầu tiên
-    if (conversation.value && conversation.value.dialogue.length > 0) {
-      console.log("Starting typing effect for first message");
-      typeTextEffect(conversation.value.dialogue[0].japanese);
+    // Xóa timeout phát hiện im lặng
+    if (silenceTimeout.value !== null) {
+      clearTimeout(silenceTimeout.value);
+      silenceTimeout.value = null;
     }
 
-    // Thêm watcher để tự động cuộn xuống khi có dòng mới
-    watch(visibleLineIndices, () => {
-      console.log("Visible lines changed, scrolling to bottom");
-      scrollToLatestMessage();
-    }, { deep: true });
+    // Stop all audio tracks
+    if (audioStream) {
+      audioStream.getTracks().forEach(track => track.stop());
+    }
+  }
+}
 
-    loading.value = false;
-  }, 1000);
-})
+// Hàm dừng ghi âm nhưng không xử lý kết quả
+const stopRecordingWithoutProcessing = () => {
+  if (mediaRecorder.value && isRecording.value) {
+    // Đặt một biến để chỉ ra rằng không nên xử lý kết quả
+    isSilent.value = true;
+
+    mediaRecorder.value.stop();
+    isRecording.value = false;
+
+    // Dừng nhận dạng giọng nói nếu đang chạy
+    if (speechRecognitionService.isServiceInitialized()) {
+      try {
+        speechRecognitionService.stopRecognition();
+      } catch (error) {
+        console.error('Error stopping speech recognition:', error);
+      }
+    }
+
+    // Xóa timeout phát hiện im lặng
+    if (silenceTimeout.value !== null) {
+      clearTimeout(silenceTimeout.value);
+      silenceTimeout.value = null;
+    }
+
+    // Stop all audio tracks
+    if (audioStream) {
+      audioStream.getTracks().forEach(track => track.stop());
+    }
+
+    // Hiển thị thông báo
+    toast.warning('Không phát hiện giọng nói, vui lòng thử lại', {
+      position: 'top',
+      duration: 2000
+    });
+  }
+}
+
+// Hàm kiểm tra xem dòng có được hiển thị không
+const isLineVisible = (index: number) => {
+  return visibleLineIndices.value.includes(index);
+}
+
+// Scroll tới tin nhắn mới nhất với hiệu ứng mượt hơn
+const scrollToLatestMessage = () => {
+  // Đợi DOM cập nhật
+  setTimeout(() => {
+    // Lấy dòng hội thoại mới nhất
+    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+    if (lastVisibleIndex === undefined) return;
+
+    const lastMessageElement = document.querySelector(`.message-row[data-index="${lastVisibleIndex}"]`);
+    if (lastMessageElement) {
+      // Lấy vị trí của phần tử so với cửa sổ
+      const rect = lastMessageElement.getBoundingClientRect();
+      const targetPosition = window.scrollY + rect.top - 150;
+
+      // Giảm thiểu giật lag bằng cách sử dụng biến delta nhỏ cho mỗi frame
+      const startPosition = window.scrollY;
+      const distance = targetPosition - startPosition;
+
+      // Chỉ cuộn khi khoảng cách đủ lớn để tránh cuộn không cần thiết
+      if (Math.abs(distance) < 20) return;
+
+      const duration = Math.min(Math.abs(distance), 600); // Thời gian tối đa là 600ms, ngắn hơn cho khoảng cách nhỏ
+      let startTime: number | null = null;
+
+      // Hàm animation cuộn với easing function mượt mà hơn
+      function animateScroll(timestamp: number) {
+        if (!startTime) startTime = timestamp;
+        const elapsed = timestamp - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing function cải tiến (easeOutQuint)
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+
+        window.scrollTo({
+          top: startPosition + distance * easedProgress,
+          behavior: 'auto' // Sử dụng 'auto' vì chúng ta đang tự xử lý animation
+        });
+
+        if (elapsed < duration) {
+          requestAnimationFrame(animateScroll);
+        }
+      }
+
+      // Bắt đầu animation với requestAnimationFrame để đồng bộ với refresh rate màn hình
+      requestAnimationFrame(animateScroll);
+    }
+  }, 50); // Giảm thời gian chờ từ 100ms xuống 50ms
+}
+
+// Hiệu ứng typing cải tiến cho văn bản
+const typeTextEffect = (text: string) => {
+  // Sử dụng requestAnimationFrame để đồng bộ với refresh rate màn hình
+  if (!text || text.length === 0) {
+    isTyping.value = false;
+    return;
+  }
+
+  if (currentTypeIndex.value < text.length) {
+    // Sử dụng RAF để đồng bộ với refresh rate của màn hình
+    requestAnimationFrame(() => {
+      typedText.value = text.substring(0, currentTypeIndex.value + 1);
+      currentTypeIndex.value++;
+
+      // Xác định thời gian chờ cho ký tự tiếp theo
+      const currentChar = text[currentTypeIndex.value - 1];
+      const pauseChars = ['。', '、', '!', '?', '！', '？', '…', '.', ','];
+
+      // Tăng độ biến thiên cho tốc độ typing để tự nhiên hơn
+      const randomVariation = Math.random() * typingVariation.value * 2 - typingVariation.value;
+      let delay = Math.max(20, typeSpeed.value + randomVariation);
+
+      // Thêm thời gian dừng cho dấu câu hoặc khoảng trắng
+      if (pauseChars.includes(currentChar)) {
+        delay += 250; // Dừng lâu hơn sau dấu câu
+      } else if (currentChar === ' ') {
+        delay += 40; // Dừng nhẹ cho khoảng trắng
+      }
+
+      // Giảm thời gian trễ nếu là ký tự cuối để tránh chờ quá lâu
+      if (currentTypeIndex.value === text.length - 1) {
+        delay = Math.min(delay, 60);
+      }
+
+      setTimeout(() => typeTextEffect(text), delay);
+    });
+  } else {
+    isTyping.value = false;
+
+    // Lấy dòng hiện tại đang typin
+    const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+    if (!conversation.value || lastVisibleIndex >= conversation.value.dialogue.length) return;
+
+    const currentLine = conversation.value.dialogue[lastVisibleIndex];
+
+    // Chỉ hiển thị mờ dòng tiếp theo nếu là dòng của Nihongo IT
+    const nextIndex = lastVisibleIndex + 1;
+    if (conversation.value && nextIndex < conversation.value.dialogue.length) {
+      const nextLine = conversation.value.dialogue[nextIndex];
+
+      // Hiển thị mờ dòng tiếp theo nếu là của Nihongo IT
+      if (nextLine.speaker !== 'user' && !dimmedLineIndices.value.includes(nextIndex) && !visibleLineIndices.value.includes(nextIndex)) {
+        requestAnimationFrame(() => {
+          dimmedLineIndices.value.push(nextIndex);
+        });
+      }
+    }
+
+    // Chỉ tự động hiển thị dòng tiếp theo nếu là dòng đầu tiên của Nihongo IT
+    if (currentLine.speaker !== 'user' && lastVisibleIndex === 0) {
+      setTimeout(() => {
+        startTypingNextLine();
+      }, 800); // Giảm xuống 800ms thay vì 1000ms
+    }
+  }
+}
+
+// Bắt đầu hiệu ứng typing cho dòng tiếp theo
+const startTypingNextLine = () => {
+  if (!conversation.value) return;
+
+  const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
+  const nextIndex = lastVisibleIndex + 1;
+
+  // Kiểm tra xem có dòng tiếp theo không
+  if (nextIndex < conversation.value.dialogue.length) {
+    const nextLine = conversation.value.dialogue[nextIndex];
+
+    // Nếu dòng tiếp theo đang hiển thị mờ, xóa khỏi danh sách hiển thị mờ
+    requestAnimationFrame(() => {
+      if (dimmedLineIndices.value.includes(nextIndex)) {
+        dimmedLineIndices.value = dimmedLineIndices.value.filter(i => i !== nextIndex);
+      }
+
+      // Thêm dòng vào danh sách hiển thị
+      visibleLineIndices.value.push(nextIndex);
+
+      // Áp dụng hiệu ứng typing
+      isTyping.value = true;
+      typedText.value = '';
+      currentTypeIndex.value = 0;
+
+      // Đảm bảo tất cả thay đổi DOM đã được áp dụng trước khi bắt đầu typing
+      setTimeout(() => {
+        typeTextEffect(nextLine.japanese);
+        // Cuộn sau khi bắt đầu hiệu ứng typing nhưng không chờ hoàn thành
+        scrollToLatestMessage();
+      }, 50);
+    });
+  }
+}
 
 onUnmounted(() => {
   // Clean up resources when component is destroyed
@@ -1374,12 +1498,8 @@ onUnmounted(() => {
   });
 
   // Cleanup Azure Speech Recognizer
-  if (azureSpeechRecognizer.value) {
-    azureSpeechRecognizer.value.stopContinuousRecognitionAsync(
-      () => {},
-      (error) => console.error('Error stopping Azure Speech Recognition:', error)
-    );
-    azureSpeechRecognizer.value = null;
+  if (speechRecognitionService.isServiceInitialized()) {
+    speechRecognitionService.stopRecognition();
   }
 })
 </script>

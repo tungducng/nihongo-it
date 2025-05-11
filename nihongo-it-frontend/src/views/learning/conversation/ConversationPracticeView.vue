@@ -134,13 +134,19 @@
                       </span>
                       <span v-else>{{ line.meaning }}</span>
                     </div>
+
+                    <!-- Interim Text Display -->
+                    <div v-if="isUserLine(line) && activeLineIndex === i && isRecording && interimText"
+                         class="mt-2 text-caption font-italic azure-interim-text">
+                      <span>{{ interimText }}</span>
+                    </div>
                   </div>
 
                   <!-- User Controls section below message -->
                   <div v-if="isUserLine(line)" class="user-controls mt-0">
                     <!-- Row of controls -->
                     <div class="d-flex align-center flex-wrap">
-                      <!-- Recording Controls (always visible) -->
+                      <!-- Recording Controls -->
                       <div class="d-flex gap-2">
                         <v-btn
                           size="small"
@@ -238,6 +244,7 @@ import { useToast } from 'vue-toast-notification'
 import { useAuthStore } from '@/stores'
 import axios, { AxiosError } from 'axios'
 import authService from '@/services/auth.service'
+import * as speechsdk from 'microsoft-cognitiveservices-speech-sdk'
 
 // Define types
 interface ConversationLine {
@@ -309,6 +316,45 @@ const typedText = ref('');
 const currentTypeIndex = ref(0);
 const typeSpeed = ref(60); // ms per character - tốc độ typing có thể điều chỉnh
 const typingVariation = ref(15); // Thêm biến đổi ngẫu nhiên cho tốc độ typing để tự nhiên hơn
+
+// Biến để lưu interim text
+const interimText = ref('');
+
+// Azure Speech Configuration - chỉ để nhận dạng và hiển thị text
+const azureSpeechKey = ref(import.meta.env.VITE_AZURE_SPEECH_KEY || '');
+const azureSpeechRegion = ref(import.meta.env.VITE_AZURE_SPEECH_REGION || '');
+const hasAzureSpeechConfig = computed(() => azureSpeechKey.value && azureSpeechRegion.value);
+const azureSpeechRecognizer = ref<speechsdk.SpeechRecognizer | null>(null);
+
+// Khởi tạo Azure Speech Recognition
+const initializeAzureSpeech = (): boolean => {
+  if (!hasAzureSpeechConfig.value) return false;
+
+  try {
+    const speechConfig = speechsdk.SpeechConfig.fromSubscription(
+      azureSpeechKey.value,
+      azureSpeechRegion.value
+    );
+    speechConfig.speechRecognitionLanguage = 'ja-JP';
+
+    // Thiết lập cấu hình âm thanh
+    const audioConfig = speechsdk.AudioConfig.fromDefaultMicrophoneInput();
+    azureSpeechRecognizer.value = new speechsdk.SpeechRecognizer(speechConfig, audioConfig);
+
+    // Xử lý sự kiện đang nhận dạng (cập nhật real-time)
+    azureSpeechRecognizer.value.recognizing = (_, e) => {
+      if (e.result.reason === speechsdk.ResultReason.RecognizingSpeech) {
+        interimText.value = e.result.text;
+        console.log('Azure recognizing:', e.result.text);
+      }
+    };
+
+    return true;
+  } catch (error) {
+    console.error('Error initializing Azure Speech Recognition:', error);
+    return false;
+  }
+};
 
 // Computed
 const isConversationCompleted = computed(() => {
@@ -416,7 +462,6 @@ const playAudio = async (line: ConversationLine) => {
 
       if (checkResponse.data.exists) {
         // Audio exists, use it
-        console.log('Using existing conversation audio file');
         toast.info('Đang phát âm thanh...', {
           position: 'top',
           duration: 2000
@@ -528,13 +573,31 @@ const canInteractWith = (index: number): boolean => {
   return line.speaker === 'user';
 }
 
+// Sửa lại hàm startRecording để tích hợp Azure Speech
 const startRecording = async (index: number) => {
   try {
     // Reset recording state
     audioChunks.value = [];
     activeLineIndex.value = index;
     isSilent.value = false;
-    hasSpoken.value = false; // Reset biến theo dõi trạng thái nói
+    hasSpoken.value = false;
+    interimText.value = '';
+
+    // Bắt đầu Azure Speech Recognition để nhận dạng text song song
+    if (hasAzureSpeechConfig.value && !azureSpeechRecognizer.value) {
+      initializeAzureSpeech();
+    }
+
+    if (azureSpeechRecognizer.value) {
+      // Bắt đầu nhận dạng liên tục
+      azureSpeechRecognizer.value.startContinuousRecognitionAsync(
+        () => console.log('Azure Speech Recognition started'),
+        (error) => console.error('Error starting Azure Speech Recognition:', error)
+      );
+    } else {
+      // Nếu không có Azure, vẫn hiển thị interim text thường
+      interimText.value = 'Đang nghe...';
+    }
 
     audioStream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -589,7 +652,7 @@ const startRecording = async (index: number) => {
   }
 }
 
-// Hàm thiết lập phát hiện âm thanh im lặng
+// Sửa hàm setupSilenceDetection để không ghi đè lên văn bản từ Azure
 const setupSilenceDetection = (stream: MediaStream) => {
   try {
     // Tạo audio context
@@ -612,6 +675,10 @@ const setupSilenceDetection = (stream: MediaStream) => {
     const silenceThreshold = 20; // Ngưỡng im lặng
     const speechThreshold = 20; // Ngưỡng để xác định đã nói (cao hơn ngưỡng im lặng)
 
+    // Thêm biến để theo dõi mức âm thanh trước đó
+    let prevLevel = 0;
+    let speakingDuration = 0;
+
     const checkSilence = () => {
       if (!isRecording.value) return;
 
@@ -624,14 +691,31 @@ const setupSilenceDetection = (stream: MediaStream) => {
       }
       const average = sum / bufferLength;
 
-      // Debug log (có thể bỏ sau khi đã cài đặt thành công)
-      // console.log('Audio level:', average);
+      // Cập nhật interim text dựa trên mức âm thanh - chỉ khi không có Azure
+      if (average > speechThreshold) {
+        // Đã phát hiện âm thanh, có thể là đang nói
+        if (!hasSpoken.value) {
+          hasSpoken.value = true;
+          console.log('Speech detected');
+          // Cập nhật interim text khi bắt đầu nói - chỉ khi không có Azure
+          if (!azureSpeechRecognizer.value && interimText.value === '') {
+            interimText.value = 'Đang nghe...';
+          }
+        }
 
-      // Kiểm tra xem người dùng đã nói hay chưa
-      if (average > speechThreshold && !hasSpoken.value) {
-        hasSpoken.value = true;
-        console.log('Speech detected');
+        // Nếu mức âm thanh khác nhiều so với trước đó, cập nhật hiển thị - chỉ khi không có Azure
+        if (Math.abs(average - prevLevel) > 10 && !azureSpeechRecognizer.value) {
+          speakingDuration += 100; // Mỗi 100ms
+          // Thay đổi hiển thị theo thời gian nói
+          if (speakingDuration > 1000) {
+            interimText.value = 'Đang phân tích...';
+          } else {
+            interimText.value = 'Đang nghe...';
+          }
+        }
       }
+
+      prevLevel = average;
 
       if (average < silenceThreshold) {
         // Âm thanh im lặng
@@ -644,14 +728,23 @@ const setupSilenceDetection = (stream: MediaStream) => {
             // Chưa nói gì và im lặng quá 3 giây -> hủy ghi âm
             console.log('No speech detected, canceling recording');
             isSilent.value = true;
+            if (!azureSpeechRecognizer.value) {
+              interimText.value = 'Không phát hiện giọng nói';
+            }
             stopRecording();
             return;
           } else if (hasSpoken.value && silenceDuration > silenceDetectionDuration) {
             // Đã nói và im lặng quá 3 giây -> tự động kết thúc và gửi đi
             console.log('Silence after speech detected, auto-submitting');
             isSilent.value = true;
+            if (!azureSpeechRecognizer.value) {
+              interimText.value = 'Đang xử lý...';
+            }
             stopRecording();
             return;
+          } else if (hasSpoken.value && silenceDuration > 1000 && !azureSpeechRecognizer.value) {
+            // Im lặng tạm thời - cập nhật interim text nếu không có Azure
+            interimText.value = 'Đang xử lý...';
           }
         }
       } else {
@@ -671,7 +764,19 @@ const setupSilenceDetection = (stream: MediaStream) => {
   }
 }
 
+// Sửa lại hàm stopRecording để dừng Azure Speech
 const stopRecording = () => {
+  // Dừng Azure Speech Recognition nếu đang chạy
+  if (azureSpeechRecognizer.value) {
+    azureSpeechRecognizer.value.stopContinuousRecognitionAsync(
+      () => {
+        console.log('Azure Speech Recognition stopped');
+        // Không xóa interimText để giữ lại transcription đã nhận diện
+      },
+      (error) => console.error('Error stopping Azure Speech Recognition:', error)
+    );
+  }
+
   // Xóa timeout phát hiện im lặng
   if (silenceTimeout.value !== null) {
     clearTimeout(silenceTimeout.value);
@@ -679,6 +784,11 @@ const stopRecording = () => {
   }
 
   if (mediaRecorder.value && isRecording.value) {
+    // Nếu không dùng Azure, hiển thị "Đang xử lý..."
+    if (!azureSpeechRecognizer.value) {
+      interimText.value = 'Đang xử lý...';
+    }
+
     mediaRecorder.value.stop();
     isRecording.value = false;
 
@@ -725,6 +835,11 @@ const processRecording = async (index: number) => {
   isProcessing.value = true;
 
   try {
+    // Xóa interim text khi không dùng Azure
+    if (!azureSpeechRecognizer.value) {
+      interimText.value = '';
+    }
+
     // Verify authentication before proceeding
     const authToken = authService.getToken()
     if (!authToken) {
@@ -780,7 +895,7 @@ const processRecording = async (index: number) => {
         score: pronunciationScores.value[index]
       });
 
-      if (index === lastVisibleIndex) {
+      if (index === lastVisibleIndex && pronunciationScores.value[index] > 50) {
         markAsComplete(index);
       } else {
         // Nếu không phải dòng cuối cùng, chỉ cập nhật trạng thái hoàn thành
@@ -790,6 +905,11 @@ const processRecording = async (index: number) => {
   } catch (err) {
     console.error('Error processing recording:', err);
 
+    // Xóa interim text nếu xử lý lỗi và không dùng Azure
+    if (!azureSpeechRecognizer.value) {
+      interimText.value = '';
+    }
+
     // Sử dụng điểm ngẫu nhiên nếu API không hoạt động
     const randomScore = Math.floor(Math.random() * 51) + 50;
     pronunciationScores.value[index] = randomScore;
@@ -798,14 +918,6 @@ const processRecording = async (index: number) => {
       position: 'top',
       duration: 3000
     });
-
-    // Vẫn cập nhật trạng thái hoàn thành
-    // const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
-    // if (index === lastVisibleIndex) {
-    //   markAsComplete(index);
-    // } else {
-    //   lineCompletionStatus.value[index] = true;
-    // }
   } finally {
     isProcessing.value = false;
   }
@@ -904,7 +1016,7 @@ const typeTextEffect = (text: string) => {
   } else {
     isTyping.value = false;
 
-    // Lấy dòng hiện tại đang typing
+    // Lấy dòng hiện tại đang typin
     const lastVisibleIndex = visibleLineIndices.value[visibleLineIndices.value.length - 1];
     if (!conversation.value || lastVisibleIndex >= conversation.value.dialogue.length) return;
 
@@ -1053,8 +1165,6 @@ const navigateBack = () => {
 
 // Hàm định dạng văn bản tiếng Nhật với các từ được tô màu
 const formatJapaneseWithHighlights = (text: string, analysis: SpeechAnalysisResult): string => {
-  console.log("Formatting text with analysis:", JSON.stringify(analysis, null, 2));
-
   if (!analysis) {
     return text;
   }
@@ -1099,8 +1209,6 @@ const formatJapaneseWithHighlights = (text: string, analysis: SpeechAnalysisResu
 
   // Cách 2: Sử dụng transcription để tìm các phần phát âm được
   if (analysis.transcription) {
-    console.log("Using transcription for highlighting:", analysis.transcription);
-
     // Thực hiện phân tích từng ký tự trong transcription và highlight
     // vào văn bản gốc nếu tìm thấy ký tự trùng khớp
     const transcribedChars = analysis.transcription
@@ -1140,7 +1248,6 @@ const formatJapaneseWithHighlights = (text: string, analysis: SpeechAnalysisResu
 // Thêm hàm mới để debug dữ liệu từ API
 const logSpeechAnalysisResult = (result: SpeechAnalysisResult | null) => {
   if (!result) {
-    console.log("No analysis result available");
     return;
   }
 
@@ -1163,45 +1270,7 @@ const escapeRegExp = (string: string): string => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Thêm một mock API result để test chức năng tô màu
-const testHighlightFunction = () => {
-  // Mock API response based on your example
-  const mockResult: SpeechAnalysisResult = {
-    score: 24,
-    feedback: "Cần cải thiện phát âm nhiều hơn.",
-    intonation: "Ngữ điệu xuất sắc",
-    clarity: "Cần điều chỉnh vị trí lưỡi khi phát âm",
-    rhythm: "Không áp dụng",
-    transcription: "ご に ち",
-    words: [
-      {
-        text: "こんにちは",
-        isCorrect: false,
-        suggestion: "Thiếu âm. Cần phát âm rõ 'こんにちは'."
-      },
-      {
-        text: "に",
-        isCorrect: true,
-        suggestion: ""
-      },
-      {
-        text: "ち",
-        isCorrect: true,
-        suggestion: ""
-      }
-    ],
-    personalizedFeedback: "Hãy tiếp tục cố gắng!"
-  };
-
-  // Hiện thị kết quả test
-  console.log("Test highlight function:");
-  const originalText = "こんにちは、はじめまして。";
-  const highlighted = formatJapaneseWithHighlights(originalText, mockResult);
-  console.log("Original:", originalText);
-  console.log("Highlighted:", highlighted);
-}
-
-// Lifecycle hooks
+// Thêm vào phần onMounted
 onMounted(() => {
   loading.value = true;
 
@@ -1284,19 +1353,14 @@ onMounted(() => {
       typeTextEffect(conversation.value.dialogue[0].japanese);
     }
 
+    // Thêm watcher để tự động cuộn xuống khi có dòng mới
+    watch(visibleLineIndices, () => {
+      console.log("Visible lines changed, scrolling to bottom");
+      scrollToLatestMessage();
+    }, { deep: true });
+
     loading.value = false;
   }, 1000);
-
-  // Thêm watcher để tự động cuộn xuống khi có dòng mới
-  watch(visibleLineIndices, () => {
-    console.log("Visible lines changed, scrolling to bottom");
-    scrollToLatestMessage();
-  }, { deep: true });
-
-  // Thêm vào cuối onMounted để test chức năng tô màu
-  setTimeout(() => {
-    testHighlightFunction();
-  }, 2000);
 })
 
 onUnmounted(() => {
@@ -1308,6 +1372,15 @@ onUnmounted(() => {
   recordedAudioUrls.value.forEach(url => {
     if (url) URL.revokeObjectURL(url);
   });
+
+  // Cleanup Azure Speech Recognizer
+  if (azureSpeechRecognizer.value) {
+    azureSpeechRecognizer.value.stopContinuousRecognitionAsync(
+      () => {},
+      (error) => console.error('Error stopping Azure Speech Recognition:', error)
+    );
+    azureSpeechRecognizer.value = null;
+  }
 })
 </script>
 
@@ -1511,6 +1584,19 @@ onUnmounted(() => {
 
   .avatar-container {
     margin-top: 0;
+  }
+
+  .azure-speech-toggle {
+    margin-right: 8px;
+  }
+
+  .azure-interim-text {
+    color: #666;
+    font-style: italic;
+    background-color: rgba(0, 0, 0, 0.03);
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-top: 4px;
   }
 }
 </style>

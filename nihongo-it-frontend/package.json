@@ -21,6 +21,7 @@
     "date-fns": "^4.1.0",
     "kuroshiro": "^1.2.0",
     "kuroshiro-analyzer-kuromoji": "^1.1.0",
+    "microsoft-cognitiveservices-speech-sdk": "^1.43.1",
     "pinia": "^3.0.1",
     "recorder-js": "^1.0.7",
     "sass": "^1.86.3",

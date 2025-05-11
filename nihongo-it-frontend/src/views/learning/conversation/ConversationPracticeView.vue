@@ -303,7 +303,7 @@ const mediaRecorder = ref<MediaRecorder | null>(null)
 const audioChunks = ref<Blob[]>([])
 const isSilent = ref(false)
 const silenceTimeout = ref<number | null>(null)
-const silenceDetectionDuration = 3000 //  giây im lặng sau khi nói sẽ tự động gửi
+const silenceDetectionDuration = 2000 //  giây im lặng sau khi nói sẽ tự động gửi
 const hasSpoken = ref(false) // Biến để theo dõi xem người dùng đã nói gì chưa
 
 // Audio stream
@@ -574,7 +574,7 @@ onMounted(() => {
         },
         {
           speaker: 'user',
-          japanese: 'こんにちは、はじめまして。',
+          japanese: 'こんにちは、初めまして。',
           meaning: 'Xin chào, rất vui được gặp bạn.'
         },
         {
@@ -584,7 +584,7 @@ onMounted(() => {
         },
         {
           speaker: 'user',
-          japanese: 'わたしの名前は＿＿＿です。',
+          japanese: '私の名前は鈴木です。',
           meaning: 'Tên tôi là ___.'
         },
         {
@@ -771,7 +771,7 @@ const hasCommonCharacters = (str1: string, str2: string, threshold: number = 0.1
   return ratio >= threshold;
 }
 
-// Cập nhật hàm startRecording để xử lý lỗi từ Azure Speech đúng cách
+// Cập nhật hàm startRecording để lưu trữ silenceRecorder
 const startRecording = async (index: number) => {
   try {
     // Reset recording state
@@ -787,10 +787,17 @@ const startRecording = async (index: number) => {
         // Xử lý văn bản đang nhận dạng (interim)
         (text) => {
           interimText.value = text;
+          // Nếu có text, đánh dấu là đã phát hiện lời nói
+          if (text && text.trim().length > 0) {
+            hasSpoken.value = true;
+          }
         },
         // Xử lý văn bản đã nhận dạng xong (final)
         (text) => {
           if (text.trim()) {
+            // Đánh dấu là đã nói
+            hasSpoken.value = true;
+
             // Lưu kết quả nhận dạng để sử dụng sau khi kết thúc ghi âm
             if (lineAnalysisResults.value[index]) {
               lineAnalysisResults.value[index]!.transcription = text;
@@ -812,7 +819,7 @@ const startRecording = async (index: number) => {
                 position: 'top',
                 duration: 3000
               });
-              stopRecordingAndProcess()
+              stopRecording();
               return;
             }
           }
@@ -872,8 +879,19 @@ const startRecording = async (index: number) => {
         duration: 2000
       });
 
-      // Thiết lập phát hiện âm thanh im lặng
-      setupSilenceDetection(audioStream);
+      // Đặt thời gian tối đa cho phiên ghi âm là 10 giây
+      setTimeout(() => {
+        if (isRecording.value && mediaRecorder.value && mediaRecorder.value.state === 'recording') {
+          if (!hasSpoken.value) {
+            isSilent.value = true;
+            toast.warning('Không phát hiện giọng nói sau 5 giây, dừng ghi âm', {
+              position: 'top',
+              duration: 2000
+            });
+          }
+          stopRecording();
+        }
+      }, 5000);
     }
   } catch (err) {
     console.error('Error starting recording:', err);
@@ -881,34 +899,6 @@ const startRecording = async (index: number) => {
       position: 'top',
       duration: 3000
     });
-  }
-}
-
-// Cập nhật hàm stopRecording để đảm bảo dừng hoàn toàn nhận dạng
-const stopRecording = async () => {
-  // Đảm bảo dừng nhận dạng trước khi dừng ghi âm
-  if (speechRecognitionService.isServiceInitialized()) {
-    try {
-      await speechRecognitionService.stopRecognition();
-    } catch (error) {
-      console.error('Error stopping speech recognition:', error);
-    }
-  }
-
-  // Xóa timeout phát hiện im lặng
-  if (silenceTimeout.value !== null) {
-    clearTimeout(silenceTimeout.value);
-    silenceTimeout.value = null;
-  }
-
-  if (mediaRecorder.value && isRecording.value) {
-    mediaRecorder.value.stop();
-    isRecording.value = false;
-
-    // Stop all audio tracks
-    if (audioStream) {
-      audioStream.getTracks().forEach(track => track.stop());
-    }
   }
 }
 
@@ -1119,154 +1109,6 @@ const escapeRegExp = (string: string): string => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-// Sửa lại hàm setupSilenceDetection với logic rõ ràng hơn
-const setupSilenceDetection = (stream: MediaStream) => {
-  try {
-    // Tạo audio context
-    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-
-    // Tạo audio source từ stream
-    const source = audioContext.createMediaStreamSource(stream);
-
-    // Tạo analyzer node để phân tích âm thanh
-    const analyzer = audioContext.createAnalyser();
-    analyzer.fftSize = 256;
-    analyzer.smoothingTimeConstant = 0.8;
-    source.connect(analyzer);
-
-    // Bắt đầu theo dõi mức độ âm thanh
-    const bufferLength = analyzer.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    let silenceStart: number | null = null;
-    const silenceThreshold = 20; // Ngưỡng im lặng
-    const speechThreshold = 20; // Ngưỡng để xác định đã nói (cao hơn ngưỡng im lặng)
-
-    // Biến để theo dõi mức âm thanh cao nhất và trạng thái nói
-    let hasSpeechDetected = false;
-
-    const checkSilence = () => {
-      if (!isRecording.value) return;
-
-      analyzer.getByteFrequencyData(dataArray);
-
-      // Tính mức độ âm thanh trung bình
-      let sum = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        sum += dataArray[i];
-      }
-      const average = sum / bufferLength;
-
-      // Kiểm tra xem người dùng đã nói hay chưa
-      if (average > speechThreshold && !hasSpoken.value) {
-        hasSpoken.value = true;
-        console.log('Speech detected');
-      }
-
-      if (average < silenceThreshold) {
-        // Âm thanh im lặng
-        if (silenceStart === null) {
-          silenceStart = Date.now();
-        } else {
-          const silenceDuration = Date.now() - silenceStart;
-
-          if (!hasSpoken.value && silenceDuration > 3000) {
-            // Chưa nói gì và im lặng quá 3 giây -> hủy ghi âm
-            console.log('No speech detected, canceling recording');
-            isSilent.value = true;
-            stopRecordingAndProcess();
-            // stopRecording();
-            return;
-          } else if (hasSpoken.value && silenceDuration > silenceDetectionDuration) {
-            // Đã nói và im lặng quá 3 giây -> tự động kết thúc và gửi đi
-            console.log('Silence after speech detected, auto-submitting');
-            isSilent.value = true;
-            stopRecordingAndProcess();
-            // stopRecording();
-            return;
-          }
-        }
-      } else {
-        // Có âm thanh, đặt lại thời gian bắt đầu im lặng
-        silenceStart = null;
-      }
-
-      // Tiếp tục kiểm tra
-      silenceTimeout.value = window.setTimeout(checkSilence, 100);
-    };
-
-    // Bắt đầu kiểm tra im lặng
-    checkSilence();
-  } catch (err) {
-    console.error('Error setting up silence detection:', err);
-    // Tiếp tục ghi âm ngay cả khi không thể thiết lập phát hiện im lặng
-  }
-}
-
-// Hàm dừng ghi âm và xử lý kết quả
-const stopRecordingAndProcess = () => {
-  if (mediaRecorder.value && isRecording.value) {
-    mediaRecorder.value.stop();
-    isRecording.value = false;
-
-    // Dừng nhận dạng giọng nói nếu đang chạy
-    if (speechRecognitionService.isServiceInitialized()) {
-      try {
-        speechRecognitionService.stopRecognition();
-      } catch (error) {
-        console.error('Error stopping speech recognition:', error);
-      }
-    }
-
-    // Xóa timeout phát hiện im lặng
-    if (silenceTimeout.value !== null) {
-      clearTimeout(silenceTimeout.value);
-      silenceTimeout.value = null;
-    }
-
-    // Stop all audio tracks
-    if (audioStream) {
-      audioStream.getTracks().forEach(track => track.stop());
-    }
-  }
-}
-
-// Hàm dừng ghi âm nhưng không xử lý kết quả
-const stopRecordingWithoutProcessing = () => {
-  if (mediaRecorder.value && isRecording.value) {
-    // Đặt một biến để chỉ ra rằng không nên xử lý kết quả
-    isSilent.value = true;
-
-    mediaRecorder.value.stop();
-    isRecording.value = false;
-
-    // Dừng nhận dạng giọng nói nếu đang chạy
-    if (speechRecognitionService.isServiceInitialized()) {
-      try {
-        speechRecognitionService.stopRecognition();
-      } catch (error) {
-        console.error('Error stopping speech recognition:', error);
-      }
-    }
-
-    // Xóa timeout phát hiện im lặng
-    if (silenceTimeout.value !== null) {
-      clearTimeout(silenceTimeout.value);
-      silenceTimeout.value = null;
-    }
-
-    // Stop all audio tracks
-    if (audioStream) {
-      audioStream.getTracks().forEach(track => track.stop());
-    }
-  }
-}
-
-// Hàm kiểm tra xem dòng có được hiển thị không
-const isLineVisible = (index: number) => {
-  return visibleLineIndices.value.includes(index);
-}
-
 // Scroll tới tin nhắn mới nhất với hiệu ứng mượt hơn
 const scrollToLatestMessage = () => {
   // Đợi DOM cập nhật
@@ -1448,6 +1290,70 @@ const startTypingNextLine = () => {
       }, 50);
     });
   }
+}
+
+// Cập nhật hàm stopRecording để đảm bảo dừng hoàn toàn nhận dạng
+const stopRecording = async () => {
+  // Đảm bảo dừng nhận dạng trước khi dừng ghi âm
+  if (speechRecognitionService.isServiceInitialized()) {
+    try {
+      await speechRecognitionService.stopRecognition();
+    } catch (error) {
+      console.error('Error stopping speech recognition:', error);
+    }
+  }
+
+  // Xóa timeout phát hiện im lặng
+  if (silenceTimeout.value !== null) {
+    clearTimeout(silenceTimeout.value);
+    silenceTimeout.value = null;
+  }
+
+  if (mediaRecorder.value && isRecording.value) {
+    mediaRecorder.value.stop();
+    isRecording.value = false;
+
+    // Stop all audio tracks
+    if (audioStream) {
+      audioStream.getTracks().forEach(track => track.stop());
+    }
+  }
+}
+
+// Hàm dừng ghi âm nhưng không xử lý kết quả
+const stopRecordingWithoutProcessing = () => {
+  if (mediaRecorder.value && isRecording.value) {
+    // Đặt một biến để chỉ ra rằng không nên xử lý kết quả
+    isSilent.value = true;
+
+    mediaRecorder.value.stop();
+    isRecording.value = false;
+
+    // Dừng nhận dạng giọng nói nếu đang chạy
+    if (speechRecognitionService.isServiceInitialized()) {
+      try {
+        speechRecognitionService.stopRecognition();
+      } catch (error) {
+        console.error('Error stopping speech recognition:', error);
+      }
+    }
+
+    // Xóa timeout phát hiện im lặng
+    if (silenceTimeout.value !== null) {
+      clearTimeout(silenceTimeout.value);
+      silenceTimeout.value = null;
+    }
+
+    // Stop all audio tracks
+    if (audioStream) {
+      audioStream.getTracks().forEach(track => track.stop());
+    }
+  }
+}
+
+// Hàm kiểm tra xem dòng có được hiển thị không
+const isLineVisible = (index: number) => {
+  return visibleLineIndices.value.includes(index);
 }
 
 onUnmounted(() => {
@@ -1685,3 +1591,4 @@ onUnmounted(() => {
   }
 }
 </style>
+

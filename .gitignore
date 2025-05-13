@@ -7,3 +7,76 @@ __pycache__/
 .pytest_cache/
 
 logs
+
+.idea/
+.vscode/
+
+.env
+
+.env.local
+
+### Java ###
+*.class
+*.log
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
+
+### Gradle ###
+.gradle
+**/build/
+!gradle/wrapper/gradle-wrapper.jar
+.gradletasknamecache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+
+### VS Code ###
+.vscode/
+*.code-workspace
+
+### Spring Boot ###
+target/
+**/src/main/**/target/
+**/src/test/**/target/
+
+### Logs ###
+logs/
+
+### Environment variables ###
+.env
+
+### Docker ###
+.docker/
+
+### MacOS ###
+.DS_Store
+
+### Windows ###
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+### Project specific ###
+application-local.yml
+application-local.properties
+
+gradle/**
+gradlew.bat
+build/
+**/build/**
+**/target/**
+**/gradle/**
+**/gradlew**
+**/gradlew.bat**
+**/build.gradle**

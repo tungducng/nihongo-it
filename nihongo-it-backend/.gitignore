@@ -61,3 +61,16 @@ src/main/resources/vocabulary/
 src/main/resources/conversation/
 *.mp3
 *.wav
+
+.env
+
+.env.local
+
+gradle/**
+gradlew
+gradlew.bat
+**/build/**
+**/gradle/**
+**/gradlew**
+**/gradlew.bat**
+**/build.gradle**

@@ -1,0 +1,252 @@
+# version: '3.8'
+
+# services:
+#   # Database
+#   postgres:
+#     image: postgres:16-alpine
+#     container_name: nihongo-it-postgres
+#     environment:
+#       POSTGRES_DB: ${POSTGRES_DB:-nihongo_it}
+#       POSTGRES_USER: ${DB_USERNAME:-postgres}
+#       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+#     ports:
+#       - "5432:5432"
+#     volumes:
+#       - postgres-data:/var/lib/postgresql/data
+#       - ./init-db:/docker-entrypoint-initdb.d
+#     networks:
+#       - nihongo-net
+
+#   # Redis for caching
+#   redis:
+#     image: redis:alpine
+#     container_name: nihongo-it-redis
+#     ports:
+#       - "6379:6379"
+#     volumes:
+#       - redis-data:/data
+#     networks:
+#       - nihongo-net
+
+#   # Service Discovery
+#   eureka-server:
+#     build:
+#       context: ./eureka-server
+#     container_name: nihongo-it-eureka
+#     ports:
+#       - "8761:8761"
+#     networks:
+#       - nihongo-net
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+#   # API Gateway
+#   api-gateway:
+#     build:
+#       context: ./api-gateway
+#     container_name: nihongo-it-gateway
+#     ports:
+#       - "8080:8080"
+#     environment:
+#       - EUREKA_SERVICE_URL=http://eureka-server:8761/eureka/
+#       - JWT_SECRET=${JWT_SECRET:-ThisIsAVerySecureSecretKeyForJWTGenerationInDevelopment}
+#     depends_on:
+#       eureka-server:
+#         condition: service_healthy
+#     networks:
+#       - nihongo-net
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+#   # User Service (Auth Service)
+#   user-service:
+#     build:
+#       context: ./user-service
+#     container_name: nihongo-it-user
+#     ports:
+#       - "8086:8086"
+#     environment:
+#       - EUREKA_SERVICE_URL=http://eureka-server:8761/eureka/
+#       - DB_HOST=postgres
+#       - DB_PORT=5432
+#       - DB_NAME=${POSTGRES_DB:-nihongo_it}
+#       - DB_USERNAME=${DB_USERNAME:-postgres}
+#       - DB_PASSWORD=${DB_PASSWORD:-postgres}
+#       - JWT_SECRET=${JWT_SECRET:-ThisIsAVerySecureSecretKeyForJWTGenerationInDevelopment}
+#       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-your-client-id}
+#       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-your-client-secret}
+#     depends_on:
+#       postgres:
+#         condition: service_started
+#       eureka-server:
+#         condition: service_healthy
+#     networks:
+#       - nihongo-net
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8086/actuator/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+#   # Learning Service
+#   learning-service:
+#     build:
+#       context: ./learning-service
+#     container_name: nihongo-it-learning
+#     ports:
+#       - "8081:8081"
+#     environment:
+#       - EUREKA_SERVICE_URL=http://eureka-server:8761/eureka/
+#       - DB_HOST=postgres
+#       - DB_PORT=5432
+#       - DB_NAME=${POSTGRES_DB:-nihongo_it}
+#       - DB_USERNAME=${DB_USERNAME:-postgres}
+#       - DB_PASSWORD=${DB_PASSWORD:-postgres}
+#       - JWT_SECRET=${JWT_SECRET:-ThisIsAVerySecureSecretKeyForJWTGenerationInDevelopment}
+#       - AI_SERVICE_URL=http://ai-service:8082
+#       - UTILITY_SERVICE_URL=http://utility-service:8083
+#       - NOTIFICATION_SERVICE_URL=http://notification-service:8084
+#       - STATISTIC_SERVICE_URL=http://statistic-service:8085
+#     depends_on:
+#       postgres:
+#         condition: service_started
+#       eureka-server:
+#         condition: service_healthy
+#       user-service:
+#         condition: service_healthy
+#     networks:
+#       - nihongo-net
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+#   # AI Service
+#   ai-service:
+#     build:
+#       context: ./ai-service
+#     container_name: nihongo-it-ai
+#     ports:
+#       - "8082:8082"
+#     environment:
+#       - EUREKA_SERVICE_URL=http://eureka-server:8761/eureka/
+#       - JWT_SECRET=${JWT_SECRET:-ThisIsAVerySecureSecretKeyForJWTGenerationInDevelopment}
+#       - OPENAI_API_KEY=${OPENAI_API_KEY:-your-api-key}
+#     depends_on:
+#       eureka-server:
+#         condition: service_healthy
+#       user-service:
+#         condition: service_healthy
+#     networks:
+#       - nihongo-net
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+#   # Utility Service
+#   utility-service:
+#     build:
+#       context: ./utility-service
+#     container_name: nihongo-it-utility
+#     ports:
+#       - "8083:8083"
+#     environment:
+#       - EUREKA_SERVICE_URL=http://eureka-server:8761/eureka/
+#       - JWT_SECRET=${JWT_SECRET:-ThisIsAVerySecureSecretKeyForJWTGenerationInDevelopment}
+#       - REDIS_HOST=redis
+#       - REDIS_PORT=6379
+#     depends_on:
+#       redis:
+#         condition: service_started
+#       eureka-server:
+#         condition: service_healthy
+#       user-service:
+#         condition: service_healthy
+#     networks:
+#       - nihongo-net
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+#   # Notification Service
+#   notification-service:
+#     build:
+#       context: ./notification-service
+#     container_name: nihongo-it-notification
+#     ports:
+#       - "8084:8084"
+#     environment:
+#       - EUREKA_SERVICE_URL=http://eureka-server:8761/eureka/
+#       - DB_HOST=postgres
+#       - DB_PORT=5432
+#       - DB_NAME=${POSTGRES_DB:-nihongo_it}
+#       - DB_USERNAME=${DB_USERNAME:-postgres}
+#       - DB_PASSWORD=${DB_PASSWORD:-postgres}
+#       - JWT_SECRET=${JWT_SECRET:-ThisIsAVerySecureSecretKeyForJWTGenerationInDevelopment}
+#       - MAIL_HOST=${MAIL_HOST:-smtp.gmail.com}
+#       - MAIL_PORT=${MAIL_PORT:-587}
+#       - MAIL_USERNAME=${MAIL_USERNAME:-your-email@gmail.com}
+#       - MAIL_PASSWORD=${MAIL_PASSWORD:-your-app-password}
+#     depends_on:
+#       postgres:
+#         condition: service_started
+#       eureka-server:
+#         condition: service_healthy
+#       user-service:
+#         condition: service_healthy
+#     networks:
+#       - nihongo-net
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8084/actuator/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+#   # Statistic Service
+#   statistic-service:
+#     build:
+#       context: ./statistic-service
+#     container_name: nihongo-it-statistic
+#     ports:
+#       - "8085:8085"
+#     environment:
+#       - EUREKA_SERVICE_URL=http://eureka-server:8761/eureka/
+#       - DB_HOST=postgres
+#       - DB_PORT=5432
+#       - DB_NAME=${POSTGRES_DB:-nihongo_it}
+#       - DB_USERNAME=${DB_USERNAME:-postgres}
+#       - DB_PASSWORD=${DB_PASSWORD:-postgres}
+#       - JWT_SECRET=${JWT_SECRET:-ThisIsAVerySecureSecretKeyForJWTGenerationInDevelopment}
+#     depends_on:
+#       postgres:
+#         condition: service_started
+#       eureka-server:
+#         condition: service_healthy
+#       user-service:
+#         condition: service_healthy
+#     networks:
+#       - nihongo-net
+#     healthcheck:
+#       test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+
+# networks:
+#   nihongo-net:
+#     driver: bridge
+
+# volumes:
+#   postgres-data:
+#   redis-data: 

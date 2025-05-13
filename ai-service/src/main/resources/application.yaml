@@ -30,7 +30,7 @@ server:
 # Eureka Configuration
 eureka:
   client:
-    enabled: ${EUREKA_ENABLED:false}
+    enabled: true
     register-with-eureka: true
     fetch-registry: true
     service-url:
@@ -38,6 +38,7 @@ eureka:
   instance:
     prefer-ip-address: true
     hostname: ${HOSTNAME:localhost}
+    instance-id: ${spring.application.name}:${random.uuid}
 
 # Swagger/OpenAPI
 springdoc:

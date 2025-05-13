@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # Database Services
   postgres:
     image: postgres:latest
     container_name: nihongo-it-postgres
@@ -28,6 +29,57 @@ services:
       - pgadmin_data:/var/lib/pgadmin
     depends_on:
       - postgres
+    networks:
+      - nihongo_network
+    restart: unless-stopped
+    
+  # Service Discovery
+  eureka-server:
+    build:
+      context: ./eureka-server
+      dockerfile: Dockerfile
+    container_name: nihongo-it-eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - nihongo_network
+    restart: unless-stopped
+    
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: nihongo-it-api-gateway
+    environment:
+      EUREKA_SERVICE_URL: http://eureka-server:8761/eureka/
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    networks:
+      - nihongo_network
+    restart: unless-stopped
+    
+  # User Service (Auth Service)
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: nihongo-it-user-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      EUREKA_SERVICE_URL: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+    ports:
+      - "8086:8086"
+    depends_on:
+      - postgres
+      - eureka-server
     networks:
       - nihongo_network
     restart: unless-stopped

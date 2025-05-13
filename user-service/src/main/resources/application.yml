@@ -26,8 +26,8 @@ spring:
       client:
         registration:
           google:
-            client-id: ${GOOGLE_CLIENT_ID:your-client-id-here}
-            client-secret: ${GOOGLE_CLIENT_SECRET:your-client-secret-here}
+            client-id: 1014067195013-47hr00d1f2gork8voqavccu3nvpcn25m.apps.googleusercontent.com
+            client-secret: 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
             scope: email,profile
   mail:
     host: smtp.gmail.com

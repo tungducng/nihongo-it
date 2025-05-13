@@ -10,18 +10,18 @@ spring:
         locator:
           enabled: true
           lower-case-service-id: true
+      # Đảm bảo các headers nhạy cảm được chuyển tiếp - không loại bỏ header Authorization
+      sensitive-headers:
+      # Loại bỏ cấu hình globalcors vì đã có corsWebFilter trong SecurityConfig
       routes:
         # User Service (Auth Service) Route
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/api/v1/users/**, /api/v1/auth/**, /api/v1/roles/**, /ai-service-api/**
+            - Path=/api/**, /api/v1/users/**, /api/v1/auth/**, /api/v1/roles/**
+            
           filters:
-            - StripPrefix=0  # Không rewrite path, chuyển tiếp nguyên đường dẫn
-            # - name: CircuitBreaker
-            #   args:
-            #     name: userServiceCircuitBreaker
-            #     fallbackUri: forward:/fallback/user
+            - StripPrefix=0
 
         # - id: learning-service
         #   uri: lb://learning-service
@@ -34,16 +34,13 @@ spring:
         #     #     name: learningServiceCircuitBreaker
         #     #     fallbackUri: forward:/fallback/learning
 
-        - id: ai-service
+        # AI Service Route cho direct access
+        - id: ai-service-direct
           uri: lb://ai-service
           predicates:
             - Path=/ai-service-api/**
           filters:
-            - StripPrefix=0  # Không rewrite path, chuyển tiếp nguyên đường dẫn
-            # - name: CircuitBreaker
-            #   args:
-            #     name: aiServiceCircuitBreaker
-            #     fallbackUri: forward:/fallback/ai
+            - StripPrefix=0
 
         # - id: notification-service
         #   uri: lb://notification-service
@@ -82,19 +79,6 @@ springdoc:
   api-docs:
     enabled: true
     path: /v3/api-docs
-
-# JWT Configuration
-jwt:
-  secret: ${JWT_SECRET:ThisIsAVerySecureSecretKeyForJWTGenerationInDevelopment}
-  expirationMs: ${JWT_EXPIRATION_MS:86400000}
-  refreshExpirationMs: ${JWT_REFRESH_EXPIRATION_MS:604800000}
-
-# CORS Configuration
-#cors:
-#  allowed-origins: ${CORS_ALLOWED_ORIGINS:*}
-#  allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,DELETE,OPTIONS}
-#  allowed-headers: ${CORS_ALLOWED_HEADERS:*}
-#  max-age: ${CORS_MAX_AGE:3600}
 
 logging:
   level:

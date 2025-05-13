@@ -8,6 +8,7 @@ import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.reactive.CorsWebFilter
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
+import org.springframework.http.HttpMethod
 
 @Configuration
 @EnableWebFluxSecurity
@@ -17,9 +18,10 @@ class SecurityConfig {
     fun springSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
         return http
             .csrf { it.disable() }
-            .cors { it.disable() } // Sử dụng CorsWebFilter dưới đây thay vì cấu hình trong SecurityWebFilterChain
+            .cors { it.disable() }  // Disable Spring Security CORS, we'll use our custom CorsWebFilter
             .authorizeExchange {
-                it.pathMatchers("/**").permitAll() // Tạm thời cho phép tất cả
+                it.pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()  // Always allow OPTIONS requests
+                it.pathMatchers("/**").permitAll()  // Allow all requests
             }
             .build()
     }
@@ -27,10 +29,24 @@ class SecurityConfig {
     @Bean
     fun corsWebFilter(): CorsWebFilter {
         val corsConfig = CorsConfiguration()
-        corsConfig.addAllowedOrigin("*")
+        
+        // Specify allowed origins - add any additional origins you need
+        corsConfig.allowedOrigins = listOf("http://localhost:5173", "http://localhost:3000", "https://nihongo-it.com")
+        
+        // Allow all common methods
         corsConfig.addAllowedMethod("*")
+        
+        // Allow all headers
         corsConfig.addAllowedHeader("*")
-        corsConfig.maxAge = 3600L
+        
+        // Expose common response headers
+        corsConfig.addExposedHeader("Authorization")
+        corsConfig.addExposedHeader("Content-Disposition")
+        
+        // Allow cookies for authenticated requests
+        corsConfig.allowCredentials = true
+        
+        corsConfig.maxAge = 3600L  // 1 hour
 
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", corsConfig)

@@ -26,14 +26,14 @@ spring:
       client:
         registration:
           google:
-            client-id: 1014067195013-47hr00d1f2gork8voqavccu3nvpcn25m.apps.googleusercontent.com
-            client-secret: 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
+            client-id: ${GOOGLE_CLIENT_ID:your-client-id-here}
+            client-secret: ${GOOGLE_CLIENT_SECRET:your-client-secret-here}
             scope: email,profile
   mail:
     host: smtp.gmail.com
     port: 587
     username: ${MAIL_USERNAME:no.reply.nihongo.it@gmail.com}
-    password: ${MAIL_PASSWORD:ngisopnkietkuvfx}
+    password: ${MAIL_PASSWORD:your-mail-app-password}
     properties:
       mail:
         smtp:

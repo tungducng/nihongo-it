@@ -71,15 +71,17 @@ Desktop.ini
 application-local.yml
 application-local.properties
 
-gradle/**
+# Gradle files
+.gradle/
+gradle/
+!gradle/wrapper/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+gradlew
 gradlew.bat
 build/
 **/build/**
 **/target/**
-**/gradle/**
-**/gradlew**
-**/gradlew.bat**
-**/build.gradle**
 
 # Ignore bin directories
 **/bin/**

@@ -80,3 +80,6 @@ build/
 **/gradlew**
 **/gradlew.bat**
 **/build.gradle**
+
+# Ignore bin directories
+**/bin/**

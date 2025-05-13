@@ -448,7 +448,7 @@ async function playAudio(item: VocabularyItem) {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
       // Call the TTS API with Authorization header
-      const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, item.term, {
+      const response = await axios.post(`${apiUrl}/ai-service-api/v1/tts/generate`, item.term, {
         headers: {
           'Content-Type': 'text/plain; charset=UTF-8',
           'Accept-Language': 'ja-JP',

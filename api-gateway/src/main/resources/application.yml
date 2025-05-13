@@ -18,8 +18,7 @@ spring:
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/api/**, /api/v1/users/**, /api/v1/auth/**, /api/v1/roles/**
-            
+            - Path=/api/**, /api/v1/users/**, /api/v1/auth/**, /api/v1/roles/**, /ai-service-api/**
           filters:
             - StripPrefix=0
 
@@ -35,7 +34,7 @@ spring:
         #     #     fallbackUri: forward:/fallback/learning
 
         # AI Service Route cho direct access
-        - id: ai-service-direct
+        - id: ai-service
           uri: lb://ai-service
           predicates:
             - Path=/ai-service-api/**

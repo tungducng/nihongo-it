@@ -716,7 +716,7 @@ async function playAudio(item: VocabularyItem, isExample = false) {
       const speed = isExample ? 1.0 : 0.9
 
       // Call the TTS API with Authorization header
-      const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
+      const response = await axios.post(`${apiUrl}/ai-service-api/v1/tts/generate`, textToSpeak, {
         headers: {
           'Content-Type': 'text/plain; charset=UTF-8',
           'Accept-Language': 'ja-JP',
@@ -879,7 +879,7 @@ async function toggleChatGPT(vocabId: string) {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
     // Query the AI for vocabulary explanation
-    axios.post(`${apiUrl}/api/v1/ai/vocabulary/explain`, null, {
+    axios.post(`${apiUrl}/ai-service-api/v1/vocabulary/explain`, null, {
       params: {
         term: vocabItem.term || '',
         pronunciation: vocabItem.pronunciation || '',

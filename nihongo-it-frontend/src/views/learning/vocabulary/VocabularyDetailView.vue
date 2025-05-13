@@ -383,7 +383,7 @@ const playAudio = async () => {
 
     // First check if audio already exists
     try {
-      const checkResponse = await axios.get(`${apiUrl}/api/v1/tts/check`, {
+      const checkResponse = await axios.get(`${apiUrl}/ai-service-api/v1/tts/check`, {
         params: {
           text: textToSpeak,
           contentType: 'vocabulary'
@@ -402,7 +402,7 @@ const playAudio = async () => {
         });
 
         // Get the audio file
-        const response = await axios.get(`${apiUrl}/api/v1/tts/audio`, {
+        const response = await axios.get(`${apiUrl}/ai-service-api/v1/tts/audio`, {
           params: {
             text: textToSpeak,
             contentType: 'vocabulary'
@@ -439,7 +439,7 @@ const playAudio = async () => {
     const speed = 0.9;
 
     // Call the TTS API with Authorization header and save audio flag
-    const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
+    const response = await axios.post(`${apiUrl}/ai-service-api/v1/tts/generate`, textToSpeak, {
       headers: {
         'Content-Type': 'text/plain; charset=UTF-8',
         'Accept-Language': 'ja-JP',
@@ -515,7 +515,7 @@ const playExampleAudio = async () => {
 
     // First check if audio already exists
     try {
-      const checkResponse = await axios.get(`${apiUrl}/api/v1/tts/check`, {
+      const checkResponse = await axios.get(`${apiUrl}/ai-service-api/v1/tts/check`, {
         params: {
           text: textToSpeak,
           contentType: 'example'
@@ -534,7 +534,7 @@ const playExampleAudio = async () => {
         });
 
         // Get the audio file
-        const response = await axios.get(`${apiUrl}/api/v1/tts/audio`, {
+        const response = await axios.get(`${apiUrl}/ai-service-api/v1/tts/audio`, {
           params: {
             text: textToSpeak,
             contentType: 'example'
@@ -571,7 +571,7 @@ const playExampleAudio = async () => {
     const speed = 1.0;
 
     // Call the TTS API with Authorization header
-    const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, textToSpeak, {
+    const response = await axios.post(`${apiUrl}/ai-service-api/v1/tts/generate`, textToSpeak, {
       headers: {
         'Content-Type': 'text/plain; charset=UTF-8',
         'Accept-Language': 'ja-JP',

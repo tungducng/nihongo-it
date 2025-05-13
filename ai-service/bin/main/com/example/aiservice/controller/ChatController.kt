@@ -1,5 +1,6 @@
-package com.example.nihongoit.chat
+package com.example.aiservice.controller
 
+import com.example.aiservice.service.ChatService
 import org.springframework.ai.chat.client.ChatClient
 import org.springframework.ai.converter.ListOutputConverter
 import org.springframework.core.ParameterizedTypeReference
@@ -14,7 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 
 @RestController
-@RequestMapping("/api/v1/ai")
+@RequestMapping("/ai-service-api/v1/chat")
 class ChatController(
     private val chatService: ChatService,
     private val chatClient: ChatClient,

@@ -28,6 +28,7 @@ repositories {
 }
 
 extra["springAiVersion"] = "1.0.0-M6"
+extra["springCloudVersion"] = "2024.0.1"
 
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
@@ -36,6 +37,12 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 
+    // Add Spring Cloud dependencies for communication with ai-service
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign")
+    implementation("org.springframework.cloud:spring-cloud-starter-loadbalancer")
+    implementation("io.github.openfeign.form:feign-form:3.8.0")
+    implementation("io.github.openfeign.form:feign-form-spring:3.8.0")
+    
     // Add Spring Boot DevTools
     developmentOnly("org.springframework.boot:spring-boot-devtools")
 
@@ -82,6 +89,7 @@ dependencies {
 dependencyManagement {
     imports {
         mavenBom("org.springframework.ai:spring-ai-bom:${property("springAiVersion")}")
+        mavenBom("org.springframework.cloud:spring-cloud-dependencies:${property("springCloudVersion")}")
     }
 }
 

@@ -34,6 +34,8 @@ show_help() {
     echo -e "  -d, --db         Start only database services (postgres + pgadmin)"
     echo -e "  -s, --services   Start only microservices (eureka + api-gateway + user-service + ai-service)"
     echo -e "  -r, --rebuild    Force rebuild the Docker images"
+    echo -e "  -b, --build-only Build all Docker images without starting services"
+    echo -e "  --build-ms       Build only microservice images without starting them"
 }
 
 # Export PWD variable for docker compose context paths
@@ -66,6 +68,22 @@ case "$1" in
         echo -e "${GREEN}Starting only microservices...${NC}"
         cd "$PROJECT_ROOT/docker"
         docker compose up -d eureka-server api-gateway user-service ai-service $REBUILD
+        ;;
+    -b|--build-only)
+        echo -e "${GREEN}Building all Docker images without starting services...${NC}"
+        cd "$PROJECT_ROOT/docker"
+        docker compose build
+        echo -e "${GREEN}All Docker images have been built.${NC}"
+        echo -e "${YELLOW}Use $0 to start services with newly built images.${NC}"
+        exit 0
+        ;;
+    --build-ms)
+        echo -e "${GREEN}Building only microservice images without starting them...${NC}"
+        cd "$PROJECT_ROOT/docker"
+        docker compose build eureka-server api-gateway user-service ai-service
+        echo -e "${GREEN}Microservice images have been built.${NC}"
+        echo -e "${YELLOW}Use $0 -s to start microservices with newly built images.${NC}"
+        exit 0
         ;;
     *)
         echo -e "${RED}Unknown option: $1${NC}"

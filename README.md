@@ -119,4 +119,59 @@ The frontend application is a separate repository located in the `nihongo-it-fro
 
 ## License
 
-[MIT License](LICENSE) 
+[MIT License](LICENSE)
+
+## Cấu trúc thư mục
+
+```
+nihongo-it/
+│
+├── services/                          # Các microservice Spring Boot
+│   ├── api-gateway/                   # API Gateway
+│   ├── eureka-server/                 # Service discovery
+│   ├── user-service/                  # Xác thực và quản lý người dùng
+│   ├── learning-service/              # Nội dung học tập
+│   ├── ai-service/                    # Dịch vụ AI và TTS
+│   └── notification-service/          # Thông báo
+│
+├── frontend/                          # Front-end Vue.js
+│
+├── python/                            # Dịch vụ Python cho xử lý ngôn ngữ
+│
+├── docker/                            # Cấu hình Docker
+│   └── docker-compose.yaml            # Cấu hình Docker Compose
+│
+├── tools/                             # Scripts tiện ích
+│   ├── start-springboot-services.sh   # Khởi động các dịch vụ Spring Boot
+│   ├── start-all-services.sh          # Khởi động Python và Vue.js
+│   ├── start-docker.sh                # Khởi động dịch vụ Docker
+│   └── stop-services.sh               # Dừng tất cả dịch vụ
+│
+└── logs/                              # Thư mục chứa logs
+```
+
+## Hướng dẫn chạy
+
+### Chạy bằng Docker
+
+```bash
+./tools/start-docker.sh
+```
+
+### Chạy các microservice Spring Boot
+
+```bash
+./tools/start-springboot-services.sh
+```
+
+### Chạy dịch vụ Python và Frontend
+
+```bash
+./tools/start-all-services.sh
+```
+
+### Dừng tất cả dịch vụ
+
+```bash
+./tools/stop-services.sh
+``` 

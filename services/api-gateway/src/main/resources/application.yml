@@ -1,0 +1,87 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      # Đảm bảo các headers nhạy cảm được chuyển tiếp - không loại bỏ header Authorization
+      sensitive-headers:
+      # Loại bỏ cấu hình globalcors vì đã có corsWebFilter trong SecurityConfig
+      routes:
+        # User Service (Auth Service) Route
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/**, /api/v1/users/**, /api/v1/auth/**, /api/v1/roles/**, /ai-service-api/**
+          filters:
+            - StripPrefix=0
+
+        # - id: learning-service
+        #   uri: lb://learning-service
+        #   predicates:
+        #     - Path=/api/learning/**
+        #   filters:
+        #     - RewritePath=/api/learning/(?<segment>.*), /$\{segment}
+        #     # - name: CircuitBreaker
+        #     #   args:
+        #     #     name: learningServiceCircuitBreaker
+        #     #     fallbackUri: forward:/fallback/learning
+
+        # AI Service Route
+        - id: ai-service
+          uri: lb://ai-service
+          predicates:
+            - Path=/ai-service-api/**
+          filters:
+            - StripPrefix=0
+
+        # - id: notification-service
+        #   uri: lb://notification-service
+        #   predicates:
+        #     - Path=/api/notification/**
+        #   filters:
+        #     - RewritePath=/api/notification/(?<segment>.*), /$\{segment}
+        #     # - name: CircuitBreaker
+        #     #   args:
+        #     #     name: notificationServiceCircuitBreaker
+        #     #     fallbackUri: forward:/fallback/notification
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true
+  instance:
+    prefer-ip-address: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    gateway:
+      enabled: true
+    health:
+      show-details: always
+
+springdoc:
+  swagger-ui:
+    path: /api-docs
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: DEBUG
+    org.springframework.web: INFO
+    com.example.apigateway: DEBUG 

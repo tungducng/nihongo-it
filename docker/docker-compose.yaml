@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # Database Services
+  postgres:
+    image: postgres:latest
+    container_name: nihongo-it-postgres
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - nihongo_network
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: nihongo-it-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    networks:
+      - nihongo_network
+    restart: unless-stopped
+    
+  # Service Discovery
+  eureka-server:
+    build:
+      context: ./services/eureka-server
+      dockerfile: Dockerfile
+    container_name: nihongo-it-eureka-server
+    ports:
+      - "8761:8761"
+    networks:
+      - nihongo_network
+    restart: unless-stopped
+    
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: nihongo-it-api-gateway
+    environment:
+      EUREKA_SERVICE_URL: http://eureka-server:8761/eureka/
+    ports:
+      - "8080:8080"
+    depends_on:
+      - eureka-server
+    networks:
+      - nihongo_network
+    restart: unless-stopped
+    
+  # User Service (Auth Service)
+  user-service:
+    build:
+      context: ./services/user-service
+      dockerfile: Dockerfile
+    container_name: nihongo-it-user-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      EUREKA_SERVICE_URL: http://eureka-server:8761/eureka/
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+    ports:
+      - "8086:8086"
+    depends_on:
+      - postgres
+      - eureka-server
+    networks:
+      - nihongo_network
+    restart: unless-stopped
+
+  # AI Service
+  ai-service:
+    build:
+      context: ./services/ai-service
+      dockerfile: Dockerfile
+    container_name: nihongo-it-ai-service
+    environment:
+      EUREKA_SERVICE_URL: http://eureka-server:8761/eureka/
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    ports:
+      - "8087:8087"
+    depends_on:
+      - eureka-server
+    networks:
+      - nihongo_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  nihongo_network:
+    driver: bridge

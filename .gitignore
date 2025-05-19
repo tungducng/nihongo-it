@@ -83,3 +83,19 @@ build/
 # Ignore bin directories
 **/bin/**
 test
+
+postgres-data/
+db-backups/
+
+*.md
+*.txt
+*.pdf
+*.docx
+*.doc
+*.xls
+*.xlsx
+*.pptx
+*.ppt
+*.pps
+*.ppsx
+*.ppsm

@@ -1,11 +1,25 @@
+FROM eclipse-temurin:21-jdk-alpine AS build
+WORKDIR /app
+
+# Copy the entire current directory
+COPY . .
+
+# Give execution permission to gradlew
+RUN chmod +x ./gradlew
+
+# Build the JAR file with all ktlint checks disabled
+RUN ./gradlew clean build -x test -x ktlintMainSourceSetCheck -x ktlintKotlinScriptCheck -x ktlintCheck
+
+# Runtime image
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Copy pre-built JAR file
-COPY build/libs/*.jar app.jar
+# Copy the built JAR from the build stage
+COPY --from=build /app/build/libs/*.jar app.jar
 
 # Set environment variables if needed
 ENV JAVA_OPTS=""
+ENV EUREKA_SERVICE_URL="http://eureka-server:8761/eureka/"
 
 # Run the application
-ENTRYPOINT ["java", "-jar", "app.jar"] 
+ENTRYPOINT ["java", "-jar", "app.jar"]

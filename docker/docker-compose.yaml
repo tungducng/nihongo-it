@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Database Services
   postgres:
@@ -12,7 +10,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ../postgres-data:/var/lib/postgresql/data
     networks:
       - nihongo_network
     restart: unless-stopped
@@ -36,7 +34,7 @@ services:
   # Service Discovery
   eureka-server:
     build:
-      context: ./services/eureka-server
+      context: ../services/eureka-server
       dockerfile: Dockerfile
     container_name: nihongo-it-eureka-server
     ports:
@@ -48,7 +46,7 @@ services:
   # API Gateway
   api-gateway:
     build:
-      context: ./services/api-gateway
+      context: ../services/api-gateway
       dockerfile: Dockerfile
     container_name: nihongo-it-api-gateway
     environment:
@@ -64,7 +62,7 @@ services:
   # User Service (Auth Service)
   user-service:
     build:
-      context: ./services/user-service
+      context: ../services/user-service
       dockerfile: Dockerfile
     container_name: nihongo-it-user-service
     environment:
@@ -87,7 +85,7 @@ services:
   # AI Service
   ai-service:
     build:
-      context: ./services/ai-service
+      context: ../services/ai-service
       dockerfile: Dockerfile
     container_name: nihongo-it-ai-service
     environment:
@@ -102,7 +100,6 @@ services:
     restart: unless-stopped
 
 volumes:
-  postgres_data:
   pgadmin_data:
 
 networks:

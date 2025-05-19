@@ -1,5 +1,5 @@
 # Python virtual environment and cache files
-nihongo-it-python/venv/
+python/venv/
 __pycache__/
 *.pyc
 *.so
@@ -67,9 +67,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 
-### Project specific ###
-application-local.yml
-application-local.properties
 
 # Gradle files
 .gradle/

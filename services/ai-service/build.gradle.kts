@@ -5,8 +5,6 @@ plugins {
     id("io.spring.dependency-management") version "1.1.7"
     kotlin("plugin.jpa") version "1.9.25"
 
-    id("org.jlleitschuh.gradle.ktlint") version "12.2.0" // Thêm plugin ktlint
-
     // OpenAPI
     id("org.openapi.generator") version "6.6.0"
 
@@ -81,14 +79,3 @@ kotlin {
 tasks.withType<Test> {
     useJUnitPlatform()
 }
-
-ktlint {
-    version.set("0.50.0")
-    verbose.set(true)
-    outputToConsole.set(true)
-    outputColorName.set("RED")
-    filter {
-        exclude("**/generated/**")
-        include("**/kotlin/**")
-    }
-} 

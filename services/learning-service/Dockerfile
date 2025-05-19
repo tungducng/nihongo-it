@@ -1,18 +1,25 @@
-FROM eclipse-temurin:21-jdk-alpine as build
-WORKDIR /workspace/app
+FROM eclipse-temurin:21-jdk-alpine AS build
+WORKDIR /app
 
-COPY gradle gradle
-COPY build.gradle.kts settings.gradle.kts gradlew ./
-RUN ./gradlew dependencies
+# Copy the entire current directory
+COPY . .
 
-COPY src src
-RUN ./gradlew build -x test
-RUN mkdir -p build/dependency && (cd build/dependency; jar -xf ../libs/*.jar)
+# Give execution permission to gradlew
+RUN chmod +x ./gradlew
 
+# Build the JAR file
+RUN ./gradlew clean build -x test
+
+# Runtime image
 FROM eclipse-temurin:21-jre-alpine
-VOLUME /tmp
-ARG DEPENDENCY=/workspace/app/build/dependency
-COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib
-COPY --from=build ${DEPENDENCY}/META-INF /app/META-INF
-COPY --from=build ${DEPENDENCY}/BOOT-INF/classes /app
-ENTRYPOINT ["java","-cp","app:app/lib/*","com.example.learningservice.LearningServiceApplicationKt"] 
+WORKDIR /app
+
+# Copy the built JAR from the build stage
+COPY --from=build /app/build/libs/*.jar app.jar
+
+# Set environment variables if needed
+ENV JAVA_OPTS=""
+ENV EUREKA_SERVICE_URL="http://eureka-server:8761/eureka/"
+
+# Run the application
+ENTRYPOINT ["java", "-jar", "app.jar"] 

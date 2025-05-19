@@ -7,8 +7,8 @@ COPY . .
 # Give execution permission to gradlew
 RUN chmod +x ./gradlew
 
-# Build the JAR file with all ktlint checks disabled
-RUN ./gradlew clean build -x test -x ktlintMainSourceSetCheck -x ktlintKotlinScriptCheck -x ktlintCheck
+# Build the JAR file
+RUN ./gradlew clean build -x test
 
 # Runtime image
 FROM eclipse-temurin:21-jre-alpine

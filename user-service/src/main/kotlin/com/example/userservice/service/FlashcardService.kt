@@ -388,8 +388,8 @@ class FlashcardService(
         val memoryStrengthDistribution = allUserCards
             .groupBy { 
                 when {
-                    it.stability <= 1.0 -> "weak"
-                    it.stability <= 10.0 -> "medium"
+                    it.stability!! <= 1.0 -> "weak"
+                    it.stability!! <= 10.0 -> "medium"
                     else -> "strong"
                 }
             }
@@ -478,30 +478,6 @@ class FlashcardService(
             "trend" to trend,
             "percentage" to percentage
         )
-    }
-    
-    // Simulate review outcomes for a flashcard
-    fun simulateReview(flashcardId: UUID): Map<String, Any> {
-        val userId = userAuthUtil.getCurrentUserId()
-        val flashcard = flashcardRepository.findById(flashcardId)
-            .orElseThrow { EntityNotFoundException("Flashcard not found with id: $flashcardId") }
-            
-        if (flashcard.user.userId != userId) {
-            throw AccessDeniedException("User does not have access to this flashcard")
-        }
-        
-        val simulationResults = fsrsService.simulateReview(flashcard)
-        
-        return simulationResults.mapKeys { it.key.name.lowercase() }
-            .mapValues { 
-                mapOf(
-                    "due" to it.value.due,
-                    "interval" to it.value.scheduledDays,
-                    "state" to FSRSService.State.entries[it.value.state].name.lowercase(),
-                    "stability" to it.value.stability.toFloat(),
-                    "difficulty" to it.value.difficulty.toFloat()
-                )
-            }
     }
     
     // Get flashcards for a vocabulary item
@@ -649,9 +625,9 @@ class FlashcardService(
         
         // Calculate memory strength distribution
         val memoryStrengthDistribution = mapOf(
-            "weak" to allFlashcards.count { it.stability < 1.0 },
-            "medium" to allFlashcards.count { it.stability >= 1.0 && it.stability < 10.0 },
-            "strong" to allFlashcards.count { it.stability >= 10.0 }
+            "weak" to allFlashcards.count { it.stability!! < 1.0 },
+            "medium" to allFlashcards.count { it.stability!! >= 1.0 && it.stability!! < 10.0 },
+            "strong" to allFlashcards.count { it.stability!! >= 10.0 }
         )
         
         return mapOf(

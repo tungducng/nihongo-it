@@ -494,7 +494,7 @@ async function playAudio(card: FlashcardDTO) {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
     // Call the TTS API with Authorization header
-    const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, card.frontText, {
+    const response = await axios.post(`${apiUrl}/ai-service-api/v1/tts/generate`, card.frontText, {
       headers: {
         'Content-Type': 'text/plain; charset=UTF-8',
         'Accept-Language': 'ja-JP',
@@ -578,7 +578,7 @@ async function playExampleAudio(card: FlashcardDTO) {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
     // Call the TTS API with Authorization header for the example sentence
-    const response = await axios.post(`${apiUrl}/api/v1/tts/generate`, exampleSentence, {
+    const response = await axios.post(`${apiUrl}/ai-service-api/v1/tts/generate`, exampleSentence, {
       headers: {
         'Content-Type': 'text/plain; charset=UTF-8',
         'Accept-Language': 'ja-JP',

@@ -498,7 +498,7 @@ const handleAudioBlob = async (blob: Blob) => {
     // Gửi đến Java service endpoint thay vì Python trực tiếp
     console.log('Đang gửi đến Java API Gateway:', sentence.value);
     try {
-      const response = await fetch('http://localhost:8080/api/v1/speech/analyze-audio-enhanced', {
+      const response = await fetch('http://localhost:8080/ai-service-api/v1/speech/analyze-audio-enhanced', {
         method: 'POST',
         body: formData,
         headers: {

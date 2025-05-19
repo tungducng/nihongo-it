@@ -29,3 +29,6 @@ storage/
 # Spring Boot devtools
 .restart
 .spring-boot-devtools.properties 
+
+# Audio files and resources
+resources/

@@ -773,7 +773,7 @@ const processRecording = async (index: number) => {
     const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080'
 
     // Send to speech analysis API
-    const response = await axios.post(`${apiUrl}/api/v1/speech/analyze-audio-enhanced`, formData, {
+    const response = await axios.post(`${apiUrl}/ai-service-api/v1/speech/analyze-audio-enhanced`, formData, {
       headers: {
         'Authorization': `Bearer ${authToken}`
       }

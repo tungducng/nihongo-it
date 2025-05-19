@@ -85,3 +85,4 @@ build/
 
 # Ignore bin directories
 **/bin/**
+test

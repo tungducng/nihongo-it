@@ -27,11 +27,11 @@ data class FlashcardEntity(
     var backText: String,
 
     // FSRS algorithm fields
-    @Column(name = "difficulty")
-    var difficulty: Double = 0.3, // Item difficulty (0.1 to 1.0)
+    @Column(name = "difficulty", nullable = true)
+    var difficulty: Double? = null, // Item difficulty (chỉ có giá trị sau đánh giá đầu tiên)
 
-    @Column(name = "stability")
-    var stability: Double = 0.5, // Memory stability (how well retained)
+    @Column(name = "stability", nullable = true)
+    var stability: Double? = null, // Memory stability (chỉ có giá trị sau đánh giá đầu tiên)
 
     @Column(name = "state")
     var state: Int = 0, // 0=New, 1=Learning, 2=Review, 3=Relearning
@@ -40,7 +40,7 @@ data class FlashcardEntity(
     var elapsedDays: Double = 0.0, // Days since last review
 
     @Column(name = "scheduled_days")
-    var scheduledDays: Double = 1.0, // Days scheduled before next review
+    var scheduledDays: Double = 0.0, // Days scheduled before next review
 
     @Column(name = "due")
     var due: LocalDateTime = LocalDateTime.now(), // Next review date

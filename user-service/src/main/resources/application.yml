@@ -5,7 +5,7 @@ spring:
   application:
     name: user-service
   datasource:
-    url: jdbc:postgresql://localhost:5432/NihongoIT
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/NihongoIT}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
@@ -26,8 +26,8 @@ spring:
       client:
         registration:
           google:
-            client-id: 1014067195013-47hr00d1f2gork8voqavccu3nvpcn25m.apps.googleusercontent.com
-            client-secret: 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
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope: email,profile
   mail:
     host: smtp.gmail.com

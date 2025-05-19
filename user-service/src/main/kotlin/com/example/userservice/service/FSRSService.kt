@@ -80,79 +80,67 @@ class FSRSService @Autowired constructor(
     @Transactional
     fun processReview(flashcard: FlashcardEntity, ratingValue: Int): FlashcardEntity {
         val rating = Rating.fromInt(ratingValue)
-        logger.info("Processing review with FSRS - Flashcard ID: ${flashcard.flashcardId}, Rating: $rating")
-        logger.info("Previous state: State=${State.fromInt(flashcard.state)}, Difficulty=${flashcard.difficulty}, Stability=${flashcard.stability}, Reps=${flashcard.reps}")
-
-        // Calculate elapsed time since due date
         val now = LocalDateTime.now()
-        val elapsedDays = if (flashcard.due.isBefore(now)) {
-            ChronoUnit.MILLIS.between(flashcard.due, now).toDouble() / (1000 * 60 * 60 * 24)
-        } else {
-            0.0
-        }
-        
-        // Calculate retrievability before making changes
-        val retrievability = calculateRetrievability(flashcard.stability, elapsedDays)
-        logger.info("Review timing: Elapsed days=$elapsedDays, Retrievability=$retrievability")
+        val isFirstReview = flashcard.reps == 0
 
-        // Get scheduling info for this rating
-        val info = calculateSchedulingInfo(flashcard, rating, elapsedDays, now)
-        logger.info("New scheduling: State=${State.fromInt(info.state)}, Difficulty=${info.difficulty}, Stability=${info.stability}")
-        logger.info("Next due: ${info.due}, Interval: ${info.scheduledDays} days")
+        logger.info("Processing review with FSRS - Flashcard ID: ${flashcard.flashcardId}, Rating: $rating")
+        logger.info("Is first review? $isFirstReview")
 
-        // Update flashcard with new values
-        flashcard.difficulty = info.difficulty
-        flashcard.stability = info.stability
-        flashcard.state = info.state
-        flashcard.elapsedDays = info.elapsedDays
-        flashcard.scheduledDays = info.scheduledDays
-        
-        // Xử lý đặc biệt cho Again rating
-        if (rating == Rating.AGAIN) {
-            // Áp dụng quy tắc FSRS thực sự cho Again
-            // Thay vì sử dụng thời gian cố định, chúng ta sẽ thực hiện theo FSRS
-            // Thông thường sẽ lên lịch cho ngày hiện tại (hoặc 30-60 phút sau)
-            val minutesToAdd = 30.0 // 30 phút là hợp lý cho relearning
-            flashcard.due = now.plusMinutes(minutesToAdd.toLong())
-            logger.info("AGAIN rating: Calculated new learning interval. Due again in $minutesToAdd minutes")
-            flashcard.lapses += 1
+        if (isFirstReview) {
+            // Lần đầu review: chỉ khởi tạo S₀(G), D₀(G), tính I, cập nhật state, scheduledDays, due
+            flashcard.stability = when (rating) {
+                Rating.AGAIN -> w[0]
+                Rating.HARD -> w[1]
+                Rating.GOOD -> w[2]
+                Rating.EASY -> w[3]
+            }
+            flashcard.difficulty = w[4] - (rating.value - 3) * w[5]
+            val interval = nextInterval(flashcard.stability!!)
+            flashcard.scheduledDays = interval
+            flashcard.state = if (rating.value >= 3) State.REVIEW.value else State.LEARNING.value
+            val days = interval.toLong()
+            val hours = ((interval - days) * 24).toLong()
+            flashcard.due = now.plusDays(days).plusHours(hours)
+            // Không cập nhật lapses, elapsedDays, ...
         } else {
-            // Sử dụng thời gian chính xác thay vì làm tròn đến ngày
+            // Các lần review tiếp theo: luôn dùng calculateSchedulingInfo cho mọi rating
+            val elapsedDays = if (flashcard.due.isBefore(now)) {
+                ChronoUnit.MILLIS.between(flashcard.due, now).toDouble() / (1000 * 60 * 60 * 24)
+            } else {
+                0.0
+            }
+            val info = calculateSchedulingInfo(flashcard, rating, elapsedDays, now)
+            flashcard.difficulty = info.difficulty
+            flashcard.stability = info.stability
+            flashcard.state = info.state
+            flashcard.elapsedDays = info.elapsedDays
+            flashcard.scheduledDays = info.scheduledDays
             flashcard.due = info.due
-            logger.info("Normal scheduling: Due at ${flashcard.due}")
+            if (rating == Rating.AGAIN) {
+                flashcard.lapses += 1
+            }
         }
-        
         flashcard.reps += 1
         flashcard.updatedAt = now
-
         return flashcardRepository.save(flashcard)
     }
 
     /**
      * Initialize a new flashcard with default FSRS values
-     * S_0(G) = w_{G-1} (Initial stability for rating G)
-     * D_0(G) = w_4 - (G-3) * w_5 (Initial difficulty for rating G)
-     * 
-     * For new cards:
-     * - Initial stability (G=3, Good): S_0(3) = w_2 = 2.4
-     * - Initial difficulty (G=3, Good): D_0(3) = w_4 = 4.93
+     * Không khởi tạo stability và difficulty - chỉ khi đánh giá lần đầu mới tính toán
      */
     @Transactional
     fun initializeFlashcard(flashcard: FlashcardEntity): FlashcardEntity {
-        logger.info("Initializing new flashcard with FSRS")
+        logger.info("Initializing new flashcard without FSRS parameters (will be set on first review)")
         
-        // S_0(G) = w_{G-1} for a new card rated as "Good" (G=3)
-        // Initial stability is w_2
-        flashcard.stability = w[2]
-        
-        // D_0(G) = w_4 - (G-3) * w_5 for a new card rated as "Good" (G=3)
-        // Initial difficulty is w_4
-        flashcard.difficulty = w[4]
+        // Thẻ mới chưa có stability và difficulty
+        flashcard.stability = null
+        flashcard.difficulty = null
         
         flashcard.state = State.NEW.value
         flashcard.elapsedDays = 0.0
-        flashcard.scheduledDays = 1.0
-        flashcard.due = LocalDateTime.now()  // Due immediately
+        flashcard.scheduledDays = 0.0  // Chưa có khoảng thời gian
+        flashcard.due = LocalDateTime.now()  // Due ngay lập tức
         flashcard.reps = 0
         flashcard.lapses = 0
 
@@ -172,13 +160,13 @@ class FSRSService @Autowired constructor(
         val state = State.fromInt(card.state)
 
         // Update difficulty
-        val newDifficulty = updateDifficulty(card.difficulty, rating)
+        val newDifficulty = updateDifficulty(card.difficulty!!, rating)
 
         // Calculate retrievability
-        val retrievability = calculateRetrievability(card.stability, elapsedDays)
+        val retrievability = calculateRetrievability(card.stability!!, elapsedDays)
 
         // Update stability based on rating
-        val newStability = updateStability(card.stability, newDifficulty, rating, retrievability)
+        val newStability = updateStability(card.stability!!, newDifficulty, rating, retrievability)
 
         // Determine new state
         val newState = determineState(state, rating)
@@ -340,18 +328,6 @@ class FSRSService @Autowired constructor(
                 if (rating.value >= 3) State.REVIEW else State.LEARNING  // Move to review if Good/Easy
             }
             else -> State.REVIEW  // Stay in review
-        }
-    }
-
-    /**
-     * Simulate and get all possible scheduling outcomes for a card
-     */
-    fun simulateReview(card: FlashcardEntity): Map<Rating, SchedulingInfo> {
-        val now = LocalDateTime.now()
-        val elapsedDays = ChronoUnit.DAYS.between(card.due, now).toDouble().coerceAtLeast(0.0)
-
-        return Rating.values().associate { rating ->
-            rating to calculateSchedulingInfo(card, rating, elapsedDays, now)
         }
     }
 }

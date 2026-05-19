@@ -114,8 +114,9 @@ class TTSController(
         @RequestParam text: String,
         @RequestParam(required = false, defaultValue = "vocabulary") contentType: String,
     ): ResponseEntity<ByteArray> {
-        val audioFile = resolveAudioPath(validateContentType(contentType), text)
-            ?: return ResponseEntity.notFound().build()
+        val audioFile =
+            resolveAudioPath(validateContentType(contentType), text)
+                ?: return ResponseEntity.notFound().build()
         if (!Files.exists(audioFile)) return ResponseEntity.notFound().build()
 
         val audioData = Files.readAllBytes(audioFile)
@@ -126,8 +127,7 @@ class TTSController(
             .body(audioData)
     }
 
-    private fun validateContentType(contentType: String): String =
-        if (contentType in validContentTypes) contentType else defaultContentType
+    private fun validateContentType(contentType: String): String = if (contentType in validContentTypes) contentType else defaultContentType
 
     /**
      * Resolves the on-disk path for cached audio, defending against path traversal:
@@ -135,7 +135,10 @@ class TTSController(
      *   - resolved path must stay inside the configured base directory
      * Returns `null` if the resolved path would escape the base (defense in depth).
      */
-    private fun resolveAudioPath(contentType: String, text: String): Path? {
+    private fun resolveAudioPath(
+        contentType: String,
+        text: String,
+    ): Path? {
         val safeContentType = validateContentType(contentType)
         val baseDir = Paths.get("src", "main", "resources", safeContentType).toAbsolutePath().normalize()
         val filename = sha256Hex(text) + ".mp3"

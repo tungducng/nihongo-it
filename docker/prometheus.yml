@@ -2,6 +2,8 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
+# Tempo writes span metrics here via remote write (configured in tempo.yml).
+# Services also expose /actuator/prometheus, scraped directly.
 scrape_configs:
   - job_name: 'spring-services'
     metrics_path: '/actuator/prometheus'
@@ -12,3 +14,8 @@ scrape_configs:
           - 'learning-service:8088'
           - 'ai-service:8087'
           - 'notification-service:8089'
+
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets:
+          - 'otel-collector:8888'

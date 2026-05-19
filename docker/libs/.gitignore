@@ -1,0 +1,3 @@
+# OTel agent is large (~21 MB) and version-pinned by docker-compose mount.
+# Download via: scripts/download-otel-agent.sh
+opentelemetry-javaagent.jar

@@ -10,7 +10,6 @@
 ### Database Data (NEVER commit actual database data) ###
 postgres-data/
 **/postgres-data/
-*.sql
 !ddl/*.sql
 !**/db/migration/*.sql
 db-backups/*.sql

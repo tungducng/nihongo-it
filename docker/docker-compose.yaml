@@ -1,5 +1,23 @@
+# Core stack — Postgres + backend services + frontends + python NLP.
+# Observability (Prometheus, Loki, Tempo, Grafana, OTel Collector) lives in
+# docker-compose.o11y.yml. Use both files together:
+#   docker compose -f docker/docker-compose.yaml -f docker/docker-compose.o11y.yml up -d
+# or set COMPOSE_FILE env var (see .env.example).
+
+# YAML anchor: shared OpenTelemetry env vars for every BE service.
+# Each service overrides OTEL_SERVICE_NAME below.
+x-otel-env: &otel-env
+  JAVA_TOOL_OPTIONS: "-javaagent:/opentelemetry-javaagent.jar"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+  OTEL_EXPORTER_OTLP_PROTOCOL: "grpc"
+  OTEL_LOGS_EXPORTER: "otlp"
+  OTEL_TRACES_EXPORTER: "otlp"
+  OTEL_METRICS_EXPORTER: "otlp"
+  OTEL_RESOURCE_ATTRIBUTES: "service.namespace=nihongo-it"
+  OTEL_INSTRUMENTATION_LOGBACK-MDC_ADD-BAGGAGE: "true"
+  OTEL_INSTRUMENTATION_LOGBACK-APPENDER_EXPERIMENTAL_CAPTURE_MDC_ATTRIBUTES: "*"
+
 services:
-  # Database Services
   postgres:
     image: postgres:16
     container_name: nihongoit-postgres
@@ -11,6 +29,8 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Runs once on first container start (empty data dir) — creates per-service databases
+      - ./postgres_init.sql:/docker-entrypoint-initdb.d/postgres_init.sql:ro
     networks:
       - nihongo_network
     restart: no
@@ -32,20 +52,23 @@ services:
       - nihongo_network
     restart: no
 
-  # Service Discovery
   eureka-server:
     build:
       context: ../services
       dockerfile: eureka-server/Dockerfile
     image: nihongoit/eureka-server:latest
     container_name: nihongoit-eureka-server
+    environment:
+      <<: *otel-env
+      OTEL_SERVICE_NAME: "eureka-server"
+    volumes:
+      - ./libs/opentelemetry-javaagent.jar:/opentelemetry-javaagent.jar:ro
     ports:
       - "8761:8761"
     networks:
       - nihongo_network
     restart: no
 
-  # API Gateway
   api-gateway:
     build:
       context: ../services
@@ -53,8 +76,12 @@ services:
     image: nihongoit/api-gateway:latest
     container_name: nihongoit-api-gateway
     environment:
+      <<: *otel-env
+      OTEL_SERVICE_NAME: "api-gateway"
       EUREKA_SERVICE_URL: http://eureka-server:8761/eureka/
       JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ./libs/opentelemetry-javaagent.jar:/opentelemetry-javaagent.jar:ro
     ports:
       - "8080:8080"
     depends_on:
@@ -63,7 +90,6 @@ services:
       - nihongo_network
     restart: no
 
-  # User Service (Auth Service)
   user-service:
     build:
       context: ../services
@@ -71,7 +97,9 @@ services:
     image: nihongoit/user-service:latest
     container_name: nihongoit-user-service
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      <<: *otel-env
+      OTEL_SERVICE_NAME: "user-service"
+      DB_URL: jdbc:postgresql://postgres:5432/user_service
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       EUREKA_SERVICE_URL: http://eureka-server:8761/eureka/
@@ -81,6 +109,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       APP_FRONTEND_URL: ${APP_FRONTEND_URL}
+    volumes:
+      - ./libs/opentelemetry-javaagent.jar:/opentelemetry-javaagent.jar:ro
     ports:
       - "8086:8086"
     depends_on:
@@ -90,7 +120,6 @@ services:
       - nihongo_network
     restart: no
 
-  # AI Service
   ai-service:
     build:
       context: ../services
@@ -98,10 +127,14 @@ services:
     image: nihongoit/ai-service:latest
     container_name: nihongoit-ai-service
     environment:
+      <<: *otel-env
+      OTEL_SERVICE_NAME: "ai-service"
       EUREKA_SERVICE_URL: http://eureka-server:8761/eureka/
       OPENAI_API_KEY: ${OPENAI_API_KEY}
       PYTHON_SERVICE_URL: ${PYTHON_SERVICE_URL:-http://python:8000}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY}
+    volumes:
+      - ./libs/opentelemetry-javaagent.jar:/opentelemetry-javaagent.jar:ro
     ports:
       - "8087:8087"
     depends_on:
@@ -110,7 +143,6 @@ services:
       - nihongo_network
     restart: no
 
-  # Notification Service
   notification-service:
     build:
       context: ../services
@@ -118,13 +150,17 @@ services:
     image: nihongoit/notification-service:latest
     container_name: nihongoit-notification-service
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      <<: *otel-env
+      OTEL_SERVICE_NAME: "notification-service"
+      DB_URL: jdbc:postgresql://postgres:5432/notification_service
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       EUREKA_SERVICE_URL: http://eureka-server:8761/eureka/
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
       APP_FRONTEND_URL: ${APP_FRONTEND_URL}
+    volumes:
+      - ./libs/opentelemetry-javaagent.jar:/opentelemetry-javaagent.jar:ro
     ports:
       - "8089:8089"
     depends_on:
@@ -134,7 +170,6 @@ services:
       - nihongo_network
     restart: no
 
-  # Learning Service
   learning-service:
     build:
       context: ../services
@@ -142,71 +177,20 @@ services:
     image: nihongoit/learning-service:latest
     container_name: nihongoit-learning-service
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      <<: *otel-env
+      OTEL_SERVICE_NAME: "learning-service"
+      DB_URL: jdbc:postgresql://postgres:5432/learning_service
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       EUREKA_SERVICE_URL: http://eureka-server:8761/eureka/
       JWT_SECRET: ${JWT_SECRET}
+    volumes:
+      - ./libs/opentelemetry-javaagent.jar:/opentelemetry-javaagent.jar:ro
     ports:
       - "8088:8088"
     depends_on:
       - postgres
       - eureka-server
-    networks:
-      - nihongo_network
-    restart: no
-
-  prometheus:
-    image: prom/prometheus:v2.51.0
-    container_name: nihongoit-prometheus
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
-    networks:
-      - nihongo_network
-    restart: no
-
-  loki:
-    image: grafana/loki:2.9.6
-    container_name: nihongoit-loki
-    command: -config.file=/etc/loki/config.yml
-    volumes:
-      - ./loki-config.yml:/etc/loki/config.yml
-      - loki_data:/loki
-    ports:
-      - "3100:3100"
-    networks:
-      - nihongo_network
-    restart: no
-
-  promtail:
-    image: grafana/promtail:2.9.6
-    container_name: nihongoit-promtail
-    command: -config.file=/etc/promtail/config.yml
-    volumes:
-      - ./promtail-config.yml:/etc/promtail/config.yml
-      - /var/run/docker.sock:/var/run/docker.sock
-    depends_on:
-      - loki
-    networks:
-      - nihongo_network
-    restart: no
-
-  grafana:
-    image: grafana/grafana:10.4.2
-    container_name: nihongoit-grafana
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
-      GF_USERS_ALLOW_SIGN_UP: "false"
-    volumes:
-      - grafana_data:/var/lib/grafana
-      - ./grafana-provisioning:/etc/grafana/provisioning
-    ports:
-      - "3001:3000"
-    depends_on:
-      - prometheus
-      - loki
     networks:
       - nihongo_network
     restart: no
@@ -230,7 +214,7 @@ services:
       - nihongo_network
     restart: no
 
-  # Next.js admin app — host port 3002 (grafana already takes 3001)
+  # Next.js admin app — host port 3002 (grafana takes 3001 in the o11y stack)
   frontend-admin:
     build:
       context: ../frontend-admin
@@ -253,5 +237,3 @@ networks:
 
 volumes:
   postgres_data:
-  grafana_data:
-  loki_data:

@@ -34,7 +34,8 @@
     <springProfile name="local">
         <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
             <encoder>
-                <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%cyan(%X{correlationId:-no-id})] [%cyan(%logger{36})] %maskedMsg%n</pattern>
+                <!-- trace_id/span_id auto-injected into MDC by OTel javaagent when enabled. -->
+                <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) [%X{trace_id:-no-trace},%X{span_id:-}] [%cyan(%logger{36})] %maskedMsg%n</pattern>
             </encoder>
         </appender>
         <root level="INFO">

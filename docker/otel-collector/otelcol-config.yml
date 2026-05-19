@@ -1,0 +1,67 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  # Promote service.* resource attributes into log labels for Loki
+  resource/loki:
+    attributes:
+      - action: insert
+        key: loki.resource.labels
+        value: service.name, service.namespace
+  # Transform traceId/spanId from log records into Loki structured metadata
+  transform/loki:
+    log_statements:
+      - context: log
+        statements:
+          - set(attributes["trace_id"], trace_id.string) where trace_id.string != ""
+          - set(attributes["span_id"], span_id.string) where span_id.string != ""
+
+exporters:
+  # Metrics → Prometheus via remote write
+  prometheusremotewrite:
+    endpoint: http://prometheus:9090/api/v1/write
+    tls:
+      insecure: true
+    resource_to_telemetry_conversion:
+      enabled: true
+  # Traces → Tempo (OTLP gRPC)
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  # Logs → Loki (push API)
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+  debug:
+    verbosity: basic
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheusremotewrite]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/tempo]
+    logs:
+      receivers: [otlp]
+      processors: [resource/loki, transform/loki, batch]
+      exporters: [loki]
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888

@@ -7,6 +7,11 @@ datasources:
     url: http://prometheus:9090
     isDefault: true
     editable: false
+    jsonData:
+      # Lets Prometheus exemplars link to a Tempo trace
+      exemplarTraceIdDestinations:
+        - name: trace_id
+          datasourceUid: tempo
 
   - name: Loki
     type: loki
@@ -14,3 +19,40 @@ datasources:
     url: http://loki:3100
     isDefault: false
     editable: false
+    jsonData:
+      # Click "trace_id" field in a log line → jump to matching Tempo trace
+      derivedFields:
+        - name: TraceID
+          matcherRegex: '"trace_id"\s*:\s*"([a-f0-9]+)"'
+          url: '$${__value.raw}'
+          datasourceUid: tempo
+        - name: TraceID
+          matcherRegex: 'trace_id=([a-f0-9]+)'
+          url: '$${__value.raw}'
+          datasourceUid: tempo
+
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    isDefault: false
+    editable: false
+    jsonData:
+      tracesToLogsV2:
+        datasourceUid: loki
+        spanStartTimeShift: '-30s'
+        spanEndTimeShift: '30s'
+        tags:
+          - key: service.name
+            value: service_name
+        filterByTraceID: true
+        filterBySpanID: false
+      tracesToMetrics:
+        datasourceUid: prometheus
+      serviceMap:
+        datasourceUid: prometheus
+      nodeGraph:
+        enabled: true
+      lokiSearch:
+        datasourceUid: loki

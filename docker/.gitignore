@@ -110,7 +110,6 @@ logs/
 # ========================
 
 ### Database Backups ###
-*.sql
 *.dump
 *.backup
 backups/

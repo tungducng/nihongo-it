@@ -1,0 +1,114 @@
+# Observability stack — OpenTelemetry pipeline:
+#   Services (OTel javaagent) → OTel Collector → Prometheus (metrics) + Tempo (traces) + Loki (logs)
+#                                                                                         ↓
+#                                                                                       Grafana
+#
+# Run together with the core stack:
+#   docker compose -f docker/docker-compose.yaml -f docker/docker-compose.o11y.yml up -d
+#
+# Or skip observability for a lighter dev loop:
+#   docker compose -f docker/docker-compose.yaml up -d
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    container_name: nihongoit-otel-collector
+    command: ["--config=/etc/otelcol/config.yml"]
+    volumes:
+      - ./otel-collector/otelcol-config.yml:/etc/otelcol/config.yml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "13133:13133" # health_check extension
+    networks:
+      - nihongo_network
+    depends_on:
+      - prometheus
+      - tempo
+      - loki
+    restart: no
+
+  tempo:
+    image: grafana/tempo:2.6.1
+    container_name: nihongoit-tempo
+    command: ["-config.file=/etc/tempo.yml"]
+    volumes:
+      - ./tempo/tempo.yml:/etc/tempo.yml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200" # Tempo HTTP query API (Grafana datasource)
+    networks:
+      - nihongo_network
+    restart: no
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: nihongoit-prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-remote-write-receiver"
+      - "--enable-feature=exemplar-storage"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - nihongo_network
+    restart: no
+
+  loki:
+    image: grafana/loki:2.9.6
+    container_name: nihongoit-loki
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - ./loki-config.yml:/etc/loki/config.yml
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - nihongo_network
+    restart: no
+
+  # Optional: keep promtail for tailing host-level Docker logs (e.g. python service)
+  # since python service uses Python logging, not OTel.
+  promtail:
+    image: grafana/promtail:2.9.6
+    container_name: nihongoit-promtail
+    command: -config.file=/etc/promtail/config.yml
+    volumes:
+      - ./promtail-config.yml:/etc/promtail/config.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - loki
+    networks:
+      - nihongo_network
+    restart: no
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: nihongoit-grafana
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_FEATURE_TOGGLES_ENABLE: "traceqlEditor traceToMetrics"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana-provisioning:/etc/grafana/provisioning
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    networks:
+      - nihongo_network
+    restart: no
+
+networks:
+  nihongo_network:
+    driver: bridge
+
+volumes:
+  grafana_data:
+  loki_data:
+  tempo_data:

@@ -5,7 +5,7 @@ spring:
   application:
     name: notification-service
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5433/NihongoIT}
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/notification_service}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver

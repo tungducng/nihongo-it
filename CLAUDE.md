@@ -88,8 +88,9 @@ nihongo-it/
 
 ### Backend — core conventions
 
-1. **Common module**: Reuse `BusinessException`, `GlobalExceptionHandler`, `ErrorResponseDto`, `GatewayHeaderAuthFilter`, `JwtAuthenticationEntryPoint` from `services/common/`. Do NOT copy-paste them into individual services.
-2. **Auth**: Services do NOT validate JWTs — the gateway has already done that and injected `X-User-Id`, `X-Role`, `X-Email` headers. Services read them via `GatewayHeaderAuthFilter`.
+1. **Common module**: Reuse `BusinessException`, `GlobalExceptionHandler`, `ErrorResponseDto`, `GatewayHeaderAuthFilter`, `JwtAuthenticationEntryPoint`, `AbstractAuditEntity`, `AuditConfig`, `AuthenticationUtils` from `services/common/`. Do NOT copy-paste them into individual services.
+2. **Auth**: Services do NOT validate JWTs — the gateway has already done that and injected `X-User-Id`, `X-Role`, `X-Email` headers. Services read them via `GatewayHeaderAuthFilter`. Inside business code, prefer `AuthenticationUtils.currentUserId()` (returns the user-id string) or `currentUserUuid()` over inlined `SecurityContextHolder` reads.
+3. **New entities**: extend `com.example.common.entity.AbstractAuditEntity` to get `created_at` / `created_by` / `updated_at` / `updated_by` auto-populated (Spring Data JPA auditing via `AuditConfig`; `AuditorAware` returns the gateway-injected user id). Tables only need the four columns; the listener handles the rest.
 3. **Error response**: Throw `BusinessException(code, message, status)` — the centralized handler formats `ErrorResponseDto`. Do not return ad-hoc `ResponseEntity.badRequest()`.
 4. **Logging**: Structured JSON (Logstash encoder) + correlation ID. Do NOT use `println` or `System.err.println`.
 5. **Migrations**: Flyway under `src/main/resources/db/migration/V{version}__{name}.sql`. Versions increment; NEVER edit a migration that has already been merged.

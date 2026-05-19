@@ -45,6 +45,11 @@ dependencies {
 
     implementation("net.logstash.logback:logstash-logback-encoder:8.0")
 
+    // JPA only on compile classpath — consuming services that actually use JPA
+    // (user-service, learning-service, notification) already pull
+    // spring-boot-starter-data-jpa, so this avoids forcing it on ai-service / gateway.
+    compileOnly("org.springframework.boot:spring-boot-starter-data-jpa")
+
     api("org.springframework.boot:spring-boot-starter-actuator")
     api("io.micrometer:micrometer-registry-prometheus")
 }

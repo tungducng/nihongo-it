@@ -29,29 +29,6 @@ const conversationService = {
       .then((r) => r.data)
   },
 
-  saveConversation(conversationId: string): Promise<void> {
-    return api
-      .post(`/api/v1/user/user/saved-conversations/${conversationId}`)
-      .then(() => undefined)
-  },
-
-  unsaveConversation(conversationId: string): Promise<void> {
-    return api
-      .delete(`/api/v1/user/user/saved-conversations/${conversationId}`)
-      .then(() => undefined)
-  },
-
-  checkSavedConversation(conversationId: string): Promise<{ saved: boolean }> {
-    return api
-      .get(`/api/v1/user/user/saved-conversations/check/${conversationId}`)
-      .then((r) => r.data)
-  },
-
-  getSavedConversations(page = 0, size = 12): Promise<PagedResponse<Conversation>> {
-    return api
-      .get('/api/v1/user/user/saved-conversations', { params: { page, size } })
-      .then((r) => r.data)
-  },
 }
 
 export default conversationService

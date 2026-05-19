@@ -18,12 +18,12 @@ const vocabularyService = {
       .then((r) => r.data),
 
   getVocabularyById: (id: string): Promise<VocabularyItem> =>
-    api.get(`/api/v1/learning/vocabulary/${id}`).then((r) => r.data.data ?? r.data),
+    api.get(`/api/v1/learning/vocabulary/${id}`).then((r) => r.data),
 
   getVocabularyByTerm: (term: string): Promise<VocabularyItem> =>
     api
       .get(`/api/v1/learning/vocabulary/term/${encodeURIComponent(term)}`)
-      .then((r) => r.data.data ?? r.data),
+      .then((r) => r.data),
 
   saveVocabulary: (id: string): Promise<void> =>
     api.post(`/api/v1/learning/vocabulary/${id}/save`, {}).then(() => undefined),

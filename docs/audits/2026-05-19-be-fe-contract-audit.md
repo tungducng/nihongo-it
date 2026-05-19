@@ -4,6 +4,8 @@
 **Scope:** All Kotlin services (`services/*`) vs `frontend-user/` + `frontend-admin/`
 **Policy:** Backend is the source of truth; FE must adapt.
 
+**Status (2026-05-19):** ✅ Audit triển khai xong — toàn bộ 🔴 HIGH + 🟡 MEDIUM + 🟢 LOW addressed hoặc đã document deferred. Xem mục **Resolution status** ở cuối file.
+
 ## Severity legend
 
 - 🔴 **HIGH** — runtime breakage or silent data loss (field always undefined, wrong path → 404).
@@ -282,3 +284,53 @@ Will display empty if BE keys differ. Verify BE actually emits those three label
 - `frontend-admin/src/services/{admin, statistics}.service.ts`
 - `frontend-admin/src/types/statistics.types.ts`
 - `frontend-user/src/stores/auth.store.ts`, `frontend-admin/src/stores/auth.store.ts`
+
+---
+
+## Resolution status (2026-05-19)
+
+### ✅ Resolved
+
+| ID | Action |
+|---|---|
+| C-1 | `learningservice.dto.PagedResponse<T>` → `{content, page, size, totalElements, totalPages, lastPage}`; `ConversationService` populates accordingly. `NotificationController` switched to `PagedNotificationResponse` matching the same shape. |
+| C-4 | Wrappers removed at controller boundary. `VocabularyController`/`AdminVocabularyController`/`FlashcardController` return raw DTOs. `AdminDashboardController` + `AdminStatisticsController` drop the `{data: ...}` envelope. Frontend services drop defensive `r.data.data ?? r.data`. |
+| F-1 | Conversation paging now uses `page` field — FE common-types `PagedResponse<T>` shape matches. |
+| F-2 | Dead `saved-conversations` methods removed from `frontend-user/conversation.service.ts`. |
+| G-1 | `frontend-user/topic.service.getTopicsByCategoryId` now calls `/api/v1/learning/categories/{id}/topics`. |
+| D-1 | Resolved by C-4 — `frontend-admin/vocabulary.service` simply does `r.data` and gets the DTO. |
+| B-1 | `UserDetailInfo` retained on FE (UI needs it). `UserDto` extended with `isEmailVerified, createdAt, updatedAt` so the basic fields are populated; remaining stats sourced from `/statistics/users/{id}`. Service typed as `UserDetailInfo` with comment explaining BE returns the subset. |
+| B-2 | `deactivateUser`/`activateUser`/`changeUserRole` now `Promise<void>` (matches 204 No Content). |
+| E-1 | `ReviewResponse` deleted. `reviewFlashcard` returns `FlashcardDTO` directly. |
+| E-2 | Swagger description updated to "1-4 where 1 is hardest". |
+| E-3 | `FlashcardStats` renamed to match BE `StudySummaryDto`: `totalCards, dueCardsNow, reviewsLast30Days, currentStreak, overallRetentionRate`. New `StudyStatistics` type mirrors `StudyStatisticsDto`. |
+| I-1 | `notification.service.ts` + `<NotificationBell />` (bell+badge+dropdown) wired into both `Header` and `AdminHeader`. 60-second poll for unread count. |
+| I-2 | `NotificationDto` + `PagedNotificationResponse` added; controller no longer inlines maps. |
+| A-1 | `UserDto` now exposes `isEmailVerified`, `createdAt`, `updatedAt`. `AuthService.getCurrentUser` + `AdminService.toUserDto` populate them. |
+| A-2 | `GetCurrentUserResponse.status` removed. |
+| A-3 | `LoginResponse.message` removed (just `{ token }`); `UpdateProfileResponse` deleted (unused). `SignupResponse.message` typed non-optional. |
+| A-4 | `UserPreferences.notificationPreferences` typed as `string` (matches BE JSON-encoded column) with explanatory comment. |
+| F-3 | Admin conversation form sends `CreateConversationRequest`/`UpdateConversationRequest` (proper request DTOs), not raw `Conversation`. New FE types added. |
+| C-2 (AI duplicate) | Dead `getVocabularyExplanation` deleted; only `explainVocabulary` remains. Stale `VocabularyExplanationRequest`/`AIExplanationResponse` types removed. |
+| C-4 (AI) | `frontend-admin/src/types/ai.types.ts` deleted (admin doesn't call AI). |
+| D-3 | Dead `VocabularyResponseDto.kt` deleted from `learning-service`. |
+| D-4 | `VocabularyItem` AI fields kept (client-only) with explanatory comment. |
+| G-2 | `Topic` FE type now exposes `jlptLevel?: JlptLevel` (BE already has it). |
+| G-3 | Dead `description` field dropped from `CreateTopicRequest`/`UpdateTopicRequest`/`CreateCategoryRequest`/`UpdateCategoryRequest` BE + FE. |
+| F-4 | FE `Conversation.jlptLevel: JlptLevel?` accepted as narrower-but-compatible vs BE `String?`. No code change needed. |
+| (cleanup) | Deleted 23 orphan DTOs in `services/user-service/dto/` that were leftover from pre-microservice consolidation (vocabulary/flashcard/category/topic/conversation duplicates with zero callers). |
+
+### ⏸️ Deferred (out of scope this round)
+
+| ID | Reason |
+|---|---|
+| C-2 cross-cutting | Datetime serialization standardization (`LocalDateTime` custom pattern vs `Instant`). Large refactor with serialization risk; revisit when designing API v2. |
+| C-3 cross-cutting | `@JsonInclude` consistency — cosmetic, low-impact. |
+| C-3 domain | Proper DTOs for `analyzeAudioEnhanced` + `summarizeFeedback` responses — requires reading speech-analysis service internals. |
+| C-1/C-5 (AI duplicates) | Two controllers proxy the same chat endpoints (`user-service/AiController` vs `ai-service/ChatController`). Big refactor; FE already navigates both correctly. |
+| A-5, A-6 | `UserController` returns `ResponseEntity<Any>` — needs dedicated DTOs. Unused BE endpoints (`logout-all`, `verify-email` link target). Document but keep until UI surfaces them. |
+| D-2 | `saveVocabulary` returns void on FE but BE sends `VocabularyDto`. Not breaking; would only enrich the UI experience. |
+| E-4 | `FlashcardDTO` mixes `Instant` (createdAt/updatedAt) and `LocalDateTime` (due). Cosmetic. |
+| E-5 | FE doesn't call `GET /flashcards`, `/paged`, `/{id}`, `POST/PUT/DELETE /flashcards`. By design — only vocab-linked flashcard CRUD is exposed. |
+| H-1 | `FeedbackController` has 0 callers. Leave for future feature (in-app feedback form). |
+| J-1, J-2, J-3, J-4 | Admin statistics user-list paged shape differs (`totalItems/currentPage` vs `page/totalElements`). Internally consistent BE↔FE for statistics. Minor cosmetic; align in next iteration. |

@@ -136,6 +136,10 @@ class AuthService(
                 currentLevel = user.currentLevel,
                 jlptGoal = user.jlptGoal,
                 lastLogin = user.lastLogin,
+                isActive = user.isActive,
+                isEmailVerified = user.isEmailVerified,
+                createdAt = user.createdAt,
+                updatedAt = user.updatedAt,
             )
 
         return GetCurrentUserResponseDto(userInfo = userInfo)

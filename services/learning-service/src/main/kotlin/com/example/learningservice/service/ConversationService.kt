@@ -26,10 +26,11 @@ class ConversationService(
 
         return PagedResponse(
             content = content,
-            totalPages = page.totalPages,
-            totalElements = page.totalElements,
-            currentPage = page.number,
+            page = page.number,
             size = page.size,
+            totalElements = page.totalElements,
+            totalPages = page.totalPages,
+            lastPage = page.isLast,
         )
     }
 
@@ -42,10 +43,11 @@ class ConversationService(
 
         return PagedResponse(
             content = content,
-            totalPages = page.totalPages,
-            totalElements = page.totalElements,
-            currentPage = page.number,
+            page = page.number,
             size = page.size,
+            totalElements = page.totalElements,
+            totalPages = page.totalPages,
+            lastPage = page.isLast,
         )
     }
 
@@ -58,10 +60,11 @@ class ConversationService(
 
         return PagedResponse(
             content = content,
-            totalPages = page.totalPages,
-            totalElements = page.totalElements,
-            currentPage = page.number,
+            page = page.number,
             size = page.size,
+            totalElements = page.totalElements,
+            totalPages = page.totalPages,
+            lastPage = page.isLast,
         )
     }
 

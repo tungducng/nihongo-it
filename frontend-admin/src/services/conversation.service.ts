@@ -1,6 +1,10 @@
 import api from '@/lib/api'
 import type { PagedResponse } from '@/types/common.types'
-import type { Conversation } from '@/types/conversation.types'
+import type {
+  Conversation,
+  CreateConversationRequest,
+  UpdateConversationRequest,
+} from '@/types/conversation.types'
 
 interface ListParams {
   page?: number
@@ -30,13 +34,11 @@ const conversationService = {
   getById: (id: string): Promise<Conversation> =>
     api.get(`/api/v1/learning/admin/conversations/${id}`).then((r) => r.data),
 
-  create: (conversation: Conversation): Promise<Conversation> =>
-    api.post('/api/v1/learning/admin/conversations', conversation).then((r) => r.data),
+  create: (data: CreateConversationRequest): Promise<Conversation> =>
+    api.post('/api/v1/learning/admin/conversations', data).then((r) => r.data),
 
-  update: (id: string, conversation: Conversation): Promise<Conversation> =>
-    api
-      .put(`/api/v1/learning/admin/conversations/${id}`, conversation)
-      .then((r) => r.data),
+  update: (id: string, data: UpdateConversationRequest): Promise<Conversation> =>
+    api.put(`/api/v1/learning/admin/conversations/${id}`, data).then((r) => r.data),
 
   delete: (id: string): Promise<void> =>
     api.delete(`/api/v1/learning/admin/conversations/${id}`).then(() => undefined),

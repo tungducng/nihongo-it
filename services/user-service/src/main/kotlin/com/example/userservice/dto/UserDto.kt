@@ -31,4 +31,16 @@ data class UserDto(
     val lastLogin: LocalDateTime?,
     @JsonProperty("isActive")
     val isActive: Boolean = true,
+    @JsonProperty("isEmailVerified")
+    val isEmailVerified: Boolean = false,
+    @JsonDeserialize(using = LocalDateTimeDeserializer::class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+    @JsonSerialize(using = LocalDateTimeSerializer::class)
+    @JsonProperty("createdAt")
+    val createdAt: LocalDateTime? = null,
+    @JsonDeserialize(using = LocalDateTimeDeserializer::class)
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
+    @JsonSerialize(using = LocalDateTimeSerializer::class)
+    @JsonProperty("updatedAt")
+    val updatedAt: LocalDateTime? = null,
 )

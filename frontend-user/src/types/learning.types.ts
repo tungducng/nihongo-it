@@ -14,13 +14,12 @@ export interface Category {
 export interface CreateCategoryRequest {
   name: string
   meaning: string
-  description?: string
   displayOrder?: number
+  isActive?: boolean
 }
 export interface UpdateCategoryRequest {
   name?: string
   meaning?: string
-  description?: string
   displayOrder?: number
   isActive?: boolean
 }
@@ -29,6 +28,7 @@ export interface Topic {
   topicId: UUID
   name: string
   meaning?: string
+  jlptLevel?: JlptLevel
   displayOrder: number
   categoryId: UUID
   categoryName?: string
@@ -41,7 +41,6 @@ export interface Topic {
 export interface CreateTopicRequest {
   name: string
   meaning: string
-  description?: string
   displayOrder?: number
   isActive?: boolean
   categoryId: UUID
@@ -49,7 +48,6 @@ export interface CreateTopicRequest {
 export interface UpdateTopicRequest {
   name?: string
   meaning?: string
-  description?: string
   displayOrder?: number
   isActive?: boolean
   categoryId?: UUID
@@ -77,7 +75,7 @@ export interface VocabularyItem {
   topicName?: string
   createdAt?: DateString
   isSaved: boolean
-  // AI chat fields (client-side only)
+  // Client-only fields populated by AI chat UI; never sent to backend.
   aiExplanation?: string
   aiExamples?: ExampleSentence[]
   chatHistory?: ChatMessage[]
@@ -121,7 +119,7 @@ export interface FlashcardDTO {
   due: DateString
   reps: number
   lapses: number
-  state: string // backend: "new"|"learning"|"review"|"relearning" or numeric string
+  state: string
   difficulty: number
   stability: number
   interval: number
@@ -131,14 +129,25 @@ export interface FlashcardDTO {
 
 export interface FlashcardStats {
   totalCards: number
-  dueToday: number
-  newCards: number
-  learningCards: number
-  masteredCards: number
-  averageRetention?: number
+  dueCardsNow: number
+  reviewsLast30Days: number
+  currentStreak: number
+  overallRetentionRate: number
 }
 
-export interface ReviewResponse {
-  result: { status: string; message: string }
-  data: FlashcardDTO
+export interface ReviewTrend {
+  trend: string
+  percentage: number
+}
+
+export interface StudyStatistics {
+  summary: FlashcardStats
+  cardsDueByDay: Record<string, number>
+  dailyReviews: Record<string, number>
+  retentionRateByDay: Record<string, number>
+  memoryStrengthDistribution: Record<string, number>
+  cardsByState: Record<string, number>
+  cardsByJlptLevel: Record<string, number>
+  reviewTrend: ReviewTrend
+  averageRating: number
 }

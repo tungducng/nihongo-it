@@ -86,6 +86,6 @@ class AdminDashboardController(
                 "recentActivities" to recentActivities,
             )
 
-        return ResponseEntity.ok(mapOf("data" to stats))
+        return ResponseEntity.ok(stats)
     }
 }

@@ -8,7 +8,11 @@ import conversationService from '@/services/conversation.service'
 import { useAppToast } from '@/hooks/useAppToast'
 import { extractApiError } from '@/types/common.types'
 import type { JlptLevel } from '@/types/common.types'
-import type { Conversation } from '@/types/conversation.types'
+import type {
+  Conversation,
+  CreateConversationRequest,
+  UpdateConversationRequest,
+} from '@/types/conversation.types'
 import {
   Dialog,
   DialogContent,
@@ -66,20 +70,21 @@ export function ConversationFormDialog({ open, onOpenChange, initial, onSaved }:
 
   async function onSubmit(values: ConversationInput) {
     try {
-      const payload: Conversation = {
-        ...initial,
-        title: values.title,
-        description: values.description,
-        jlptLevel: values.jlptLevel,
-        unit: values.unit,
-        // Preserve lines on edit (server-side merge would otherwise drop them
-        // if absent from the payload — verified empirically against existing flow)
-        lines: initial?.lines,
-      }
       const saved =
         isEdit && initial?.conversationId
-          ? await conversationService.update(initial.conversationId, payload)
-          : await conversationService.create(payload)
+          ? await conversationService.update(initial.conversationId, {
+              title: values.title,
+              description: values.description,
+              jlptLevel: values.jlptLevel,
+              unit: values.unit,
+            } satisfies UpdateConversationRequest)
+          : await conversationService.create({
+              title: values.title,
+              description: values.description,
+              jlptLevel: values.jlptLevel,
+              unit: values.unit,
+              lines: [],
+            } satisfies CreateConversationRequest)
       toast.success(isEdit ? 'Đã cập nhật hội thoại' : 'Đã tạo hội thoại')
       onOpenChange(false)
       onSaved(saved)

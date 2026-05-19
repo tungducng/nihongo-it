@@ -54,7 +54,6 @@ fun TopicEntity.toDTO(vocabularyCount: Int? = null): TopicDTO =
 data class CreateTopicRequest(
     val name: String,
     val meaning: String,
-    val description: String? = null,
     val displayOrder: Int = 0,
     val isActive: Boolean = true,
     val categoryId: UUID,
@@ -64,7 +63,6 @@ data class CreateTopicRequest(
 data class UpdateTopicRequest(
     val name: String? = null,
     val meaning: String? = null,
-    val description: String? = null,
     val displayOrder: Int? = null,
     val isActive: Boolean? = null,
     val categoryId: UUID? = null,

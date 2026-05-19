@@ -14,13 +14,12 @@ export interface Category {
 export interface CreateCategoryRequest {
   name: string
   meaning: string
-  description?: string
   displayOrder?: number
+  isActive?: boolean
 }
 export interface UpdateCategoryRequest {
   name?: string
   meaning?: string
-  description?: string
   displayOrder?: number
   isActive?: boolean
 }
@@ -29,6 +28,7 @@ export interface Topic {
   topicId: UUID
   name: string
   meaning?: string
+  jlptLevel?: JlptLevel
   displayOrder: number
   categoryId: UUID
   categoryName?: string
@@ -41,7 +41,6 @@ export interface Topic {
 export interface CreateTopicRequest {
   name: string
   meaning: string
-  description?: string
   displayOrder?: number
   isActive?: boolean
   categoryId: UUID
@@ -49,19 +48,9 @@ export interface CreateTopicRequest {
 export interface UpdateTopicRequest {
   name?: string
   meaning?: string
-  description?: string
   displayOrder?: number
   isActive?: boolean
   categoryId?: UUID
-}
-
-export interface ExampleSentence {
-  japanese: string
-  vietnamese: string
-}
-export interface ChatMessage {
-  role: string
-  content: string
 }
 
 export interface VocabularyItem {
@@ -77,10 +66,6 @@ export interface VocabularyItem {
   topicName?: string
   createdAt?: DateString
   isSaved: boolean
-  // AI chat fields (client-side only)
-  aiExplanation?: string
-  aiExamples?: ExampleSentence[]
-  chatHistory?: ChatMessage[]
 }
 
 export interface VocabularyFilter {
@@ -111,34 +96,4 @@ export interface UpdateVocabularyRequest {
   audioPath?: string
   topicName?: string
   jlptLevel?: JlptLevel
-}
-
-export interface FlashcardDTO {
-  id: UUID
-  frontText: string
-  backText: string
-  vocabularyId?: UUID
-  due: DateString
-  reps: number
-  lapses: number
-  state: string // backend: "new"|"learning"|"review"|"relearning" or numeric string
-  difficulty: number
-  stability: number
-  interval: number
-  createdAt?: DateString
-  updatedAt?: DateString
-}
-
-export interface FlashcardStats {
-  totalCards: number
-  dueToday: number
-  newCards: number
-  learningCards: number
-  masteredCards: number
-  averageRetention?: number
-}
-
-export interface ReviewResponse {
-  result: { status: string; message: string }
-  data: FlashcardDTO
 }

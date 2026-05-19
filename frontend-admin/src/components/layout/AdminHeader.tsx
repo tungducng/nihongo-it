@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { MobileNavLinks } from './Sidebar'
+import { NotificationBell } from './NotificationBell'
 
 export function AdminHeader() {
   const router = useRouter()
@@ -55,7 +56,8 @@ export function AdminHeader() {
         </SheetContent>
       </Sheet>
 
-      <div className="ml-auto">
+      <div className="ml-auto flex items-center gap-1">
+        {user && <NotificationBell />}
         {user && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

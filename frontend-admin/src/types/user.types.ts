@@ -15,6 +15,9 @@ export interface UserInfo {
   updatedAt?: DateString
 }
 
+// Extension of UserInfo used by admin user-detail screens. Backend currently
+// returns the plain UserDto here, so the extra fields are populated separately
+// via the statistics endpoint (or left undefined).
 export interface UserDetailInfo extends UserInfo {
   streakCount?: number
   points?: number
@@ -40,7 +43,9 @@ export interface UserPreferences {
   reminderTime?: string
   minCardThreshold?: number
   leechNotificationsEnabled?: boolean
-  notificationPreferences?: Record<string, boolean>
+  // Backend stores this as a JSON-encoded string. Callers wanting a structured
+  // form must JSON.parse(...) themselves.
+  notificationPreferences?: string
 }
 
 export interface LoginRequest {
@@ -48,8 +53,7 @@ export interface LoginRequest {
   password: string
 }
 export interface LoginResponse {
-  token?: string
-  message?: string
+  token: string
 }
 export interface SignupRequest {
   email: string
@@ -60,20 +64,15 @@ export interface SignupRequest {
   jlptGoal?: string
 }
 export interface SignupResponse {
-  message?: string
+  message: string
 }
 export interface GetCurrentUserResponse {
-  status: 'OK' | 'NG'
   userInfo?: UserInfo
 }
 export interface UpdateProfileRequest {
   fullName: string
   currentLevel: string
   jlptGoal: string
-}
-export interface UpdateProfileResponse {
-  status: 'OK' | 'NG'
-  message?: string
 }
 export interface ChangePasswordRequest {
   currentPassword: string

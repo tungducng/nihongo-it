@@ -9,7 +9,9 @@
       "Bash(docker compose *)",
       "Skill(superpowers:writing-plans)",
       "Bash(npm run *)",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(./gradlew :learning-service:compileKotlin --no-daemon)",
+      "Bash(./gradlew :notification-service:ktlintFormat :learning-service:ktlintFormat :user-service:ktlintFormat :ai-service:ktlintFormat :api-gateway:ktlintFormat :eureka-server:ktlintFormat --no-daemon)"
     ]
   }
 }

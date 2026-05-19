@@ -259,5 +259,8 @@ class AdminService(
             jlptGoal = this.jlptGoal,
             lastLogin = this.lastLogin,
             isActive = this.isActive,
+            isEmailVerified = this.isEmailVerified,
+            createdAt = this.createdAt,
+            updatedAt = this.updatedAt,
         )
 }

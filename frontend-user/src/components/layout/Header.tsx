@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { NotificationBell } from './NotificationBell'
 
 const NAV_LINKS = [
   { href: '/vocabulary', label: 'Từ vựng' },
@@ -63,50 +64,53 @@ export function Header() {
         </nav>
 
         {user ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
-                <Avatar className="h-9 w-9">
-                  {user.profilePicture && (
-                    <AvatarImage src={user.profilePicture} alt={user.fullName} />
-                  )}
-                  <AvatarFallback>{initials}</AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium">{user.fullName}</span>
-                  <span className="text-muted-foreground truncate text-xs">{user.email}</span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/profile" className="cursor-pointer">
-                  <UserIcon className="mr-2 size-4" />
-                  Hồ sơ
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/account/settings" className="cursor-pointer">
-                  <Settings className="mr-2 size-4" />
-                  Cài đặt
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/account/change-password" className="cursor-pointer">
-                  <Lock className="mr-2 size-4" />
-                  Đổi mật khẩu
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-                <LogOut className="mr-2 size-4" />
-                Đăng xuất
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+                  <Avatar className="h-9 w-9">
+                    {user.profilePicture && (
+                      <AvatarImage src={user.profilePicture} alt={user.fullName} />
+                    )}
+                    <AvatarFallback>{initials}</AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{user.fullName}</span>
+                    <span className="text-muted-foreground truncate text-xs">{user.email}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/profile" className="cursor-pointer">
+                    <UserIcon className="mr-2 size-4" />
+                    Hồ sơ
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/account/settings" className="cursor-pointer">
+                    <Settings className="mr-2 size-4" />
+                    Cài đặt
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/account/change-password" className="cursor-pointer">
+                    <Lock className="mr-2 size-4" />
+                    Đổi mật khẩu
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                  <LogOut className="mr-2 size-4" />
+                  Đăng xuất
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         ) : (
           <div className="flex items-center gap-2">
             <Button variant="ghost" asChild>

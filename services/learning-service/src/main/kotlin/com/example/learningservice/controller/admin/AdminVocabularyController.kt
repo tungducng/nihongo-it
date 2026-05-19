@@ -1,11 +1,9 @@
-﻿package com.example.learningservice.controller.admin
+package com.example.learningservice.controller.admin
 
 import com.example.learningservice.dto.CreateVocabularyRequestDto
-import com.example.learningservice.dto.CreateVocabularyResponseDto
-import com.example.learningservice.dto.GetVocabularyResponseDto
 import com.example.learningservice.dto.PagedVocabularyResponseDto
 import com.example.learningservice.dto.UpdateVocabularyRequestDto
-import com.example.learningservice.dto.UpdateVocabularyResponseDto
+import com.example.learningservice.dto.VocabularyDto
 import com.example.learningservice.dto.VocabularyFilterRequestDto
 import com.example.learningservice.entity.JlptLevel
 import com.example.learningservice.service.VocabularyService
@@ -58,7 +56,6 @@ class AdminVocabularyController(
         @RequestParam(defaultValue = "0") page: Int,
         @RequestParam(defaultValue = "20") size: Int,
     ): ResponseEntity<PagedVocabularyResponseDto> {
-        // Implementation needed
         val filter =
             VocabularyFilterRequestDto(
                 topicId = topicId,
@@ -76,7 +73,7 @@ class AdminVocabularyController(
     )
     fun getVocabularyById(
         @PathVariable vocabId: UUID,
-    ): ResponseEntity<GetVocabularyResponseDto> = ResponseEntity.ok(vocabularyService.getVocabularybyId(vocabId))
+    ): ResponseEntity<VocabularyDto> = ResponseEntity.ok(vocabularyService.getVocabularybyId(vocabId).data)
 
     @PostMapping("", produces = [MediaType.APPLICATION_JSON_VALUE])
     @Operation(
@@ -86,9 +83,12 @@ class AdminVocabularyController(
     )
     fun createVocabulary(
         @Valid @RequestBody request: CreateVocabularyRequestDto,
-    ): ResponseEntity<CreateVocabularyResponseDto> {
-        val createdVocabulary = vocabularyService.createVocabulary(request)
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdVocabulary)
+    ): ResponseEntity<VocabularyDto> {
+        val created =
+            requireNotNull(vocabularyService.createVocabulary(request).data) {
+                "Created vocabulary payload missing"
+            }
+        return ResponseEntity.status(HttpStatus.CREATED).body(created)
     }
 
     @PutMapping("/{vocabId}", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -100,10 +100,7 @@ class AdminVocabularyController(
     fun updateVocabulary(
         @PathVariable vocabId: UUID,
         @Valid @RequestBody request: UpdateVocabularyRequestDto,
-    ): ResponseEntity<UpdateVocabularyResponseDto> {
-        val updatedVocabulary = vocabularyService.updateVocabulary(vocabId, request)
-        return ResponseEntity.ok(updatedVocabulary)
-    }
+    ): ResponseEntity<VocabularyDto> = ResponseEntity.ok(vocabularyService.updateVocabulary(vocabId, request).data)
 
     @DeleteMapping("/{vocabId}", produces = [MediaType.APPLICATION_JSON_VALUE])
     @Operation(

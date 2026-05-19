@@ -48,7 +48,6 @@ fun CategoryEntity.toDTO(topicCount: Int? = null): CategoryDTO =
 data class CreateCategoryRequest(
     val name: String,
     val meaning: String,
-    val description: String? = null,
     val displayOrder: Int = 0,
     val isActive: Boolean = true,
 )
@@ -57,7 +56,6 @@ data class CreateCategoryRequest(
 data class UpdateCategoryRequest(
     val name: String? = null,
     val meaning: String? = null,
-    val description: String? = null,
     val displayOrder: Int? = null,
     val isActive: Boolean? = null,
 )

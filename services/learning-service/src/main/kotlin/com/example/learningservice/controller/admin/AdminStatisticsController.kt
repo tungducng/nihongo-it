@@ -71,13 +71,10 @@ class AdminStatisticsController(
 
         return ResponseEntity.ok(
             mapOf(
-                "data" to
-                    mapOf(
-                        "users" to userStatsList,
-                        "totalItems" to usersPage.totalElements,
-                        "totalPages" to usersPage.totalPages,
-                        "currentPage" to usersPage.number,
-                    ),
+                "users" to userStatsList,
+                "totalItems" to usersPage.totalElements,
+                "totalPages" to usersPage.totalPages,
+                "currentPage" to usersPage.number,
             ),
         )
     }
@@ -132,7 +129,7 @@ class AdminStatisticsController(
                 "reviewHistory" to reviewHistory,
             )
 
-        return ResponseEntity.ok(mapOf("data" to userStats))
+        return ResponseEntity.ok(userStats)
     }
 
     @GetMapping("/overview", produces = [MediaType.APPLICATION_JSON_VALUE])
@@ -212,7 +209,7 @@ class AdminStatisticsController(
                 "mostActiveUsers" to mostActiveUsers,
             )
 
-        return ResponseEntity.ok(mapOf("data" to overview))
+        return ResponseEntity.ok(overview)
     }
 
     private fun calculateUserProgress(stats: StudyStatisticsDto): Int {

@@ -23,7 +23,11 @@ import conversationService from '@/services/conversation.service'
 import { useAppToast } from '@/hooks/useAppToast'
 import { useConfirm } from '@/hooks/useConfirm'
 import { extractApiError } from '@/types/common.types'
-import type { Conversation, ConversationLine } from '@/types/conversation.types'
+import type {
+  Conversation,
+  ConversationLine,
+  UpdateConversationRequest,
+} from '@/types/conversation.types'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/common/Loader'
 import { SortableLine } from './SortableLine'
@@ -144,10 +148,12 @@ export function LinesEditor({ conversationId }: Props) {
     if (!conversation) return
     setSaving(true)
     try {
-      const payload: Conversation = {
-        ...conversation,
+      const payload: UpdateConversationRequest = {
+        title: conversation.title,
+        description: conversation.description,
+        jlptLevel: conversation.jlptLevel,
+        unit: conversation.unit,
         lines: lines.map((l, index) => {
-          // Drop the client-only tempId before sending to server
           const { tempId, ...rest } = l
           void tempId
           return { ...rest, orderIndex: index }

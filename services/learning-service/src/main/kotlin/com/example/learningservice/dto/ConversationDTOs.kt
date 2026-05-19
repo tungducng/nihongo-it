@@ -170,12 +170,14 @@ data class UpdateConversationLineRequest(
 data class PagedResponse<T>(
     @JsonProperty("content")
     val content: List<T>,
-    @JsonProperty("totalPages")
-    val totalPages: Int,
-    @JsonProperty("totalElements")
-    val totalElements: Long,
-    @JsonProperty("currentPage")
-    val currentPage: Int,
+    @JsonProperty("page")
+    val page: Int,
     @JsonProperty("size")
     val size: Int,
+    @JsonProperty("totalElements")
+    val totalElements: Long,
+    @JsonProperty("totalPages")
+    val totalPages: Int,
+    @JsonProperty("lastPage")
+    val lastPage: Boolean,
 )

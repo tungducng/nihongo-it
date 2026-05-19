@@ -1,14 +1,12 @@
 import api from '@/lib/api'
 import { getAccessToken } from '@/lib/tokenStore'
 import type {
-  AIExplanationResponse,
   ChatResponse,
   ContentType,
   FeedbackSummary,
   SpeechAnalysisResult,
   TTSCheckResponse,
   VocabularyExplanation,
-  VocabularyExplanationRequest,
 } from '@/types/ai.types'
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080'
@@ -152,28 +150,6 @@ const aiService = {
       }
     }
     return data
-  },
-
-  async getVocabularyExplanation(
-    request: VocabularyExplanationRequest,
-  ): Promise<AIExplanationResponse> {
-    const params: Record<string, string> = {
-      term: request.term,
-      reading: request.reading || '',
-      meaning: request.meaning || '',
-      partOfSpeech: request.partOfSpeech || '',
-      explanation: request.explanation || '',
-      language: request.language || 'vi',
-    }
-    if (request.exampleSentences && request.exampleSentences.length > 0) {
-      params.exampleSentences = request.exampleSentences[0]
-    }
-    const res = await api.post('/api/v1/ai/chat/vocabulary/explain', null, { params })
-    const data = res.data
-    if (typeof data === 'string') return { content: data }
-    if (data?.content) return data
-    if (data?.explanation) return { content: data.explanation }
-    return { content: JSON.stringify(data) }
   },
 
   /**

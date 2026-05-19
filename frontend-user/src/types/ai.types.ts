@@ -31,20 +31,6 @@ export interface ChatResponse {
   message: string
 }
 
-export interface VocabularyExplanationRequest {
-  term: string
-  reading?: string
-  meaning?: string
-  partOfSpeech?: string
-  explanation?: string
-  exampleSentences?: string[]
-  language?: string
-}
-
-export interface AIExplanationResponse {
-  content: string
-}
-
 export interface FeedbackSummary {
   summary: string
   common_errors: string[]

@@ -14,6 +14,9 @@ on:
       - 'frontend-admin/**'
       - '.github/workflows/frontend.yml'
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     name: ${{ matrix.app }} (lint, type-check, test, build)

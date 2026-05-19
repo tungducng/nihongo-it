@@ -10,8 +10,10 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
+import java.security.MessageDigest
 
 @RestController
 @RequestMapping("/api/v1/ai/tts")
@@ -22,6 +24,7 @@ class TTSController(
         private const val SPEED_MIN = 0.25f
         private const val SPEED_MAX = 4.0f
         private const val SPEED_DEFAULT = 1.0f
+        private const val MAX_TEXT_BYTES = 4096
     }
 
     private val logger = LoggerFactory.getLogger(TTSController::class.java)
@@ -37,15 +40,17 @@ class TTSController(
         @RequestHeader(value = "X-Content-Language", required = false, defaultValue = "ja") language: String,
         @RequestHeader(value = "X-Save-Audio", required = false, defaultValue = "false") saveAudio: Boolean,
     ): ResponseEntity<ByteArray> {
-        // Validate content type
-        val validatedContentType = if (contentType in validContentTypes) contentType else defaultContentType
-
+        val validatedContentType = validateContentType(contentType)
         val speed = speedStr.toFloatOrNull()?.coerceIn(SPEED_MIN, SPEED_MAX) ?: SPEED_DEFAULT
+        require(text.isNotBlank()) { "Text must not be blank" }
+        require(text.toByteArray(Charsets.UTF_8).size <= MAX_TEXT_BYTES) {
+            "Text exceeds maximum length"
+        }
 
         val options =
             OpenAiAudioSpeechOptions
                 .builder()
-                .voice(OpenAiAudioApi.SpeechRequest.Voice.NOVA) // NOVA has the best Japanese pronunciation
+                .voice(OpenAiAudioApi.SpeechRequest.Voice.NOVA)
                 .responseFormat(OpenAiAudioApi.SpeechRequest.AudioResponseFormat.MP3)
                 .model("gpt-4o-mini-tts")
                 .speed(speed)
@@ -58,12 +63,10 @@ class TTSController(
                 throw RuntimeException("TTS generation failed: ${e.message}", e)
             }
 
-        // Validate audio output
         require(response.result.output.isNotEmpty()) {
             "OpenAI returned empty audio data"
         }
 
-        // Save the audio file if requested
         if (saveAudio) {
             saveGeneratedAudio(text, response.result.output, validatedContentType)
         }
@@ -77,83 +80,71 @@ class TTSController(
             .body(response.result.output)
     }
 
-    /**
-     * Saves the generated audio to the appropriate directory based on content type
-     */
     private fun saveGeneratedAudio(
         text: String,
         audioData: ByteArray,
         contentType: String,
     ) {
         try {
-            // Determine the appropriate directory based on content type
-            val directoryPath = Paths.get("src", "main", "resources", contentType)
-
-            // Create directory if it doesn't exist
-            if (!Files.exists(directoryPath)) {
-                Files.createDirectories(directoryPath)
-                logger.info("Created directory: $directoryPath")
+            val audioFile = resolveAudioPath(contentType, text) ?: return
+            val directory = audioFile.parent
+            if (!Files.exists(directory)) {
+                Files.createDirectories(directory)
+                logger.info("Created directory: {}", directory)
             }
-
-            // Use exact text as filename to preserve Japanese characters
-            val audioFile = directoryPath.resolve("$text.mp3")
-
-            // Save the audio data to the file
             Files.write(audioFile, audioData, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
-            logger.info("Saved generated audio to: ${audioFile.toAbsolutePath()}")
+            logger.info("Saved generated audio to: {}", audioFile.toAbsolutePath())
         } catch (e: Exception) {
-            logger.error("Failed to save generated audio: ${e.message}", e)
-            // We don't want to fail the main request if saving fails
+            logger.error("Failed to save generated audio", e)
         }
     }
 
-    /**
-     * Check if audio file exists for the given text
-     */
     @GetMapping("/check")
     fun checkAudioExists(
         @RequestParam text: String,
         @RequestParam(required = false, defaultValue = "vocabulary") contentType: String,
     ): ResponseEntity<Map<String, Boolean>> {
-        // Validate content type
-        val validatedContentType = if (contentType in validContentTypes) contentType else defaultContentType
-
-        val directoryPath = Paths.get("src", "main", "resources", validatedContentType)
-
-        // Use exact text as filename
-        val audioFile = directoryPath.resolve("$text.mp3")
-
-        val exists = Files.exists(audioFile)
-
+        val audioFile = resolveAudioPath(validateContentType(contentType), text)
+        val exists = audioFile != null && Files.exists(audioFile)
         return ResponseEntity.ok(mapOf("exists" to exists))
     }
 
-    /**
-     * Retrieve previously generated audio file
-     */
     @GetMapping("/audio")
     fun getAudio(
         @RequestParam text: String,
         @RequestParam(required = false, defaultValue = "vocabulary") contentType: String,
     ): ResponseEntity<ByteArray> {
-        // Validate content type
-        val validatedContentType = if (contentType in validContentTypes) contentType else defaultContentType
-
-        val directoryPath = Paths.get("src", "main", "resources", validatedContentType)
-
-        // Use exact text as filename
-        val audioFile = directoryPath.resolve("$text.mp3")
-
-        if (!Files.exists(audioFile)) {
-            return ResponseEntity.notFound().build()
-        }
+        val audioFile = resolveAudioPath(validateContentType(contentType), text)
+            ?: return ResponseEntity.notFound().build()
+        if (!Files.exists(audioFile)) return ResponseEntity.notFound().build()
 
         val audioData = Files.readAllBytes(audioFile)
-
         return ResponseEntity
             .ok()
             .contentType(MediaType("audio", "mpeg"))
             .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"audio.mp3\"")
             .body(audioData)
+    }
+
+    private fun validateContentType(contentType: String): String =
+        if (contentType in validContentTypes) contentType else defaultContentType
+
+    /**
+     * Resolves the on-disk path for cached audio, defending against path traversal:
+     *   - `text` is mapped through SHA-256 so user input never reaches the filesystem
+     *   - resolved path must stay inside the configured base directory
+     * Returns `null` if the resolved path would escape the base (defense in depth).
+     */
+    private fun resolveAudioPath(contentType: String, text: String): Path? {
+        val safeContentType = validateContentType(contentType)
+        val baseDir = Paths.get("src", "main", "resources", safeContentType).toAbsolutePath().normalize()
+        val filename = sha256Hex(text) + ".mp3"
+        val resolved = baseDir.resolve(filename).normalize()
+        return if (resolved.startsWith(baseDir)) resolved else null
+    }
+
+    private fun sha256Hex(input: String): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(input.toByteArray(Charsets.UTF_8))
+        return digest.joinToString("") { "%02x".format(it) }
     }
 }

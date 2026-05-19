@@ -134,15 +134,15 @@ async def analyze_audio(
             user_audio_path = tmp.name
         await user_audio.seek(0)
 
-        # Resolve sample audio
+        # Resolve sample audio (filename derived from hash to defeat path traversal)
         sample_audio_path = None
         if audio_type in ("conversation", "vocabulary"):
             candidate = get_sample_audio_path(audio_type, reference_text)
-            if os.path.exists(candidate):
+            if candidate and os.path.exists(candidate):
                 sample_audio_path = candidate
-                logger.info(f"Sample audio found: {sample_audio_path}")
+                logger.info("Sample audio found")
             else:
-                logger.info(f"Sample audio not found: {candidate}")
+                logger.info("Sample audio not found")
 
         reference_text = reference_text or ""
 

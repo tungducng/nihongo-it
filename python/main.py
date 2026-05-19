@@ -1,6 +1,5 @@
 import os
 import logging
-import traceback
 
 from fastapi import FastAPI, File, UploadFile, Form, Request
 from fastapi.responses import JSONResponse
@@ -47,11 +46,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
-    if DEBUG_MODE:
-        return JSONResponse(
-            status_code=500,
-            content={"detail": str(exc), "traceback": traceback.format_exc()},
-        )
+    # Log the full exception server-side, return a generic error to the client.
+    logger.exception("Unhandled exception while serving %s %s", request.method, request.url.path)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
@@ -74,13 +70,9 @@ async def analyze_enhanced_endpoint(
 
         result = await analyze_audio(file, reference_text, type)
         return JSONResponse(content=result)
-    except Exception as e:
-        if DEBUG_MODE:
-            return JSONResponse(
-                status_code=500,
-                content={"detail": str(e), "traceback": traceback.format_exc()},
-            )
-        return JSONResponse(status_code=500, content={"detail": str(e)})
+    except Exception:
+        logger.exception("analyze_enhanced_endpoint failed")
+        return JSONResponse(status_code=500, content={"detail": "Phân tích âm thanh thất bại"})
 
 
 @app.post("/summarize-feedback", response_class=JSONResponse)
@@ -92,13 +84,9 @@ async def summarize_feedback_endpoint(request: Request):
             body.get("conversation_text", ""),
         )
         return JSONResponse(content=result)
-    except Exception as e:
-        if DEBUG_MODE:
-            return JSONResponse(
-                status_code=500,
-                content={"detail": str(e), "traceback": traceback.format_exc()},
-            )
-        return JSONResponse(status_code=500, content={"detail": str(e)})
+    except Exception:
+        logger.exception("summarize_feedback_endpoint failed")
+        return JSONResponse(status_code=500, content={"detail": "Tổng hợp phản hồi thất bại"})
 
 
 if __name__ == "__main__":

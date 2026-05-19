@@ -1,3 +1,4 @@
+import hashlib
 import os
 from dotenv import load_dotenv
 
@@ -7,6 +8,8 @@ DEBUG_MODE = os.getenv("DEBUG_MODE", "False").lower() in ("true", "1", "t")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 SAMPLE_AUDIO_BASE_PATH = os.getenv("SAMPLE_AUDIO_BASE_PATH", "services/ai-service/src/main/resources")
 PROJECT_ROOT_PATH = os.getenv("PROJECT_ROOT_PATH", "")
+
+_ALLOWED_AUDIO_TYPES = {"conversation", "vocabulary", "example"}
 
 
 def get_project_root() -> str:
@@ -23,5 +26,18 @@ def get_project_root() -> str:
     return os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-def get_sample_audio_path(audio_type: str, reference_text: str) -> str:
-    return os.path.join(get_project_root(), SAMPLE_AUDIO_BASE_PATH, audio_type, f"{reference_text}.mp3")
+def get_sample_audio_path(audio_type: str, reference_text: str) -> str | None:
+    """Return absolute path for a cached sample audio file, or None if inputs are
+    unsafe. The reference text is hashed to defeat path-traversal attacks; the
+    resolved path is also verified to stay inside the configured base directory.
+    """
+    if audio_type not in _ALLOWED_AUDIO_TYPES:
+        return None
+
+    base = os.path.realpath(os.path.join(get_project_root(), SAMPLE_AUDIO_BASE_PATH, audio_type))
+    filename = hashlib.sha256(reference_text.encode("utf-8")).hexdigest() + ".mp3"
+    candidate = os.path.realpath(os.path.join(base, filename))
+
+    if not candidate.startswith(base + os.sep) and candidate != base:
+        return None
+    return candidate

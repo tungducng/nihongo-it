@@ -12,6 +12,9 @@ on:
       - 'python/**'
       - '.github/workflows/python.yml'
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     name: Lint, Test

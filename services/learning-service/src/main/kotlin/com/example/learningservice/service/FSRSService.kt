@@ -6,7 +6,6 @@ import com.example.learningservice.repository.FlashcardRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
 import kotlin.math.max
@@ -134,7 +133,7 @@ class FSRSService(
             }
         }
         flashcard.reps += 1
-        flashcard.updatedAt = Instant.now()
+        // updatedAt auto-filled by JPA auditing on save (AbstractAuditEntity)
         return flashcardRepository.save(flashcard)
     }
 

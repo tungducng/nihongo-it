@@ -56,7 +56,8 @@ class AdminStatisticsController(
                 val lastReview = flashcardStatisticsService.getLastReviewDate(uid)
                 val lastActive =
                     lastReview?.format(dateTimeFormatter)
-                        ?: user.updatedAt.atZone(ZoneOffset.UTC).format(dateTimeFormatter)
+                        ?: user.updatedAt?.atZone(ZoneOffset.UTC)?.format(dateTimeFormatter)
+                        ?: ""
 
                 mapOf(
                     "userId" to user.userId,
@@ -96,7 +97,11 @@ class AdminStatisticsController(
         val reviewHistory = flashcardStatisticsService.getUserReviewHistory(userId, 30)
         val lastActive =
             lastReview?.format(dateTimeFormatter)
-                ?: user.updatedAt.atZone(ZoneOffset.UTC).format(dateTimeFormatter)
+                ?: user.updatedAt?.atZone(ZoneOffset.UTC)?.format(dateTimeFormatter)
+                ?: ""
+
+        val createdAtStr =
+            user.createdAt?.atZone(ZoneOffset.UTC)?.format(dateTimeFormatter) ?: ""
 
         val userStats =
             mapOf(
@@ -107,7 +112,7 @@ class AdminStatisticsController(
                     mapOf(
                         "currentLevel" to user.currentLevel,
                         "jlptGoal" to user.jlptGoal,
-                        "createdAt" to user.createdAt.atZone(ZoneOffset.UTC).format(dateTimeFormatter),
+                        "createdAt" to createdAtStr,
                         "lastLogin" to user.lastLogin?.format(dateTimeFormatter),
                         "isActive" to user.isActive,
                         "isEmailVerified" to user.isEmailVerified,
@@ -163,7 +168,8 @@ class AdminStatisticsController(
                     val lastReview = flashcardStatisticsService.getLastReviewDate(uid)
                     val lastActive =
                         lastReview?.format(dateTimeFormatter)
-                            ?: user.updatedAt.atZone(ZoneOffset.UTC).format(dateTimeFormatter)
+                            ?: user.updatedAt?.atZone(ZoneOffset.UTC)?.format(dateTimeFormatter)
+                            ?: ""
 
                     mapOf(
                         "userId" to user.userId,
@@ -184,7 +190,8 @@ class AdminStatisticsController(
                     val lastReview = flashcardStatisticsService.getLastReviewDate(uid)
                     val lastActive =
                         lastReview?.format(dateTimeFormatter)
-                            ?: user.updatedAt.atZone(ZoneOffset.UTC).format(dateTimeFormatter)
+                            ?: user.updatedAt?.atZone(ZoneOffset.UTC)?.format(dateTimeFormatter)
+                            ?: ""
 
                     mapOf(
                         "userId" to user.userId,

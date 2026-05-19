@@ -13,7 +13,6 @@ import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.util.UserAuthUtil
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 import java.util.UUID
 
 @Service
@@ -56,8 +55,6 @@ class CategoryService(
                 name = request.name,
                 meaning = request.meaning,
                 displayOrder = request.displayOrder,
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now(),
             )
 
         val savedCategory = categoryRepository.save(category)
@@ -88,7 +85,6 @@ class CategoryService(
                 meaning = request.meaning ?: category.meaning,
                 displayOrder = request.displayOrder ?: category.displayOrder,
                 isActive = request.isActive ?: category.isActive,
-                updatedAt = LocalDateTime.now(),
             )
 
         val savedCategory = categoryRepository.save(updatedCategory)
@@ -105,7 +101,6 @@ class CategoryService(
         val updatedCategory =
             category.copy(
                 isActive = !category.isActive,
-                updatedAt = LocalDateTime.now(),
             )
 
         val savedCategory = categoryRepository.save(updatedCategory)

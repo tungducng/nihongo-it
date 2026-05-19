@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
-import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
@@ -75,11 +74,11 @@ class StreakTrackerJob(
                     reviewedToday || reviewedYesterday -> null
                     reviewedTwoDaysAgo && user.streakCount > 1 -> {
                         reducedCount++
-                        user.copy(streakCount = user.streakCount - 1, updatedAt = Instant.now())
+                        user.copy(streakCount = user.streakCount - 1)
                     }
                     else -> {
                         resetCount++
-                        user.copy(streakCount = 0, updatedAt = Instant.now())
+                        user.copy(streakCount = 0)
                     }
                 }
             }

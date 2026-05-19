@@ -12,7 +12,6 @@ import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.util.UserAuthUtil
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 import java.util.UUID
 
 @Service
@@ -69,8 +68,6 @@ class TopicService(
                 displayOrder = request.displayOrder,
                 isActive = request.isActive,
                 category = category,
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now(),
             )
 
         val savedTopic = topicRepository.save(topic)
@@ -113,7 +110,6 @@ class TopicService(
                 displayOrder = request.displayOrder ?: topic.displayOrder,
                 isActive = request.isActive ?: topic.isActive,
                 category = category,
-                updatedAt = LocalDateTime.now(),
             )
 
         val savedTopic = topicRepository.save(updatedTopic)
@@ -130,7 +126,6 @@ class TopicService(
         val updatedTopic =
             topic.copy(
                 isActive = !topic.isActive,
-                updatedAt = LocalDateTime.now(),
             )
 
         val savedTopic = topicRepository.save(updatedTopic)

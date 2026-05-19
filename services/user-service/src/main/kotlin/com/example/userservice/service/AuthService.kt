@@ -111,7 +111,6 @@ class AuthService(
             user.copy(
                 isEmailVerified = true,
                 verificationToken = null,
-                updatedAt = LocalDateTime.now(),
             ),
         )
     }

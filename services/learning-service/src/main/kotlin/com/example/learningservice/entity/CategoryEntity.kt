@@ -1,7 +1,7 @@
-﻿package com.example.learningservice.entity
+package com.example.learningservice.entity
 
+import com.example.common.entity.AbstractAuditEntity
 import jakarta.persistence.*
-import java.time.LocalDateTime
 import java.util.*
 
 @Entity
@@ -19,10 +19,6 @@ data class CategoryEntity(
     val displayOrder: Int = 0,
     @Column(name = "is_active")
     val isActive: Boolean = true,
-    @Column(name = "created_at")
-    val createdAt: LocalDateTime? = LocalDateTime.now(),
-    @Column(name = "updated_at")
-    val updatedAt: LocalDateTime? = LocalDateTime.now(),
     @OneToMany(mappedBy = "category", cascade = [CascadeType.ALL], orphanRemoval = true)
     val topics: MutableList<TopicEntity> = mutableListOf(),
-)
+) : AbstractAuditEntity()

@@ -1,7 +1,7 @@
-﻿package com.example.learningservice.entity
+package com.example.learningservice.entity
 
+import com.example.common.entity.AbstractAuditEntity
 import jakarta.persistence.*
-import java.time.LocalDateTime
 import java.util.*
 
 @Entity
@@ -22,10 +22,6 @@ data class TopicEntity(
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     val category: CategoryEntity,
-    @Column(name = "created_at")
-    val createdAt: LocalDateTime? = LocalDateTime.now(),
-    @Column(name = "updated_at")
-    val updatedAt: LocalDateTime? = LocalDateTime.now(),
     @OneToMany(mappedBy = "topic", cascade = [CascadeType.ALL], orphanRemoval = true)
     val vocabularyItems: MutableList<VocabularyEntity> = mutableListOf(),
-)
+) : AbstractAuditEntity()

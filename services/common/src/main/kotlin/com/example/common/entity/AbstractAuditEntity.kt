@@ -8,7 +8,7 @@ import org.springframework.data.annotation.CreatedDate
 import org.springframework.data.annotation.LastModifiedBy
 import org.springframework.data.annotation.LastModifiedDate
 import org.springframework.data.jpa.domain.support.AuditingEntityListener
-import java.time.Instant
+import java.time.LocalDateTime
 
 /**
  * Base entity providing auditing columns.
@@ -21,15 +21,16 @@ import java.time.Instant
  *  3. Provide an `AuditorAware<String>` bean — [AuditConfig.auditorProvider]
  *     reads `X-User-Id` populated by `GatewayHeaderAuthFilter`.
  *
- * Columns map to `created_at`, `created_by`, `updated_at`, `updated_by`. Existing
- * tables that already have these column names will work transparently.
+ * Columns map to `created_at`, `created_by`, `updated_at`, `updated_by` —
+ * matches the `TIMESTAMP` / `LocalDateTime` shape used by existing Flyway
+ * migrations across user / learning / notification services.
  */
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener::class)
 abstract class AbstractAuditEntity {
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
-    var createdAt: Instant? = null
+    var createdAt: LocalDateTime? = null
 
     @CreatedBy
     @Column(name = "created_by", updatable = false, length = 64)
@@ -37,7 +38,7 @@ abstract class AbstractAuditEntity {
 
     @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
-    var updatedAt: Instant? = null
+    var updatedAt: LocalDateTime? = null
 
     @LastModifiedBy
     @Column(name = "updated_by", length = 64)

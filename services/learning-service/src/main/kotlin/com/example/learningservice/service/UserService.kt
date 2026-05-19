@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
-import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 @Service
@@ -66,10 +65,11 @@ class UserService(
             recentUsersWithActivity.mapIndexedNotNull { index, user ->
                 val lastLogin = user.lastLogin
                 if (index < limit && lastLogin != null) {
+                    val createdAt = user.createdAt
                     val action =
                         when {
                             lastLogin.isAfter(LocalDateTime.now().minusHours(1)) -> "Đã đăng nhập"
-                            user.createdAt.isAfter(Instant.now().minus(1, ChronoUnit.DAYS)) -> "Đã tạo tài khoản mới"
+                            createdAt != null && createdAt.isAfter(LocalDateTime.now().minusDays(1)) -> "Đã tạo tài khoản mới"
                             else -> "Đã truy cập hệ thống"
                         }
 
@@ -230,10 +230,7 @@ class UserService(
                         // If streak is 0, set it to 1
                         if (user.streakCount == 0) {
                             logger.info("Last review was today but streak is 0 - setting streak to 1")
-                            user.copy(
-                                streakCount = 1,
-                                updatedAt = Instant.now(),
-                            )
+                            user.copy(streakCount = 1)
                         } else {
                             logger.info("Last review was today - not changing streak")
                             user
@@ -242,27 +239,18 @@ class UserService(
                     // If last review was yesterday, increment the streak
                     previousReviewDate == yesterday -> {
                         logger.info("Last review was yesterday - incrementing streak from ${user.streakCount} to ${user.streakCount + 1}")
-                        user.copy(
-                            streakCount = user.streakCount + 1,
-                            updatedAt = Instant.now(),
-                        )
+                        user.copy(streakCount = user.streakCount + 1)
                     }
                     // If the user missed a day or more, reset streak to 1
                     else -> {
                         logger.info("Last review was before yesterday ($previousReviewDate) - resetting streak to 1")
-                        user.copy(
-                            streakCount = 1,
-                            updatedAt = Instant.now(),
-                        )
+                        user.copy(streakCount = 1)
                     }
                 }
             } else {
                 // First time user is reviewing, set streak to 1
                 logger.info("First time user is reviewing - setting streak to 1")
-                user.copy(
-                    streakCount = 1,
-                    updatedAt = Instant.now(),
-                )
+                user.copy(streakCount = 1)
             }
 
         if (updatedUser != user) {
@@ -311,7 +299,8 @@ class UserService(
                             ?.reviewTimestamp
                             ?.atZone(ZoneOffset.UTC)
                             ?.toInstant()
-                            ?: user.updatedAt
+                            ?: user.updatedAt?.atZone(ZoneOffset.UTC)?.toInstant()
+                            ?: Instant.EPOCH
                     user to lastActive
                 }
 

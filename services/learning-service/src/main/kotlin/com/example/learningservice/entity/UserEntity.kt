@@ -1,7 +1,7 @@
 package com.example.learningservice.entity
 
+import com.example.common.entity.AbstractAuditEntity
 import jakarta.persistence.*
-import java.time.Instant
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.util.*
@@ -50,7 +50,7 @@ data class UserEntity(
     @Column(name = "reminder_enabled")
     val reminderEnabled: Boolean = true,
     @Column(name = "reminder_time")
-    val reminderTime: LocalTime? = LocalTime.of(20, 0), // Default reminder at 8 PM
+    val reminderTime: LocalTime? = LocalTime.of(20, 0),
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
         name = "user_notification_preferences",
@@ -59,7 +59,7 @@ data class UserEntity(
     @Column(name = "preference", length = 50)
     val notificationPreferences: MutableSet<String> = mutableSetOf("email", "app"),
     @Column(name = "min_card_threshold")
-    val minCardThreshold: Int? = 5, // Minimum number of cards before sending notification
+    val minCardThreshold: Int? = 5,
     @Column(name = "firebase_token")
     val firebaseToken: String? = null,
     @ManyToOne(fetch = FetchType.EAGER)
@@ -67,8 +67,4 @@ data class UserEntity(
     var role: RoleEntity,
     @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
     val flashcards: MutableList<FlashcardEntity> = mutableListOf(),
-    @Column(name = "created_at", columnDefinition = "TIMESTAMP")
-    val createdAt: Instant = Instant.now(),
-    @Column(name = "updated_at", columnDefinition = "TIMESTAMP")
-    val updatedAt: Instant = Instant.now(),
-)
+) : AbstractAuditEntity()

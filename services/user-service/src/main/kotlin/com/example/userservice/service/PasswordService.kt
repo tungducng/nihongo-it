@@ -43,7 +43,6 @@ class PasswordService(
         userRepository.save(
             user.copy(
                 password = passwordEncoder.encode(request.newPassword)!!,
-                updatedAt = LocalDateTime.now(),
             ),
         )
 
@@ -92,7 +91,6 @@ class PasswordService(
                 password = passwordEncoder.encode(request.password)!!,
                 resetPasswordToken = null,
                 resetPasswordExpires = null,
-                updatedAt = LocalDateTime.now(),
             ),
         )
 

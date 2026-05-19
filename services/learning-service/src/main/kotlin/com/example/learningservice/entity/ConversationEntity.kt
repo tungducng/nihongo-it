@@ -1,7 +1,7 @@
 package com.example.learningservice.entity
 
+import com.example.common.entity.AbstractAuditEntity
 import jakarta.persistence.*
-import java.time.LocalDateTime
 import java.util.UUID
 
 @Entity
@@ -21,8 +21,4 @@ data class ConversationEntity(
     var unit: Int? = null,
     @OneToMany(mappedBy = "conversation", cascade = [CascadeType.ALL], fetch = FetchType.LAZY)
     var lines: MutableList<ConversationLineEntity> = mutableListOf(),
-    @Column(name = "created_at", nullable = false)
-    var createdAt: LocalDateTime = LocalDateTime.now(),
-    @Column(name = "updated_at", nullable = false)
-    var updatedAt: LocalDateTime = LocalDateTime.now(),
-)
+) : AbstractAuditEntity()

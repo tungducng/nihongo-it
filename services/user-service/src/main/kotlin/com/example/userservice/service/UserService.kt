@@ -8,7 +8,6 @@ import com.example.userservice.repository.UserRepository
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -73,7 +72,6 @@ class UserService(
                 reminderEnabled = request.reminderEnabled ?: user.reminderEnabled,
                 reminderTime = request.reminderTime?.let { LocalTime.parse(it, timeFormatter) } ?: user.reminderTime,
                 minCardThreshold = request.minCardThreshold ?: user.minCardThreshold,
-                updatedAt = LocalDateTime.now(),
             ),
         )
         logger.info("Notification preferences updated for user $userId")
@@ -105,7 +103,6 @@ class UserService(
                 fullName = request.fullName,
                 currentLevel = request.currentLevel,
                 jlptGoal = request.jlptGoal,
-                updatedAt = LocalDateTime.now(),
             ),
         )
 

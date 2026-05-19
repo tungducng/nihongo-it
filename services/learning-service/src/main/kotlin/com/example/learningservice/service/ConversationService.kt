@@ -12,7 +12,6 @@ import com.example.learningservice.repository.ConversationRepository
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 import java.util.UUID
 
 @Service
@@ -85,8 +84,6 @@ class ConversationService(
                 description = request.description,
                 jlptLevel = request.jlptLevel,
                 unit = request.unit,
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now(),
             )
 
         val savedConversation = conversationRepository.save(conversation)
@@ -122,13 +119,12 @@ class ConversationService(
                 .findById(conversationId)
                 .orElseThrow { BusinessException("Conversation not found with id: $conversationId") }
 
-        // Update conversation properties
+        // Update conversation properties (updatedAt auto-filled by JPA auditing)
         conversation.apply {
             title = request.title ?: title
             description = request.description ?: description
             jlptLevel = request.jlptLevel ?: jlptLevel
             unit = request.unit ?: unit
-            updatedAt = LocalDateTime.now()
         }
 
         conversationRepository.save(conversation)

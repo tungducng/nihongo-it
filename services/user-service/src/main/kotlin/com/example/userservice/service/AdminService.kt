@@ -16,7 +16,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -83,8 +82,6 @@ class AdminService(
                 isEmailVerified = true,
                 lastLogin = null,
                 role = role,
-                createdAt = LocalDateTime.now(),
-                updatedAt = LocalDateTime.now(),
             )
 
         val savedUser = userRepository.save(newUser)
@@ -159,7 +156,6 @@ class AdminService(
                         ?: existingUser.notificationPreferences,
                 minCardThreshold = request.minCardThreshold ?: existingUser.minCardThreshold,
                 role = role,
-                updatedAt = LocalDateTime.now(),
             )
 
         val savedUser = userRepository.save(updatedUser)
@@ -187,7 +183,7 @@ class AdminService(
             }
         }
 
-        userRepository.save(user.copy(isActive = false, updatedAt = LocalDateTime.now()))
+        userRepository.save(user.copy(isActive = false))
         val actorId = userAuthUtil.getCurrentUserId()
         auditService.log(
             AuditAction.USER_DEACTIVATED,
@@ -202,7 +198,7 @@ class AdminService(
     @Transactional
     fun activateUser(userId: UUID) {
         val user = findUserById(userId)
-        userRepository.save(user.copy(isActive = true, updatedAt = LocalDateTime.now()))
+        userRepository.save(user.copy(isActive = true))
         val actorId = userAuthUtil.getCurrentUserId()
         auditService.log(
             AuditAction.USER_ACTIVATED,
@@ -232,7 +228,7 @@ class AdminService(
             }
         }
 
-        userRepository.save(user.copy(role = newRole, updatedAt = LocalDateTime.now()))
+        userRepository.save(user.copy(role = newRole))
         val actorId = userAuthUtil.getCurrentUserId()
         auditService.log(
             AuditAction.ROLE_CHANGED,

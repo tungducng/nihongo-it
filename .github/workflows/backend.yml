@@ -14,6 +14,8 @@ on:
 
 permissions:
   contents: read
+  # Needed so madrapps/jacoco-report can post a coverage comment to the PR.
+  pull-requests: write
 
 jobs:
   build-and-test:
@@ -61,8 +63,10 @@ jobs:
         run: ./gradlew :${{ matrix.service }}:build -x test
         working-directory: services
 
-      - name: Run tests
-        run: ./gradlew :${{ matrix.service }}:test
+      - name: Run tests + JaCoCo verification
+        # `check` includes jacocoTestCoverageVerification on user/learning;
+        # other services have no coverage gate yet but still run tests.
+        run: ./gradlew :${{ matrix.service }}:check
         working-directory: services
 
       - name: Upload JaCoCo report
@@ -80,3 +84,15 @@ jobs:
           name: test-report-${{ matrix.service }}
           path: services/${{ matrix.service }}/build/reports/tests/
           retention-days: 7
+
+      - name: Post coverage comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: madrapps/jacoco-report@v1.7.1
+        continue-on-error: true
+        with:
+          paths: services/${{ matrix.service }}/build/reports/jacoco/test/jacocoTestReport.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 15
+          min-coverage-changed-files: 30
+          title: 'Coverage — ${{ matrix.service }}'
+          update-comment: true

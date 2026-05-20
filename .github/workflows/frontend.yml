@@ -50,9 +50,17 @@ jobs:
         run: npm run type-check
         working-directory: ${{ matrix.app }}
 
-      - name: Unit tests
-        run: npm test
+      - name: Unit tests with coverage
+        run: npm run test:coverage
         working-directory: ${{ matrix.app }}
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-${{ matrix.app }}
+          path: ${{ matrix.app }}/coverage/
+          retention-days: 7
 
       - name: Build
         run: npm run build

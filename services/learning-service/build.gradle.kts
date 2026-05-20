@@ -106,6 +106,38 @@ tasks.jacocoTestReport {
     )
 }
 
+// Minimum line coverage gate. Raise gradually as test suite grows
+// (current state ~18%, see docs/plans/2026-05-19-yas-adoption-plan.md P4.1).
+tasks.jacocoTestCoverageVerification {
+    dependsOn(tasks.test)
+    classDirectories.setFrom(
+        files(
+            classDirectories.files.map {
+                fileTree(it) {
+                    exclude(
+                        "**/dto/**",
+                        "**/entity/**",
+                        "**/*Application*",
+                        "**/config/**",
+                    )
+                }
+            },
+        ),
+    )
+    violationRules {
+        rule {
+            limit {
+                counter = "LINE"
+                minimum = "0.15".toBigDecimal()
+            }
+        }
+    }
+}
+
+tasks.check {
+    dependsOn(tasks.jacocoTestCoverageVerification)
+}
+
 detekt {
     config.setFrom(rootProject.file("../detekt.yml"))
     buildUponDefaultConfig = true

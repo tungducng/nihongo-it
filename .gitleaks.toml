@@ -1,0 +1,30 @@
+# Gitleaks configuration — extends the default ruleset and adds allowlist
+# entries for known-safe matches in this repo.
+# Docs: https://github.com/gitleaks/gitleaks#configuration
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Repo-specific allowlist"
+paths = [
+    # Documentation snippets that demonstrate token shapes / sample keys.
+    '''docs/.*''',
+    '''README\.md$''',
+    # Example env files (placeholder strings only).
+    '''.*\.env\.example$''',
+    # Test fixtures using deterministic fake secrets.
+    '''.*/src/test/resources/.*''',
+    # Frontend lockfiles — large auto-generated noise.
+    '''frontend-(user|admin)/package-lock\.json$''',
+    # Sample project (reference YAS codebase).
+    '''sample_project/.*''',
+]
+regexes = [
+    # Local dev defaults in compose env — clearly placeholders.
+    '''NihongoIT2024!''',
+    '''change-this-to-a-random-secret-string''',
+    '''local-dev-jwt-secret-nihongo-it-change-in-production-must-be-at-least-64-chars!!''',
+    # Test fixture passwords.
+    '''(password|secret)\s*[:=]\s*["']?(test|fake|dummy|example|password|admin)["']?''',
+]

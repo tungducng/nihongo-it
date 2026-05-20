@@ -21,8 +21,6 @@ import org.mockito.kotlin.mock
 import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
-import java.time.Instant
-import java.time.LocalDateTime
 import java.util.Optional
 import java.util.UUID
 import kotlin.test.assertEquals
@@ -46,8 +44,6 @@ class CategoryServiceTest {
             meaning = "テスト",
             displayOrder = 1,
             isActive = isActive,
-            createdAt = LocalDateTime.now(),
-            updatedAt = LocalDateTime.now(),
         )
 
     private fun makeUser() =
@@ -57,8 +53,7 @@ class CategoryServiceTest {
             password = "encoded",
             fullName = "Admin",
             role = RoleEntity(RoleEntity.ROLE_ADMIN, "ROLE_ADMIN"),
-            createdAt = Instant.now(),
-            updatedAt = Instant.now(),
+            lastLogin = null,
         )
 
     @BeforeEach

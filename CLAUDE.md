@@ -116,12 +116,28 @@ Before committing: `type-check` + `lint` + `build` MUST pass on both apps. Tests
 
 ### Running the full local stack
 
+First-time setup (downloads OTel agent + copies .env + starts everything):
 ```bash
-cd docker && docker compose up -d   # postgres + all services + both frontends
-# → frontend-user: http://localhost:3000
-# → frontend-admin: http://localhost:3002
-# → api gateway:   http://localhost:8080
+./scripts/setup.sh
 ```
+
+Day-to-day (Makefile wraps `docker compose --env-file docker/.env -f docker-compose.yaml -f docker-compose.o11y.yml`):
+```bash
+make up             # core + observability stack
+make up MAKE_NO_O11Y=1  # core only (lighter dev loop, no Prometheus/Loki/Tempo/Grafana)
+make down           # stop (keep volumes)
+make reset          # stop + delete volumes (DESTRUCTIVE: wipes DB)
+make logs           # tail all
+make logs SERVICE=user-service
+make db DB=learning_service   # psql shell into a service DB
+make help           # full target list
+```
+
+After-up endpoints:
+- frontend-user http://localhost:3000 · frontend-admin http://localhost:3002
+- api gateway   http://localhost:8080 · eureka http://localhost:8761
+- Grafana       http://localhost:3001 (admin/admin) — Tempo + Loki + Prometheus pre-provisioned
+- Tempo HTTP    http://localhost:3200 · Prometheus http://localhost:9090
 
 Dev mode (without docker, for hot reload):
 ```bash

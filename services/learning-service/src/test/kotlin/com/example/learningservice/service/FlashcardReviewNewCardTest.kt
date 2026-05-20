@@ -65,7 +65,7 @@ class FlashcardReviewNewCardTest {
         newFlashcard =
             FlashcardEntity(
                 flashcardId = flashcardId,
-                user = user,
+                userId = userId,
                 frontText = "テスト",
                 backText = "Test",
                 difficulty = 0.0,

@@ -59,25 +59,26 @@ interface VocabularyRepository : JpaRepository<VocabularyEntity, UUID> {
         pageable: Pageable,
     ): Page<VocabularyEntity>
 
-    // Find saved vocabulary for a specific user
-    @Query("SELECT v FROM VocabularyEntity v JOIN v.savedByUsers u WHERE u.userId = :userId")
+    // Find saved vocabulary for a specific user (via SavedVocabularyEntity join table).
+    @Query(
+        "SELECT v FROM VocabularyEntity v WHERE v.vocabId IN " +
+            "(SELECT s.vocabId FROM SavedVocabularyEntity s WHERE s.userId = :userId)",
+    )
     fun findSavedByUser(
         @Param("userId") userId: UUID,
         pageable: Pageable,
     ): Page<VocabularyEntity>
 
-    // Find saved vocabulary with keyword search
     @Query(
         """
-        SELECT v FROM VocabularyEntity v
-        JOIN v.savedByUsers u
-        WHERE u.userId = :userId
+        SELECT v FROM VocabularyEntity v WHERE v.vocabId IN
+            (SELECT s.vocabId FROM SavedVocabularyEntity s WHERE s.userId = :userId)
         AND (
             LOWER(v.term) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(v.pronunciation) LIKE LOWER(CONCAT('%', :keyword, '%'))
             OR LOWER(v.meaning) LIKE LOWER(CONCAT('%', :keyword, '%'))
         )
-    """,
+        """,
     )
     fun findSavedByUserAndKeyword(
         @Param("userId") userId: UUID,

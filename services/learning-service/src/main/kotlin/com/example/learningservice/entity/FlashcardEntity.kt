@@ -12,9 +12,10 @@ data class FlashcardEntity(
     @GeneratedValue(generator = "UUID")
     @Column(name = "flashcard_id", updatable = false, nullable = false)
     val flashcardId: UUID? = null,
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    val user: UserEntity,
+    // Cross-service reference — no DB-level FK. The user record lives in
+    // user-service; learning-service stores only the UUID.
+    @Column(name = "user_id", nullable = false)
+    val userId: UUID,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "vocabulary_id")
     val vocabulary: VocabularyEntity? = null,

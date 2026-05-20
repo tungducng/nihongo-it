@@ -1,5 +1,6 @@
 package com.example.notify.entity
 
+import com.example.common.entity.AbstractAuditEntity
 import jakarta.persistence.*
 import java.time.LocalDateTime
 import java.util.*
@@ -11,9 +12,10 @@ data class NotificationEntity(
     @GeneratedValue(generator = "UUID")
     @Column(name = "notification_id", updatable = false, nullable = false)
     val notificationId: UUID? = null,
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    val user: UserEntity,
+    // Cross-service reference — no FK constraint, no local users table.
+    // The authoritative user record lives in user-service.
+    @Column(name = "user_id", nullable = false)
+    val userId: UUID,
     @Column(name = "title", nullable = false)
     val title: String,
     @Column(name = "message", columnDefinition = "text")
@@ -33,31 +35,25 @@ data class NotificationEntity(
     @Column(name = "read_at")
     val readAt: LocalDateTime? = null,
     @Column(name = "review_count")
-    val reviewCount: Int? = null, // Number of flashcards due for review
+    val reviewCount: Int? = null,
     @Column(name = "review_category")
-    val reviewCategory: String? = null, // Category of items due (flashcard)
+    val reviewCategory: String? = null,
     @Column(name = "priority_level")
-    val priorityLevel: Int = 0, // Priority based on FSRS algorithm (0-low, 5-high)
+    val priorityLevel: Int = 0,
     @Column(name = "scheduled_for")
     val scheduledFor: LocalDateTime? = null,
     @Column(name = "external_id")
-    val externalId: String? = null, // For Firebase or external notification IDs
-)
+    val externalId: String? = null,
+) : AbstractAuditEntity()
 
-/**
- * Notification types for Japanese IT vocabulary learning system
- */
 enum class NotificationType {
     STUDY_REMINDER, // General study reminder
     REVIEW_DUE, // FSRS-calculated flashcard review due
     SYSTEM_ANNOUNCEMENT, // System announcements
 }
 
-/**
- * Notification delivery channels
- */
 enum class NotificationChannel {
-    APP, // In-app notification
-    EMAIL, // Email notification
-    PUSH, // Push notification via Firebase
+    APP,
+    EMAIL,
+    PUSH,
 }

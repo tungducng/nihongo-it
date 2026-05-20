@@ -12,20 +12,22 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 @Repository
-@Suppress("FunctionNaming", "ktlint:standard:function-naming") // Spring Data JPA convention for nested properties uses underscores
+@Suppress("FunctionNaming", "ktlint:standard:function-naming")
 interface FlashcardRepository : JpaRepository<FlashcardEntity, UUID> {
-    // LEFT JOIN FETCH vocabulary to avoid N+1 when accessing flashcard.vocabulary
-    @Query("SELECT f FROM FlashcardEntity f LEFT JOIN FETCH f.vocabulary WHERE f.user.userId = :userId AND f.due <= :now ORDER BY f.due")
+    @Query(
+        "SELECT f FROM FlashcardEntity f LEFT JOIN FETCH f.vocabulary " +
+            "WHERE f.userId = :userId AND f.due <= :now ORDER BY f.due",
+    )
     fun findDueCards(
         @Param("userId") userId: UUID,
         @Param("now") now: LocalDateTime,
     ): List<FlashcardEntity>
 
     @EntityGraph(attributePaths = ["vocabulary"])
-    fun findByUser_UserId(userId: UUID): List<FlashcardEntity>
+    fun findByUserId(userId: UUID): List<FlashcardEntity>
 
     @EntityGraph(attributePaths = ["vocabulary"])
-    fun findByUser_UserId(
+    fun findByUserId(
         userId: UUID,
         pageable: Pageable,
     ): Page<FlashcardEntity>
@@ -33,7 +35,7 @@ interface FlashcardRepository : JpaRepository<FlashcardEntity, UUID> {
     fun findByVocabulary_VocabId(vocabId: UUID): List<FlashcardEntity>
 
     @EntityGraph(attributePaths = ["vocabulary"])
-    fun findByUser_UserIdAndVocabulary_VocabId(
+    fun findByUserIdAndVocabulary_VocabId(
         userId: UUID,
         vocabId: UUID,
     ): List<FlashcardEntity>

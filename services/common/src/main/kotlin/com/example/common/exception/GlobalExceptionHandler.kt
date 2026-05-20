@@ -94,6 +94,15 @@ class GlobalExceptionHandler {
         )
     }
 
+    @ExceptionHandler(NotFoundException::class)
+    fun handleNotFoundException(ex: NotFoundException): ResponseEntity<*> {
+        logger.warn("Resource not found: ${ex.message}")
+        return ResponseEntity(
+            ErrorResponseDto(message = ex.message ?: "Resource not found"),
+            HttpStatus.NOT_FOUND,
+        )
+    }
+
     @ExceptionHandler(ExpiredJwtException::class)
     fun handleExpiredJwtException(ex: ExpiredJwtException): ResponseEntity<*> {
         logger.warn("JWT token expired: ${ex.message}")

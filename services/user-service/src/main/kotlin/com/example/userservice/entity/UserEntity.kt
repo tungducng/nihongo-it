@@ -65,6 +65,4 @@ data class UserEntity(
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role_id", nullable = false)
     var role: RoleEntity,
-    @OneToMany(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val flashcards: MutableList<FlashcardEntity> = mutableListOf(),
 ) : AbstractAuditEntity()

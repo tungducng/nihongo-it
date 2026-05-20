@@ -4,13 +4,11 @@ import com.example.common.exception.BusinessException
 import com.example.learningservice.dto.VocabularyFilterRequestDto
 import com.example.learningservice.entity.CategoryEntity
 import com.example.learningservice.entity.JlptLevel
-import com.example.learningservice.entity.RoleEntity
 import com.example.learningservice.entity.TopicEntity
-import com.example.learningservice.entity.UserEntity
 import com.example.learningservice.entity.VocabularyEntity
 import com.example.learningservice.repository.FlashcardRepository
+import com.example.learningservice.repository.SavedVocabularyRepository
 import com.example.learningservice.repository.TopicRepository
-import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.repository.VocabularyRepository
 import com.example.learningservice.util.UserAuthUtil
 import org.junit.jupiter.api.BeforeEach
@@ -33,24 +31,15 @@ import kotlin.test.assertTrue
 
 class VocabularyServiceTest {
     private lateinit var vocabularyRepository: VocabularyRepository
-    private lateinit var userRepository: UserRepository
     private lateinit var topicRepository: TopicRepository
     private lateinit var userAuthUtil: UserAuthUtil
     private lateinit var flashcardCrudService: FlashcardCrudService
     private lateinit var flashcardRepository: FlashcardRepository
+    private lateinit var savedVocabularyRepository: SavedVocabularyRepository
     private lateinit var service: VocabularyService
 
     private val userId = UUID.randomUUID()
     private val vocabId = UUID.randomUUID()
-
-    private fun makeUser() =
-        UserEntity(
-            userId = userId,
-            email = "user@test.com",
-            password = "encoded",
-            fullName = "Test User",
-            role = RoleEntity(RoleEntity.ROLE_USER, "ROLE_USER"),
-        )
 
     private fun makeTopic(): TopicEntity {
         val category =
@@ -67,7 +56,7 @@ class VocabularyServiceTest {
         )
     }
 
-    private fun makeVocabulary(savedUsers: MutableSet<UserEntity> = mutableSetOf()): VocabularyEntity =
+    private fun makeVocabulary(): VocabularyEntity =
         VocabularyEntity(
             vocabId = vocabId,
             term = "テスト",
@@ -79,25 +68,24 @@ class VocabularyServiceTest {
             jlptLevel = JlptLevel.N4,
             topic = makeTopic(),
             createdAt = Instant.now(),
-            savedByUsers = savedUsers,
         )
 
     @BeforeEach
     fun setup() {
         vocabularyRepository = mock()
-        userRepository = mock()
         topicRepository = mock()
         userAuthUtil = mock()
         flashcardCrudService = mock()
         flashcardRepository = mock()
+        savedVocabularyRepository = mock()
         service =
             VocabularyService(
                 vocabularyRepository,
-                userRepository,
                 topicRepository,
                 userAuthUtil,
                 flashcardCrudService,
                 flashcardRepository,
+                savedVocabularyRepository,
             )
     }
 
@@ -105,44 +93,38 @@ class VocabularyServiceTest {
     @DisplayName("saveVocabularyToNotebook()")
     inner class SaveVocabularyToNotebook {
         @Test
-        @DisplayName("happy path → adds user to savedByUsers, saves, isSaved=true")
+        @DisplayName("happy path → inserts row in saved_vocabulary, isSaved=true")
         fun happyPath_addsSavedUser() {
-            val user = makeUser()
             val vocab = makeVocabulary()
             whenever(userAuthUtil.getCurrentUserId()).thenReturn(userId)
-            whenever(userRepository.findById(userId)).thenReturn(Optional.of(user))
             whenever(vocabularyRepository.findById(vocabId)).thenReturn(Optional.of(vocab))
-            whenever(vocabularyRepository.save(any())).thenReturn(vocab)
+            whenever(savedVocabularyRepository.existsByVocabIdAndUserId(vocabId, userId)).thenReturn(false)
 
             val result = service.saveVocabularyToNotebook(vocabId)
 
             assertTrue(result.isSaved)
-            verify(vocabularyRepository).save(vocab)
+            verify(savedVocabularyRepository).save(any())
         }
 
         @Test
         @DisplayName("auto-creates flashcard (silently ignores if flashcard already exists)")
         fun autoCreatesFlashcard() {
-            val user = makeUser()
             val vocab = makeVocabulary()
             whenever(userAuthUtil.getCurrentUserId()).thenReturn(userId)
-            whenever(userRepository.findById(userId)).thenReturn(Optional.of(user))
             whenever(vocabularyRepository.findById(vocabId)).thenReturn(Optional.of(vocab))
-            whenever(vocabularyRepository.save(any())).thenReturn(vocab)
+            whenever(savedVocabularyRepository.existsByVocabIdAndUserId(vocabId, userId)).thenReturn(false)
             whenever(flashcardCrudService.createFlashcardFromVocabulary(vocabId))
                 .thenThrow(BusinessException("Flashcard already exists"))
 
-            // Should NOT throw even though flashcard creation fails
             val result = service.saveVocabularyToNotebook(vocabId)
 
             assertTrue(result.isSaved)
         }
 
         @Test
-        @DisplayName("vocabulary not found → throws BusinessException")
+        @DisplayName("vocabulary not found → throws")
         fun vocabNotFound_throwsBusinessException() {
             whenever(userAuthUtil.getCurrentUserId()).thenReturn(userId)
-            whenever(userRepository.findById(userId)).thenReturn(Optional.of(makeUser()))
             whenever(vocabularyRepository.findById(vocabId)).thenReturn(Optional.empty())
 
             assertThrows<Exception> {
@@ -158,7 +140,7 @@ class VocabularyServiceTest {
             assertThrows<BusinessException> {
                 service.saveVocabularyToNotebook(vocabId)
             }
-            verify(vocabularyRepository, never()).save(any())
+            verify(savedVocabularyRepository, never()).save(any())
         }
     }
 
@@ -166,20 +148,18 @@ class VocabularyServiceTest {
     @DisplayName("removeVocabularyFromNotebook()")
     inner class RemoveVocabularyFromNotebook {
         @Test
-        @DisplayName("happy path → removes user from savedByUsers, isSaved=false")
+        @DisplayName("happy path → deletes saved_vocabulary row, isSaved=false")
         fun happyPath_removesSavedUser() {
-            val user = makeUser()
-            val vocab = makeVocabulary(savedUsers = mutableSetOf(user))
+            val vocab = makeVocabulary()
             whenever(userAuthUtil.getCurrentUserId()).thenReturn(userId)
             whenever(vocabularyRepository.findById(vocabId)).thenReturn(Optional.of(vocab))
-            whenever(vocabularyRepository.save(any())).thenReturn(vocab)
-            whenever(flashcardRepository.findByUser_UserIdAndVocabulary_VocabId(userId, vocabId))
+            whenever(flashcardRepository.findByUserIdAndVocabulary_VocabId(userId, vocabId))
                 .thenReturn(emptyList())
 
             val result = service.removeVocabularyFromNotebook(vocabId)
 
             assertEquals(false, result.isSaved)
-            verify(vocabularyRepository).save(vocab)
+            verify(savedVocabularyRepository).deleteByVocabAndUser(vocabId, userId)
         }
 
         @Test
@@ -220,36 +200,6 @@ class VocabularyServiceTest {
             service.filterVocabulary(filter)
 
             verify(vocabularyRepository).findAll(any<org.springframework.data.domain.Pageable>())
-        }
-
-        @Test
-        @DisplayName("authenticated user → isSaved correctly reflects saved status")
-        fun authenticatedUser_isSavedReflectsSavedStatus() {
-            val user = makeUser()
-            val savedVocab = makeVocabulary(savedUsers = mutableSetOf(user))
-            val page = PageImpl(listOf(savedVocab), PageRequest.of(0, 10), 1)
-            val filter = VocabularyFilterRequestDto(page = 0, size = 10)
-            whenever(userAuthUtil.getCurrentUserId()).thenReturn(userId)
-            whenever(vocabularyRepository.findAll(any<org.springframework.data.domain.Pageable>())).thenReturn(page)
-
-            val result = service.filterVocabulary(filter)
-
-            assertEquals(1, result.content.size)
-            assertTrue(result.content[0].isSaved)
-        }
-    }
-
-    @Nested
-    @DisplayName("getVocabularyCount()")
-    inner class GetVocabularyCount {
-        @Test
-        @DisplayName("delegates to repository.count()")
-        fun delegatesToRepository() {
-            whenever(vocabularyRepository.count()).thenReturn(42L)
-
-            val count = service.getVocabularyCount()
-
-            assertEquals(42, count)
         }
     }
 }

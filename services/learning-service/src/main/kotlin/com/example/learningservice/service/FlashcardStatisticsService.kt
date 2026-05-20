@@ -33,7 +33,7 @@ class FlashcardStatisticsService(
         logger.info("Getting study statistics for user: $userId")
 
         val now = LocalDateTime.now()
-        val allUserCards = flashcardRepository.findByUser_UserId(requireNotNull(userId) { "User not authenticated" })
+        val allUserCards = flashcardRepository.findByUserId(requireNotNull(userId) { "User not authenticated" })
         val totalCards = allUserCards.size
         val dueCardsNow = allUserCards.count { it.due <= now }
 
@@ -147,7 +147,7 @@ class FlashcardStatisticsService(
                 .findById(userId)
                 .orElseThrow { EntityNotFoundException("User not found with id: $userId") }
 
-        val allFlashcards = flashcardRepository.findByUser_UserId(userId)
+        val allFlashcards = flashcardRepository.findByUserId(userId)
         if (allFlashcards.isEmpty()) {
             return StudyStatisticsDto(
                 summary = StudySummaryDto(0, 0, 0, user.streakCount, 0.0),

@@ -38,7 +38,7 @@ class FSRSServiceTest {
     private fun makeNewFlashcard() =
         FlashcardEntity(
             flashcardId = flashcardId,
-            user = makeUser(),
+            userId = userId,
             frontText = "テスト",
             backText = "test",
             stability = 0.0,
@@ -54,7 +54,7 @@ class FSRSServiceTest {
         difficulty: Double = 4.93,
     ) = FlashcardEntity(
         flashcardId = flashcardId,
-        user = makeUser(),
+        userId = userId,
         frontText = "テスト",
         backText = "test",
         stability = stability,

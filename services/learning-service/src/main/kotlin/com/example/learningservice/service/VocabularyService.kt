@@ -11,10 +11,11 @@ import com.example.learningservice.dto.UpdateVocabularyResponseDto
 import com.example.learningservice.dto.VocabularyDto
 import com.example.learningservice.dto.VocabularyFilterRequestDto
 import com.example.learningservice.entity.JlptLevel
+import com.example.learningservice.entity.SavedVocabularyEntity
 import com.example.learningservice.entity.VocabularyEntity
 import com.example.learningservice.repository.FlashcardRepository
+import com.example.learningservice.repository.SavedVocabularyRepository
 import com.example.learningservice.repository.TopicRepository
-import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.repository.VocabularyRepository
 import com.example.learningservice.util.UserAuthUtil
 import org.slf4j.LoggerFactory
@@ -28,11 +29,11 @@ import java.util.*
 @Service
 class VocabularyService(
     private val vocabularyRepository: VocabularyRepository,
-    private val userRepository: UserRepository,
     private val topicRepository: TopicRepository,
     private val userAuthUtil: UserAuthUtil,
     private val flashcardCrudService: FlashcardCrudService,
     private val flashcardRepository: FlashcardRepository,
+    private val savedVocabularyRepository: SavedVocabularyRepository,
 ) {
     private val logger = LoggerFactory.getLogger(VocabularyService::class.java)
 
@@ -83,7 +84,10 @@ class VocabularyService(
 
         val isSaved =
             currentUserId?.let { userId ->
-                vocabulary.savedByUsers.any { it.userId == userId }
+                savedVocabularyRepository.existsByVocabIdAndUserId(
+                    requireNotNull(vocabulary.vocabId) { "Vocabulary ID missing" },
+                    userId,
+                )
             } ?: false
 
         return GetVocabularyResponseDto(data = mapToResponse(vocabulary, isSaved))
@@ -96,7 +100,10 @@ class VocabularyService(
 
         val isSaved =
             currentUserId?.let { userId ->
-                vocabulary.savedByUsers.any { it.userId == userId }
+                savedVocabularyRepository.existsByVocabIdAndUserId(
+                    requireNotNull(vocabulary.vocabId) { "Vocabulary ID missing" },
+                    userId,
+                )
             } ?: false
 
         return GetVocabularyResponseDto(data = mapToResponse(vocabulary, isSaved))
@@ -183,7 +190,10 @@ class VocabularyService(
             result.content.map { vocabulary ->
                 val isSaved =
                     currentUserId?.let { userId ->
-                        vocabulary.savedByUsers.any { it.userId == userId }
+                        savedVocabularyRepository.existsByVocabIdAndUserId(
+                            requireNotNull(vocabulary.vocabId) { "Vocabulary ID missing" },
+                            userId,
+                        )
                     } ?: false
 
                 mapToResponse(vocabulary, isSaved)
@@ -215,24 +225,16 @@ class VocabularyService(
             userAuthUtil.getCurrentUserId()
                 ?: throw BusinessException("User not authenticated")
 
-        val user =
-            userRepository
-                .findById(currentUserId)
-                .orElseThrow { BusinessException("User not found") }
-
         val vocabulary = vocabularyRepository.findById(vocabId).orThrow("Vocabulary not found")
 
-        vocabulary.savedByUsers.add(user)
-        vocabularyRepository.save(vocabulary)
+        if (!savedVocabularyRepository.existsByVocabIdAndUserId(vocabId, currentUserId)) {
+            savedVocabularyRepository.save(SavedVocabularyEntity(vocabId = vocabId, userId = currentUserId))
+        }
 
-        // Automatically create a flashcard for this vocabulary
         try {
             flashcardCrudService.createFlashcardFromVocabulary(vocabId)
             logger.info("Automatically created flashcard for vocabulary $vocabId when saved to notebook")
         } catch (e: Exception) {
-            // Log the error but don't fail the save operation
-            // This allows vocabulary to be saved even if flashcard creation fails
-            // (e.g., if a flashcard already exists)
             logger.warn("Failed to auto-create flashcard for vocabulary $vocabId: ${e.message}")
         }
 
@@ -246,22 +248,15 @@ class VocabularyService(
                 ?: throw BusinessException("User not authenticated")
 
         val vocabulary = vocabularyRepository.findById(vocabId).orThrow("Vocabulary not found")
+        savedVocabularyRepository.deleteByVocabAndUser(vocabId, currentUserId)
 
-        vocabulary.savedByUsers.removeIf { it.userId == currentUserId }
-        vocabularyRepository.save(vocabulary)
-
-        // Delete associated flashcard for this vocabulary
         try {
-            // Find the flashcards for this vocabulary and user
-            val flashcards = flashcardRepository.findByUser_UserIdAndVocabulary_VocabId(currentUserId, vocabId)
-
-            // Delete each flashcard
+            val flashcards = flashcardRepository.findByUserIdAndVocabulary_VocabId(currentUserId, vocabId)
             flashcards.forEach { flashcard ->
                 flashcardCrudService.deleteFlashcard(requireNotNull(flashcard.flashcardId) { "Flashcard ID missing" })
                 logger.info("Deleted flashcard ${flashcard.flashcardId} when vocabulary $vocabId was removed from notebook")
             }
         } catch (e: Exception) {
-            // Log the error but don't fail the remove operation
             logger.warn("Failed to delete flashcard for vocabulary $vocabId: ${e.message}")
         }
 
@@ -330,7 +325,10 @@ class VocabularyService(
             result.content.map { vocabulary ->
                 val isSaved =
                     currentUserId?.let { userId ->
-                        vocabulary.savedByUsers.any { it.userId == userId }
+                        savedVocabularyRepository.existsByVocabIdAndUserId(
+                            requireNotNull(vocabulary.vocabId) { "Vocabulary ID missing" },
+                            userId,
+                        )
                     } ?: false
 
                 mapToResponse(vocabulary, isSaved)

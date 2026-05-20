@@ -72,7 +72,7 @@ class FlashcardReviewExistingCardTest {
         existingFlashcard =
             FlashcardEntity(
                 flashcardId = flashcardId,
-                user = user,
+                userId = userId,
                 frontText = "テスト",
                 backText = "Test",
                 difficulty = initialDifficulty,

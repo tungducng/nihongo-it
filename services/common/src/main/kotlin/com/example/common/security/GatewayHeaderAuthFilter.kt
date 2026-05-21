@@ -16,7 +16,7 @@ import org.springframework.web.filter.OncePerRequestFilter
  */
 @Component
 class GatewayHeaderAuthFilter : OncePerRequestFilter() {
-    private val logger = LoggerFactory.getLogger(GatewayHeaderAuthFilter::class.java)
+    private val log = LoggerFactory.getLogger(GatewayHeaderAuthFilter::class.java)
 
     override fun doFilterInternal(
         request: HttpServletRequest,
@@ -30,7 +30,7 @@ class GatewayHeaderAuthFilter : OncePerRequestFilter() {
             val authority = SimpleGrantedAuthority("ROLE_$userRole")
             val auth = UsernamePasswordAuthenticationToken(userId, null, listOf(authority))
             SecurityContextHolder.getContext().authentication = auth
-            logger.debug("Authenticated via gateway header: userId=$userId role=$userRole")
+            log.debug("Authenticated via gateway header: userId=$userId role=$userRole")
         }
 
         chain.doFilter(request, response)

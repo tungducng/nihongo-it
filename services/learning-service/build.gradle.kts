@@ -1,7 +1,7 @@
 ﻿plugins {
-    kotlin("jvm") version "2.3.0"
-    kotlin("plugin.spring") version "2.3.0"
-    kotlin("plugin.jpa") version "2.3.0"
+    kotlin("jvm")
+    kotlin("plugin.spring")
+    kotlin("plugin.jpa")
     id("org.springframework.boot") version "4.0.2"
     jacoco
     id("dev.detekt") version "2.0.0-alpha.2"
@@ -69,7 +69,11 @@ dependencies {
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
+        // -Xannotation-default-target=param-property: opt-in to Kotlin 2.3's future
+        // default so annotations on constructor parameters (e.g. @JsonFormat on
+        // TopicDTO) propagate to both the param AND the property/getter, which
+        // is what Jackson actually reads at serialization time.
+        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
     }
 }
 

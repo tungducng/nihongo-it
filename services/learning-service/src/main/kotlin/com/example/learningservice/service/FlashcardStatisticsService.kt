@@ -262,7 +262,7 @@ class FlashcardStatisticsService(
     fun getUserReviewHistory(
         userId: UUID,
         days: Int,
-    ): List<Map<String, Any>> {
+    ): List<Map<String, Any?>> {
         val startDate = LocalDateTime.now().minusDays(days.toLong())
         val reviews =
             reviewLogRepository.findRecentReviewsByUser(
@@ -272,9 +272,9 @@ class FlashcardStatisticsService(
 
         return reviews.map { review ->
             val map =
-                mutableMapOf<String, Any>(
-                    ("reviewId" to review.reviewLogId) as Pair<String, Any>,
-                    ("flashcardId" to review.flashcard.flashcardId) as Pair<String, Any>,
+                mutableMapOf<String, Any?>(
+                    "reviewId" to review.reviewLogId,
+                    "flashcardId" to review.flashcard.flashcardId,
                     "rating" to review.rating,
                     "elapsedDays" to review.elapsedDays,
                     "scheduledDays" to review.scheduledDays,
@@ -282,18 +282,15 @@ class FlashcardStatisticsService(
                     "timestamp" to review.reviewTimestamp.format(DateTimeFormatter.ISO_DATE_TIME),
                 )
 
-            // Handle nullable vocabulary separately
-            review.flashcard.vocabulary?.let { vocab ->
-                map["vocabulary"] =
+            map["vocabulary"] =
+                review.flashcard.vocabulary?.let { vocab ->
                     mapOf(
                         "vocabId" to vocab.vocabId,
                         "term" to vocab.term,
                         "meaning" to vocab.meaning,
                         "jlptLevel" to vocab.jlptLevel,
                     )
-            } ?: run {
-                map["vocabulary"] = emptyMap<String, Any>()
-            }
+                } ?: emptyMap<String, Any?>()
 
             map
         }

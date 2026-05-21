@@ -1,7 +1,7 @@
 ﻿plugins {
-    kotlin("jvm") version "2.3.0"
-    kotlin("plugin.spring") version "2.3.0"
-    kotlin("plugin.jpa") version "2.3.0"
+    kotlin("jvm")
+    kotlin("plugin.spring")
+    kotlin("plugin.jpa")
     id("org.springframework.boot") version "4.0.2"
     id("dev.detekt") version "2.0.0-alpha.2"
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
@@ -57,7 +57,7 @@ dependencies {
 
 kotlin {
     compilerOptions {
-        freeCompilerArgs.addAll("-Xjsr305=strict")
+        freeCompilerArgs.addAll("-Xjsr305=strict", "-Xannotation-default-target=param-property")
     }
 }
 

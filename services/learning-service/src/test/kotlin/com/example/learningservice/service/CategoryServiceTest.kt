@@ -4,11 +4,8 @@ import com.example.common.exception.BusinessException
 import com.example.learningservice.dto.CreateCategoryRequest
 import com.example.learningservice.dto.UpdateCategoryRequest
 import com.example.learningservice.entity.CategoryEntity
-import com.example.learningservice.entity.RoleEntity
-import com.example.learningservice.entity.UserEntity
 import com.example.learningservice.repository.CategoryRepository
 import com.example.learningservice.repository.TopicRepository
-import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.util.UserAuthUtil
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -30,7 +27,6 @@ import kotlin.test.assertTrue
 class CategoryServiceTest {
     private lateinit var categoryRepository: CategoryRepository
     private lateinit var topicRepository: TopicRepository
-    private lateinit var userRepository: UserRepository
     private lateinit var userAuthUtil: UserAuthUtil
     private lateinit var service: CategoryService
 
@@ -46,23 +42,12 @@ class CategoryServiceTest {
             isActive = isActive,
         )
 
-    private fun makeUser() =
-        UserEntity(
-            userId = userId,
-            email = "admin@test.com",
-            password = "encoded",
-            fullName = "Admin",
-            role = RoleEntity(RoleEntity.ROLE_ADMIN, "ROLE_ADMIN"),
-            lastLogin = null,
-        )
-
     @BeforeEach
     fun setup() {
         categoryRepository = mock()
         topicRepository = mock()
-        userRepository = mock()
         userAuthUtil = mock()
-        service = CategoryService(categoryRepository, topicRepository, userRepository, userAuthUtil)
+        service = CategoryService(categoryRepository, topicRepository, userAuthUtil)
     }
 
     @Nested
@@ -145,7 +130,6 @@ class CategoryServiceTest {
             val request = CreateCategoryRequest(name = "New Category", meaning = "新カテゴリ", displayOrder = 5)
             whenever(userAuthUtil.getCurrentUserId()).thenReturn(userId)
             whenever(categoryRepository.existsByName("New Category")).thenReturn(false)
-            whenever(userRepository.findById(userId)).thenReturn(Optional.of(makeUser()))
             whenever(categoryRepository.save(any())).thenAnswer { invocation ->
                 val entity = invocation.arguments[0] as CategoryEntity
                 entity.copy(categoryId = UUID.randomUUID())

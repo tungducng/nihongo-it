@@ -24,6 +24,8 @@ class UserService(
     fun getUserProfile(userId: UUID): Map<String, Any> {
         val user = getUserById(userId)
 
+        // streakCount / points now owned by learning-service (user_progress).
+        // FE callers that need them must call /api/v1/learning/users/me/progress.
         return mapOf(
             "userId" to (user.userId ?: ""),
             "email" to user.email,
@@ -31,8 +33,6 @@ class UserService(
             "profilePicture" to user.profilePicture.orEmpty(),
             "currentLevel" to user.currentLevel?.name.orEmpty(),
             "jlptGoal" to user.jlptGoal?.name.orEmpty(),
-            "streakCount" to user.streakCount,
-            "points" to user.points,
             "lastLogin" to user.lastLogin?.toString().orEmpty(),
             "isEmailVerified" to user.isEmailVerified,
             "createdAt" to user.createdAt.toString(),

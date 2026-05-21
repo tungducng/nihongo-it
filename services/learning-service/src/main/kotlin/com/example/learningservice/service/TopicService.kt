@@ -8,7 +8,6 @@ import com.example.learningservice.dto.toDTO
 import com.example.learningservice.entity.TopicEntity
 import com.example.learningservice.repository.CategoryRepository
 import com.example.learningservice.repository.TopicRepository
-import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.util.UserAuthUtil
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -18,7 +17,6 @@ import java.util.UUID
 class TopicService(
     private val topicRepository: TopicRepository,
     private val categoryRepository: CategoryRepository,
-    private val userRepository: UserRepository,
     private val userAuthUtil: UserAuthUtil,
 ) {
     @Transactional(readOnly = true)
@@ -42,24 +40,17 @@ class TopicService(
 
     @Transactional
     fun createTopic(request: CreateTopicRequest): TopicDTO {
-        val currentUserId =
-            userAuthUtil.getCurrentUserId()
-                ?: throw BusinessException("User not authenticated")
+        userAuthUtil.getCurrentUserId()
+            ?: throw BusinessException("User not authenticated")
 
         val category =
             categoryRepository
                 .findById(request.categoryId)
                 .orElseThrow { BusinessException("Category not found with ID: ${request.categoryId}") }
 
-        // Check if a topic with the same name already exists in this category
         if (topicRepository.existsByNameAndCategory(request.name, category)) {
             throw BusinessException("A topic with the name '${request.name}' already exists in this category")
         }
-
-        val user =
-            userRepository
-                .findById(currentUserId)
-                .orElseThrow { BusinessException("User not found") }
 
         val topic =
             TopicEntity(

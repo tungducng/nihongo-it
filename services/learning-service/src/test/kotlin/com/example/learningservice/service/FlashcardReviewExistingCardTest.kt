@@ -1,11 +1,8 @@
 package com.example.learningservice.service
 
 import com.example.learningservice.entity.FlashcardEntity
-import com.example.learningservice.entity.RoleEntity
-import com.example.learningservice.entity.UserEntity
 import com.example.learningservice.repository.FlashcardRepository
 import com.example.learningservice.repository.ReviewLogRepository
-import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.repository.VocabularyRepository
 import com.example.learningservice.util.UserAuthUtil
 import org.junit.jupiter.api.BeforeEach
@@ -19,19 +16,15 @@ import java.util.Optional
 import kotlin.test.assertEquals
 
 class FlashcardReviewExistingCardTest {
-    // Mock repositories and services
     private lateinit var flashcardRepository: FlashcardRepository
     private lateinit var reviewLogRepository: ReviewLogRepository
-    private lateinit var userRepository: UserRepository
     private lateinit var vocabularyRepository: VocabularyRepository
     private lateinit var fsrsService: FSRSService
     private lateinit var userAuthUtil: UserAuthUtil
-    private lateinit var userService: UserService
+    private lateinit var userProgressService: UserProgressService
 
-    // Service under test
     private lateinit var flashcardService: FlashcardCrudService
 
-    private lateinit var user: UserEntity
     private lateinit var existingFlashcard: FlashcardEntity
     private val userId = UUID.randomUUID()
     private val flashcardId = UUID.randomUUID()
@@ -43,31 +36,13 @@ class FlashcardReviewExistingCardTest {
 
     @BeforeEach
     fun setup() {
-        // Khởi tạo mocks
         flashcardRepository = mock()
         reviewLogRepository = mock()
-        userRepository = mock()
         vocabularyRepository = mock()
         fsrsService = mock()
         userAuthUtil = mock()
-        userService = mock()
+        userProgressService = mock()
 
-        // Tạo user
-        val userRole = RoleEntity(RoleEntity.ROLE_USER, "ROLE_USER")
-        user =
-            UserEntity(
-                userId = userId,
-                email = "test@example.com",
-                password = "password",
-                fullName = "Test User",
-                profilePicture = null,
-                currentLevel = null,
-                jlptGoal = null,
-                lastLogin = LocalDateTime.now(),
-                role = userRole,
-            )
-
-        // Tạo thẻ đã có lịch sử ôn tập
         val dueDate = LocalDateTime.now().minus(elapsedDays.toLong(), ChronoUnit.DAYS)
         existingFlashcard =
             FlashcardEntity(
@@ -91,16 +66,14 @@ class FlashcardReviewExistingCardTest {
         // Mock findById
         whenever(flashcardRepository.findById(flashcardId)).thenReturn(Optional.of(existingFlashcard))
 
-        // Khởi tạo service
         flashcardService =
             FlashcardCrudService(
                 flashcardRepository,
                 reviewLogRepository,
-                userRepository,
                 vocabularyRepository,
                 fsrsService,
                 userAuthUtil,
-                userService,
+                userProgressService,
             )
     }
 
@@ -142,7 +115,7 @@ class FlashcardReviewExistingCardTest {
         verify(flashcardRepository).findById(flashcardId)
         verify(fsrsService).processReview(any(), eq(1))
         verify(reviewLogRepository).save(any())
-        verify(userService).updateUserStreak(userId)
+        verify(userProgressService).updateStreak(userId)
     }
 
     @Test
@@ -171,7 +144,7 @@ class FlashcardReviewExistingCardTest {
         verify(flashcardRepository).findById(flashcardId)
         verify(fsrsService).processReview(any(), eq(2))
         verify(reviewLogRepository).save(any())
-        verify(userService).updateUserStreak(userId)
+        verify(userProgressService).updateStreak(userId)
     }
 
     @Test
@@ -200,7 +173,7 @@ class FlashcardReviewExistingCardTest {
         verify(flashcardRepository).findById(flashcardId)
         verify(fsrsService).processReview(any(), eq(3))
         verify(reviewLogRepository).save(any())
-        verify(userService).updateUserStreak(userId)
+        verify(userProgressService).updateStreak(userId)
     }
 
     @Test
@@ -229,6 +202,6 @@ class FlashcardReviewExistingCardTest {
         verify(flashcardRepository).findById(flashcardId)
         verify(fsrsService).processReview(any(), eq(4))
         verify(reviewLogRepository).save(any())
-        verify(userService).updateUserStreak(userId)
+        verify(userProgressService).updateStreak(userId)
     }
 }

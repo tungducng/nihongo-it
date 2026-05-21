@@ -18,7 +18,6 @@ import com.example.learningservice.entity.ReviewLogEntity
 import com.example.learningservice.entity.VocabularyEntity
 import com.example.learningservice.repository.FlashcardRepository
 import com.example.learningservice.repository.ReviewLogRepository
-import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.repository.VocabularyRepository
 import com.example.learningservice.util.UserAuthUtil
 import jakarta.persistence.EntityNotFoundException
@@ -36,11 +35,10 @@ import java.util.*
 class FlashcardCrudService(
     private val flashcardRepository: FlashcardRepository,
     private val reviewLogRepository: ReviewLogRepository,
-    private val userRepository: UserRepository,
     private val vocabularyRepository: VocabularyRepository,
     private val fsrsService: FSRSService,
     private val userAuthUtil: UserAuthUtil,
-    private val userService: UserService,
+    private val userProgressService: UserProgressService,
 ) {
     private val logger = LoggerFactory.getLogger(FlashcardCrudService::class.java)
 
@@ -162,8 +160,8 @@ class FlashcardCrudService(
         // Save review log
         reviewLogRepository.save(reviewLog)
 
-        logger.info("Calling updateUserStreak for user $userId after successful review")
-        userService.updateUserStreak(userId)
+        logger.info("Updating user_progress streak for user $userId after successful review")
+        userProgressService.updateStreak(userId)
 
         return ReviewFlashcardResponseDto(
             data = toDTO(updatedFlashcard),

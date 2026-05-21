@@ -38,11 +38,4 @@ data class VocabularyEntity(
     val createdAt: Instant? = null,
     @OneToMany(mappedBy = "vocabulary", cascade = [CascadeType.ALL])
     val flashcards: MutableList<FlashcardEntity> = mutableListOf(),
-    @ManyToMany
-    @JoinTable(
-        name = "saved_vocabulary",
-        joinColumns = [JoinColumn(name = "vocab_id")],
-        inverseJoinColumns = [JoinColumn(name = "user_id")],
-    )
-    val savedByUsers: MutableSet<UserEntity> = mutableSetOf(),
 )

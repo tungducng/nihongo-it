@@ -3,7 +3,6 @@ package com.example.learningservice.controller.admin
 import com.example.learningservice.service.CategoryService
 import com.example.learningservice.service.FlashcardCrudService
 import com.example.learningservice.service.TopicService
-import com.example.learningservice.service.UserService
 import com.example.learningservice.service.VocabularyService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
@@ -16,35 +15,35 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 import java.time.LocalDateTime
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
+/**
+ * Learning-domain dashboard stats — vocabulary, topic, category, flashcards.
+ *
+ * User-related aggregates (userCount, newUsers, activeUsers, recentActivities)
+ * are now served by user-service under `/api/v1/user/admin/users/stats/`.
+ * The frontend admin dashboard merges both responses.
+ */
 @RestController
 @RequestMapping("/api/v1/learning/admin/dashboard")
-@Tag(name = "Admin Dashboard", description = "API endpoints for admin dashboard statistics")
+@Tag(name = "Admin Dashboard (Learning)", description = "Learning-domain stats")
 @PreAuthorize("hasRole('ADMIN')")
 class AdminDashboardController(
-    private val userService: UserService,
     private val vocabularyService: VocabularyService,
     private val categoryService: CategoryService,
     private val topicService: TopicService,
     private val flashcardCrudService: FlashcardCrudService,
 ) {
     private val logger = LoggerFactory.getLogger(AdminDashboardController::class.java)
-    private val dateTimeFormatter = DateTimeFormatter.ISO_DATE_TIME
 
     @GetMapping("/stats", produces = [MediaType.APPLICATION_JSON_VALUE])
     @Operation(
-        summary = "Get dashboard statistics",
-        description = "Retrieves various statistics for the admin dashboard",
+        summary = "Get learning-domain dashboard statistics",
         security = [SecurityRequirement(name = "bearerAuth")],
     )
     fun getDashboardStats(): ResponseEntity<Any> {
-        logger.info("Fetching dashboard statistics")
+        logger.info("Fetching learning-domain dashboard statistics")
 
         val now = LocalDateTime.now()
-        val thirtyDaysAgo = now.minusDays(30)
-        val sevenDaysAgo = now.minusDays(7)
         val startOfDay =
             now
                 .withHour(0)
@@ -52,38 +51,14 @@ class AdminDashboardController(
                 .withSecond(0)
                 .withNano(0)
 
-        val userCount = userService.getUserCount()
-        val vocabularyCount = vocabularyService.getVocabularyCount()
-        val categoryCount = categoryService.getCategoryCount()
-        val topicCount = topicService.getTopicCount()
-        val newUsers = userService.getNewUserCount(sevenDaysAgo.toInstant(ZoneOffset.UTC))
-        val activeUsers = userService.getActiveUserCount(thirtyDaysAgo)
-        val flashcardsCreatedToday = flashcardCrudService.getFlashcardsCreatedCount(startOfDay)
-        val flashcardsStudiedToday = flashcardCrudService.getFlashcardsStudiedCount(startOfDay)
-        val searchesToday = 0
-
-        val recentActivities =
-            userService.getRecentUserActivities(10).map { activity ->
-                val timestamp = activity["timestamp"] as? LocalDateTime
-                mapOf(
-                    "user" to activity["user"]?.toString().orEmpty(),
-                    "action" to activity["action"]?.toString().orEmpty(),
-                    "timestamp" to timestamp?.format(dateTimeFormatter).orEmpty(),
-                )
-            }
-
         val stats =
             mapOf(
-                "userCount" to userCount,
-                "vocabularyCount" to vocabularyCount,
-                "categoryCount" to categoryCount,
-                "topicCount" to topicCount,
-                "newUsers" to newUsers,
-                "activeUsers" to activeUsers,
-                "flashcardsCreatedToday" to flashcardsCreatedToday,
-                "flashcardsStudiedToday" to flashcardsStudiedToday,
-                "searchesToday" to searchesToday,
-                "recentActivities" to recentActivities,
+                "vocabularyCount" to vocabularyService.getVocabularyCount(),
+                "categoryCount" to categoryService.getCategoryCount(),
+                "topicCount" to topicService.getTopicCount(),
+                "flashcardsCreatedToday" to flashcardCrudService.getFlashcardsCreatedCount(startOfDay),
+                "flashcardsStudiedToday" to flashcardCrudService.getFlashcardsStudiedCount(startOfDay),
+                "searchesToday" to 0,
             )
 
         return ResponseEntity.ok(stats)

@@ -1,11 +1,8 @@
 package com.example.learningservice.service
 
 import com.example.learningservice.entity.FlashcardEntity
-import com.example.learningservice.entity.RoleEntity
-import com.example.learningservice.entity.UserEntity
 import com.example.learningservice.repository.FlashcardRepository
 import com.example.learningservice.repository.ReviewLogRepository
-import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.repository.VocabularyRepository
 import com.example.learningservice.util.UserAuthUtil
 import org.junit.jupiter.api.BeforeEach
@@ -18,50 +15,28 @@ import java.util.Optional
 import kotlin.test.assertEquals
 
 class FlashcardProgressiveLearningTest {
-    // Mock repositories and services
     private lateinit var flashcardRepository: FlashcardRepository
     private lateinit var reviewLogRepository: ReviewLogRepository
-    private lateinit var userRepository: UserRepository
     private lateinit var vocabularyRepository: VocabularyRepository
     private lateinit var fsrsService: FSRSService
     private lateinit var userAuthUtil: UserAuthUtil
-    private lateinit var userService: UserService
+    private lateinit var userProgressService: UserProgressService
 
-    // Service under test
     private lateinit var flashcardService: FlashcardCrudService
 
-    private lateinit var user: UserEntity
     private lateinit var newFlashcard: FlashcardEntity
     private val userId = UUID.randomUUID()
     private val flashcardId = UUID.randomUUID()
 
     @BeforeEach
     fun setup() {
-        // Khởi tạo mocks
         flashcardRepository = mock()
         reviewLogRepository = mock()
-        userRepository = mock()
         vocabularyRepository = mock()
         fsrsService = mock()
         userAuthUtil = mock()
-        userService = mock()
+        userProgressService = mock()
 
-        // Tạo user
-        val userRole = RoleEntity(RoleEntity.ROLE_USER, "ROLE_USER")
-        user =
-            UserEntity(
-                userId = userId,
-                email = "test@example.com",
-                password = "password",
-                fullName = "Test User",
-                profilePicture = null,
-                currentLevel = null,
-                jlptGoal = null,
-                lastLogin = LocalDateTime.now(),
-                role = userRole,
-            )
-
-        // Tạo thẻ mới với các giá trị ban đầu (chưa có lịch sử ôn tập)
         newFlashcard =
             FlashcardEntity(
                 flashcardId = flashcardId,
@@ -81,16 +56,14 @@ class FlashcardProgressiveLearningTest {
         // Mock getCurrentUserId
         whenever(userAuthUtil.getCurrentUserId()).thenReturn(userId)
 
-        // Khởi tạo service
         flashcardService =
             FlashcardCrudService(
                 flashcardRepository,
                 reviewLogRepository,
-                userRepository,
                 vocabularyRepository,
                 fsrsService,
                 userAuthUtil,
-                userService,
+                userProgressService,
             )
     }
 
@@ -168,13 +141,13 @@ class FlashcardProgressiveLearningTest {
             verify(flashcardRepository).findById(flashcardId)
             verify(fsrsService).processReview(any(), eq(rating))
             verify(reviewLogRepository).save(any())
-            verify(userService).updateUserStreak(userId)
+            verify(userProgressService).updateStreak(userId)
 
             // Cập nhật flashcard hiện tại cho lần ôn tập tiếp theo
             currentFlashcard = updatedFlashcard
 
             // Reset mocks để chuẩn bị cho lần ôn tập tiếp theo
-            clearInvocations(flashcardRepository, fsrsService, reviewLogRepository, userService)
+            clearInvocations(flashcardRepository, fsrsService, reviewLogRepository, userProgressService)
         }
     }
 }

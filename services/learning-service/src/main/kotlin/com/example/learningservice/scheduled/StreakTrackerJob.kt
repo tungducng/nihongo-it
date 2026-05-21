@@ -1,7 +1,7 @@
 package com.example.learningservice.scheduled
 
 import com.example.learningservice.repository.ReviewLogRepository
-import com.example.learningservice.repository.UserRepository
+import com.example.learningservice.repository.UserProgressRepository
 import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
@@ -10,9 +10,18 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.util.UUID
 
+/**
+ * Nightly job that maintains `user_progress.streak_count`:
+ *   • reviewed today or yesterday — keep streak unchanged
+ *   • reviewed 2 days ago and streak > 1 — decrement (grace period)
+ *   • otherwise — reset to 0
+ *
+ * Operates entirely on `user_progress` rows owned by learning-service — no
+ * cross-service calls.
+ */
 @Component
 class StreakTrackerJob(
-    private val userRepository: UserRepository,
+    private val userProgressRepository: UserProgressRepository,
     private val reviewLogRepository: ReviewLogRepository,
 ) {
     private val logger = LoggerFactory.getLogger(StreakTrackerJob::class.java)
@@ -34,15 +43,13 @@ class StreakTrackerJob(
         val startOfYesterday = today.minusDays(1).atStartOfDay()
         val startOfTwoDaysAgo = today.minusDays(2).atStartOfDay()
 
-        val allUsers = userRepository.findByIsActiveTrueAndStreakCountGreaterThan(0)
-        if (allUsers.isEmpty()) {
-            logger.info("No active users with positive streak — skipping")
+        val progresses = userProgressRepository.findAll().filter { it.streakCount > 0 }
+        if (progresses.isEmpty()) {
+            logger.info("No user_progress rows with positive streak — skipping")
             return
         }
 
-        val userIds = allUsers.mapNotNull { it.userId }
-
-        // Single aggregate query instead of 3 queries × N users
+        val userIds = progresses.map { it.userId }
         val activityRows =
             reviewLogRepository.getUserActivitySummary(
                 userIds,
@@ -59,36 +66,33 @@ class StreakTrackerJob(
                 uid to Triple(reviewedToday, reviewedYesterday, reviewedTwoDaysAgo)
             }
 
-        val now = LocalDateTime.now()
         var resetCount = 0
         var reducedCount = 0
 
-        val updatedUsers =
-            allUsers.mapNotNull { user ->
-                val userId = user.userId ?: return@mapNotNull null
+        val updated =
+            progresses.mapNotNull { progress ->
                 val (reviewedToday, reviewedYesterday, reviewedTwoDaysAgo) =
-                    activityMap[userId]
-                        ?: Triple(false, false, false)
+                    activityMap[progress.userId] ?: Triple(false, false, false)
 
                 when {
                     reviewedToday || reviewedYesterday -> null
-                    reviewedTwoDaysAgo && user.streakCount > 1 -> {
+                    reviewedTwoDaysAgo && progress.streakCount > 1 -> {
                         reducedCount++
-                        user.copy(streakCount = user.streakCount - 1)
+                        progress.also { it.streakCount = it.streakCount - 1 }
                     }
                     else -> {
                         resetCount++
-                        user.copy(streakCount = 0)
+                        progress.also { it.streakCount = 0 }
                     }
                 }
             }
 
-        if (updatedUsers.isNotEmpty()) {
-            userRepository.saveAll(updatedUsers)
+        if (updated.isNotEmpty()) {
+            userProgressRepository.saveAll(updated)
         }
 
         logger.info(
-            "Streak job done: processed ${allUsers.size} users, " +
+            "Streak job done: processed ${progresses.size} progress rows, " +
                 "reset $resetCount, reduced $reducedCount",
         )
     }

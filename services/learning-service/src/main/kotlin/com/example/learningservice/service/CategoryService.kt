@@ -9,7 +9,6 @@ import com.example.learningservice.dto.toDTO
 import com.example.learningservice.entity.CategoryEntity
 import com.example.learningservice.repository.CategoryRepository
 import com.example.learningservice.repository.TopicRepository
-import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.util.UserAuthUtil
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -19,7 +18,6 @@ import java.util.UUID
 class CategoryService(
     private val categoryRepository: CategoryRepository,
     private val topicRepository: TopicRepository,
-    private val userRepository: UserRepository,
     private val userAuthUtil: UserAuthUtil,
 ) {
     @Transactional(readOnly = true)
@@ -37,18 +35,12 @@ class CategoryService(
 
     @Transactional
     fun createCategory(request: CreateCategoryRequest): CategoryDTO {
-        val currentUserId =
-            userAuthUtil.getCurrentUserId()
-                ?: throw BusinessException("User not authenticated")
+        userAuthUtil.getCurrentUserId()
+            ?: throw BusinessException("User not authenticated")
 
         if (categoryRepository.existsByName(request.name)) {
             throw BusinessException("A category with the name '${request.name}' already exists")
         }
-
-        val user =
-            userRepository
-                .findById(currentUserId)
-                .orElseThrow { BusinessException("User not found") }
 
         val category =
             CategoryEntity(

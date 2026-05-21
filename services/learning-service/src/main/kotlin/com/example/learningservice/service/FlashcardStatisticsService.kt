@@ -7,9 +7,7 @@ import com.example.learningservice.dto.StudySummaryDto
 import com.example.learningservice.entity.ReviewLogEntity
 import com.example.learningservice.repository.FlashcardRepository
 import com.example.learningservice.repository.ReviewLogRepository
-import com.example.learningservice.repository.UserRepository
 import com.example.learningservice.util.UserAuthUtil
-import jakarta.persistence.EntityNotFoundException
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -21,8 +19,7 @@ import java.util.*
 class FlashcardStatisticsService(
     private val flashcardRepository: FlashcardRepository,
     private val reviewLogRepository: ReviewLogRepository,
-    private val userRepository: UserRepository,
-    private val userService: UserService,
+    private val userProgressService: UserProgressService,
     private val userAuthUtil: UserAuthUtil,
 ) {
     private val logger = LoggerFactory.getLogger(FlashcardStatisticsService::class.java)
@@ -120,7 +117,7 @@ class FlashcardStatisticsService(
                         totalCards = totalCards,
                         dueCardsNow = dueCardsNow,
                         reviewsLast30Days = recentReviews.size,
-                        currentStreak = userService.getUserById(userId).streakCount,
+                        currentStreak = userProgressService.getOrCreate(userId).streakCount,
                         overallRetentionRate = overallRetentionRate,
                     ),
                 cardsDueByDay = cardsDueByDay,
@@ -142,15 +139,12 @@ class FlashcardStatisticsService(
     fun getUserFlashcardStatistics(userId: UUID): StudyStatisticsDto {
         logger.info("Getting flashcard statistics for user: $userId")
 
-        val user =
-            userRepository
-                .findById(userId)
-                .orElseThrow { EntityNotFoundException("User not found with id: $userId") }
+        val progress = userProgressService.getOrCreate(userId)
 
         val allFlashcards = flashcardRepository.findByUserId(userId)
         if (allFlashcards.isEmpty()) {
             return StudyStatisticsDto(
-                summary = StudySummaryDto(0, 0, 0, user.streakCount, 0.0),
+                summary = StudySummaryDto(0, 0, 0, progress.streakCount, 0.0),
                 cardsDueByDay = emptyMap(),
                 dailyReviews = emptyMap(),
                 retentionRateByDay = emptyMap(),
@@ -238,7 +232,7 @@ class FlashcardStatisticsService(
                     totalCards = allFlashcards.size,
                     dueCardsNow = dueCardsNow,
                     reviewsLast30Days = recentReviews.size,
-                    currentStreak = user.streakCount,
+                    currentStreak = progress.streakCount,
                     overallRetentionRate = overallRetentionRate,
                 ),
             cardsByState = cardsByState,

@@ -39,14 +39,8 @@ data class UserEntity(
     val resetPasswordExpires: LocalDateTime? = null,
     @Column(name = "last_login")
     val lastLogin: LocalDateTime?,
-    @Column(name = "streak_count")
-    val streakCount: Int = 0,
-    @Column(name = "last_study_date")
-    val lastStudyDate: LocalDateTime? = null,
-    @Column(name = "points")
-    val points: Int = 0,
-    @Column(name = "daily_goal_minutes")
-    val dailyGoalMinutes: Int = 15,
+    // Learning activity stats (streak, last_study_date, points, daily_goal_minutes)
+    // moved to learning-service.user_progress in P6.A.
     @Column(name = "reminder_enabled")
     val reminderEnabled: Boolean = true,
     @Column(name = "reminder_time")

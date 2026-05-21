@@ -2,8 +2,6 @@ package com.example.learningservice.service
 
 import com.example.learningservice.config.FsrsProperties
 import com.example.learningservice.entity.FlashcardEntity
-import com.example.learningservice.entity.RoleEntity
-import com.example.learningservice.entity.UserEntity
 import com.example.learningservice.repository.FlashcardRepository
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
@@ -25,15 +23,6 @@ class FSRSServiceTest {
 
     private val userId = UUID.randomUUID()
     private val flashcardId = UUID.randomUUID()
-
-    private fun makeUser() =
-        UserEntity(
-            userId = userId,
-            email = "test@test.com",
-            password = "pw",
-            fullName = "Test",
-            role = RoleEntity(RoleEntity.ROLE_USER, "ROLE_USER"),
-        )
 
     private fun makeNewFlashcard() =
         FlashcardEntity(

@@ -150,8 +150,10 @@ class AuthService(
     }
 
     fun refreshToken(request: RefreshTokenRequest): LoginResponseDto {
+        val token = request.refreshToken
+            ?: throw UnauthorizedException("Refresh token is required")
         val stored =
-            refreshTokenRepository.findByToken(request.refreshToken)
+            refreshTokenRepository.findByToken(token)
                 ?: throw UnauthorizedException("Invalid refresh token")
 
         if (stored.isRevoked) {
@@ -185,7 +187,7 @@ class AuthService(
     }
 
     fun logout(request: RefreshTokenRequest) {
-        refreshTokenRepository.deleteByToken(request.refreshToken)
+        request.refreshToken?.let { refreshTokenRepository.deleteByToken(it) }
         auditService.log(AuditAction.LOGOUT)
     }
 

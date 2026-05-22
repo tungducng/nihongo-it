@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import api from '@/lib/api'
+import api, { refreshAccessToken } from '@/lib/api'
 import { clearAccessToken, getAccessToken, setAccessToken } from '@/lib/tokenStore'
 import { decodeToken } from '@/lib/jwt'
 import { ROLES } from '@/types/roles'
@@ -38,9 +38,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     if (get().initialized) return
     set({ loading: true })
     try {
-      const res = await api.post<{ token: string }>('/api/v1/user/auth/refresh-token', {})
-      setAccessToken(res.data.token)
-      await get().fetchCurrentUser()
+      // Use the shared single-flight refresh helper so we never race the
+      // axios-interceptor's own refresh call with the same cookie. See the
+      // long comment in lib/api.ts for why this matters.
+      const token = await refreshAccessToken()
+      if (token) {
+        await get().fetchCurrentUser()
+      } else {
+        clearAccessToken()
+        set({ user: null })
+      }
     } catch {
       clearAccessToken()
       set({ user: null })

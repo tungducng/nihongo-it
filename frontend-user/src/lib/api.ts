@@ -20,21 +20,41 @@ api.interceptors.request.use((config) => {
 })
 
 // --- Single-flight refresh ---
+// One module-level promise is shared between (a) auth.store.initialize() and
+// (b) the 401 interceptor's tryRefreshToken below. Without this, both callers
+// race a POST /auth/refresh-token with the SAME refresh cookie, the BE rotates
+// it under one of them, then sees the other as a revoked-cookie reuse and
+// deletes the entire refresh-token family. Net effect: the user gets bounced
+// to /login on any protected route that fires a 401 while AuthInitializer is
+// still warming up.
+let inflightRefresh: Promise<string | null> | null = null
 let isRefreshing = false
 let refreshQueue: Array<(token: string) => void> = []
 
+export async function refreshAccessToken(): Promise<string | null> {
+  if (inflightRefresh) return inflightRefresh
+  inflightRefresh = (async () => {
+    try {
+      const res = await axios.post<{ token: string }>(
+        `${API_URL}/api/v1/user/auth/refresh-token`,
+        {},
+        { withCredentials: true },
+      )
+      setAccessToken(res.data.token)
+      return res.data.token
+    } catch {
+      return null
+    } finally {
+      // Allow the next genuinely-new refresh attempt (e.g. after a later 401)
+      // to run, but only after the in-flight one completes.
+      inflightRefresh = null
+    }
+  })()
+  return inflightRefresh
+}
+
 async function tryRefreshToken(): Promise<string | null> {
-  try {
-    const res = await axios.post<{ token: string }>(
-      `${API_URL}/api/v1/user/auth/refresh-token`,
-      {},
-      { withCredentials: true },
-    )
-    setAccessToken(res.data.token)
-    return res.data.token
-  } catch {
-    return null
-  }
+  return refreshAccessToken()
 }
 
 function isRetryableServerError(error: AxiosError): boolean {

@@ -15,7 +15,11 @@
       "Bash(./gradlew :ai-service:compileKotlin --no-daemon)",
       "Bash(./gradlew :common:build --no-daemon)",
       "Bash(./gradlew :common:ktlintFormat --no-daemon)",
-      "Bash(./gradlew *)"
+      "Bash(./gradlew *)",
+      "Bash(npx playwright *)",
+      "Bash(docker exec *)",
+      "Bash(npx tsc *)",
+      "PowerShell(Get-Process *)"
     ]
   }
 }

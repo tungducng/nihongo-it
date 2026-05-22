@@ -9,43 +9,45 @@ spring:
       enabled: true
   cloud:
     gateway:
-      discovery:
-        locator:
-          enabled: true
-          lower-case-service-id: true
-      # Đảm bảo các headers nhạy cảm được chuyển tiếp - không loại bỏ header Authorization
-      sensitive-headers:
-      # Loại bỏ cấu hình globalcors vì đã có corsWebFilter trong SecurityConfig
-      routes:
-        # User Service (Auth Service) Route
-        - id: user-service
-          uri: ${USER_SERVICE_URL:lb://user-service}
-          predicates:
-            - Path=/api/v1/user/**
-          filters:
-            - StripPrefix=0
+      # Spring Cloud Gateway 5.0 (Spring Cloud 2025) moved every gateway property
+      # under .server.webflux (reactive) or .server.webmvc (MVC). The old
+      # spring.cloud.gateway.routes path silently no-ops on 5.x.
+      server:
+        webflux:
+          discovery:
+            locator:
+              enabled: true
+              lower-case-service-id: true
+          # Forward sensitive headers (e.g. Authorization) unchanged.
+          sensitive-headers:
+          routes:
+            - id: user-service
+              uri: ${USER_SERVICE_URL:lb://user-service}
+              predicates:
+                - Path=/api/v1/user/**
+              filters:
+                - StripPrefix=0
 
-        - id: learning-service
-          uri: ${LEARNING_SERVICE_URL:lb://learning-service}
-          predicates:
-            - Path=/api/v1/learning/**
-          filters:
-            - StripPrefix=0
+            - id: learning-service
+              uri: ${LEARNING_SERVICE_URL:lb://learning-service}
+              predicates:
+                - Path=/api/v1/learning/**
+              filters:
+                - StripPrefix=0
 
-        # AI Service Route
-        - id: ai-service
-          uri: ${AI_SERVICE_URL:lb://ai-service}
-          predicates:
-            - Path=/api/v1/ai/**
-          filters:
-            - StripPrefix=0
+            - id: ai-service
+              uri: ${AI_SERVICE_URL:lb://ai-service}
+              predicates:
+                - Path=/api/v1/ai/**
+              filters:
+                - StripPrefix=0
 
-        - id: notification-service
-          uri: ${NOTIFICATION_SERVICE_URL:lb://notification-service}
-          predicates:
-            - Path=/api/v1/notify/**
-          filters:
-            - StripPrefix=0
+            - id: notification-service
+              uri: ${NOTIFICATION_SERVICE_URL:lb://notification-service}
+              predicates:
+                - Path=/api/v1/notify/**
+              filters:
+                - StripPrefix=0
 
 eureka:
   client:

@@ -1,0 +1,197 @@
+# Boot the full local stack: postgres (docker), then Eureka, then api-gateway +
+# 4 BE services + 2 Next.js apps. Waits until each is healthy before returning.
+#
+# Strategy:
+#   - Eureka must be UP before others start (otherwise their registration beans
+#     can fail at startup). Other services are started in parallel after Eureka.
+#   - Each background process logs to e2e/.stack-logs/<name>.log
+#   - PIDs are saved to e2e/.stack-pids.json so stop-stack.ps1 can kill them.
+#
+# Usage:
+#   cd e2e
+#   ./scripts/start-stack.ps1            # default - full stack
+#   ./scripts/start-stack.ps1 -SkipFE    # skip the 2 Next.js apps
+
+[CmdletBinding()]
+param(
+    [switch]$SkipFE,
+    # Skip ai-service. Default = ON because Spring AI 1.0.0 is incompatible
+    # with Spring Boot 4 (RestClientAutoConfiguration moved). All AI-using
+    # tests are gated behind E2E_OPENAI=1 so they SKIP without the service.
+    [switch]$IncludeAI
+)
+
+$ErrorActionPreference = 'Stop'
+
+$repoRoot    = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$composeFile = Join-Path $repoRoot 'docker/docker-compose.yaml'
+$envFile     = Join-Path $repoRoot 'docker/.env'
+$servicesDir = Join-Path $repoRoot 'services'
+$feUserDir   = Join-Path $repoRoot 'frontend-user'
+$feAdminDir  = Join-Path $repoRoot 'frontend-admin'
+$logsDir     = Join-Path $PSScriptRoot '..\.stack-logs'
+$pidsFile    = Join-Path $PSScriptRoot '..\.stack-pids.json'
+
+if (-not (Test-Path $envFile)) {
+    Write-Error "Missing $envFile. Copy docker/.env.example to docker/.env first."
+}
+
+# Load docker/.env into process env so child Spring Boot apps inherit
+# JWT_SECRET, DB_*, OPENAI_API_KEY, etc. Lines like KEY=value (skip blanks/comments).
+# Override hostnames that target docker network: child services run on localhost.
+Get-Content $envFile | ForEach-Object {
+    $line = $_.Trim()
+    if ($line -and -not $line.StartsWith('#') -and $line -match '^([^=]+)=(.*)$') {
+        $key = $matches[1].Trim()
+        $val = $matches[2].Trim()
+        # Rewrite the only known docker-internal hostname: postgres -> localhost (mapped 5433)
+        $val = $val -replace 'jdbc:postgresql://postgres:5433/', 'jdbc:postgresql://localhost:5433/'
+        $val = $val -replace '^http://python:8000', 'http://localhost:8000'
+        Set-Item -Path "env:$key" -Value $val
+    }
+}
+
+# Sanity defaults: each Spring service reads spring.datasource.url from a service-
+# specific env var like LEARNING_DB_URL. Our docker compose sets these, but if they
+# aren't in the .env they'll be undefined. The services' application.yml falls back
+# to localhost-style URLs, but we set explicit overrides here for clarity.
+if (-not $env:USER_DB_URL)         { $env:USER_DB_URL         = 'jdbc:postgresql://localhost:5433/user_service' }
+if (-not $env:LEARNING_DB_URL)     { $env:LEARNING_DB_URL     = 'jdbc:postgresql://localhost:5433/learning_service' }
+if (-not $env:NOTIFICATION_DB_URL) { $env:NOTIFICATION_DB_URL = 'jdbc:postgresql://localhost:5433/notification_service' }
+if (-not $env:EUREKA_URL)          { $env:EUREKA_URL          = 'http://localhost:8761/eureka/' }
+if (-not $env:SPRING_PROFILES_ACTIVE) { $env:SPRING_PROFILES_ACTIVE = 'default' }
+
+# Force JVM timezone to the IANA name Postgres knows. Windows often reports
+# "Asia/Saigon", which Postgres rejects; the IANA equivalent is "Asia/Ho_Chi_Minh".
+$env:JAVA_TOOL_OPTIONS = '-Duser.timezone=Asia/Ho_Chi_Minh'
+$env:TZ = 'Asia/Ho_Chi_Minh'
+
+# Disable Flyway for E2E runs. Reason: Spring Boot 4 + devtools auto-restart
+# triggers JPA validate before Flyway migrations finish, breaking bootRun on
+# a fresh DB. E2E uses a one-time SQL apply (scripts/init-dbs.ps1) to bootstrap
+# the schema, then disables Flyway so the service skips its migration step.
+$env:SPRING_FLYWAY_ENABLED = 'false'
+
+# Skip Hibernate schema validation for E2E. The pre-applied migrations match the
+# entity layout closely enough for runtime; strict validation flags edge cases
+# (NOT NULL with no @Column(nullable=false) annotation, etc.) that don't affect
+# functional tests. Production keeps ddl-auto=validate via docker compose.
+$env:SPRING_JPA_HIBERNATE_DDL_AUTO = 'none'
+
+# Disable rate limiting for E2E. Production keeps the default (true) via docker.
+$env:APP_RATE_LIMIT_ENABLED = 'false'
+
+New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
+
+function Wait-ForUrl {
+    param([string]$Url, [int]$TimeoutSec = 180, [string]$Name)
+    Write-Host ("    waiting for {0} @ {1} ... " -f $Name, $Url) -NoNewline
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $r = Invoke-WebRequest -Uri $Url -UseBasicParsing -TimeoutSec 3 -ErrorAction Stop
+            if ($r.StatusCode -ge 200 -and $r.StatusCode -lt 500) {
+                Write-Host "UP" -ForegroundColor Green
+                return $true
+            }
+        } catch {
+            Start-Sleep -Milliseconds 1500
+        }
+    }
+    Write-Host "TIMEOUT" -ForegroundColor Red
+    return $false
+}
+
+function Wait-ForPort {
+    param([string]$HostName = 'localhost', [int]$Port, [int]$TimeoutSec = 60, [string]$Name)
+    Write-Host ("    waiting for {0} @ {1}:{2} ... " -f $Name, $HostName, $Port) -NoNewline
+    $deadline = (Get-Date).AddSeconds($TimeoutSec)
+    while ((Get-Date) -lt $deadline) {
+        try {
+            $tcp = New-Object System.Net.Sockets.TcpClient
+            $tcp.Connect($HostName, $Port)
+            $tcp.Close()
+            Write-Host "UP" -ForegroundColor Green
+            return $true
+        } catch {
+            Start-Sleep -Milliseconds 1000
+        }
+    }
+    Write-Host "TIMEOUT" -ForegroundColor Red
+    return $false
+}
+
+function Start-BgProcess {
+    param([string]$Name, [string]$WorkDir, [string]$Command, [string]$Arguments)
+    $logFile = Join-Path $logsDir ("{0}.log" -f $Name)
+    Write-Host ("    starting {0} (-> {1})" -f $Name, $logFile)
+    $p = Start-Process -FilePath $Command -ArgumentList $Arguments `
+        -WorkingDirectory $WorkDir `
+        -WindowStyle Hidden `
+        -RedirectStandardOutput $logFile `
+        -RedirectStandardError ($logFile + '.err') `
+        -PassThru
+    return $p.Id
+}
+
+$pids = @{}
+
+Write-Host "==> [1/4] Starting postgres container" -ForegroundColor Cyan
+docker compose --env-file $envFile -f $composeFile up -d postgres | Out-Null
+if (-not (Wait-ForPort -Port 5433 -Name 'postgres' -TimeoutSec 60)) {
+    exit 1
+}
+
+$gradlew = Join-Path $servicesDir 'gradlew.bat'
+
+function Gradle-Args { param([string]$Task); return ('/c ""' + $gradlew + '" ' + $Task + '"') }
+
+Write-Host "==> [2/4] Starting Eureka server" -ForegroundColor Cyan
+$pids.eureka = Start-BgProcess -Name 'eureka' -WorkDir $servicesDir -Command 'cmd.exe' -Arguments (Gradle-Args ':eureka-server:bootRun')
+if (-not (Wait-ForUrl -Url 'http://localhost:8761/' -Name 'eureka' -TimeoutSec 240)) {
+    Write-Host "Eureka failed. Check log:" -ForegroundColor Red
+    Write-Host (Join-Path $logsDir 'eureka.log')
+    exit 1
+}
+
+Write-Host "==> [3/4] Starting backend services in parallel" -ForegroundColor Cyan
+$pids['api-gateway']      = Start-BgProcess -Name 'api-gateway'      -WorkDir $servicesDir -Command 'cmd.exe' -Arguments (Gradle-Args ':api-gateway:bootRun')
+$pids['user-service']     = Start-BgProcess -Name 'user-service'     -WorkDir $servicesDir -Command 'cmd.exe' -Arguments (Gradle-Args ':user-service:bootRun')
+$pids['learning-service'] = Start-BgProcess -Name 'learning-service' -WorkDir $servicesDir -Command 'cmd.exe' -Arguments (Gradle-Args ':learning-service:bootRun')
+if ($IncludeAI) {
+    $pids['ai-service']   = Start-BgProcess -Name 'ai-service'       -WorkDir $servicesDir -Command 'cmd.exe' -Arguments (Gradle-Args ':ai-service:bootRun')
+}
+$pids['notification']     = Start-BgProcess -Name 'notification'     -WorkDir $servicesDir -Command 'cmd.exe' -Arguments (Gradle-Args ':notification:bootRun')
+
+$beTargets = @(
+    @{ Name = 'api-gateway';      Url = 'http://localhost:8080/actuator/health' },
+    @{ Name = 'user-service';     Url = 'http://localhost:8086/actuator/health' },
+    @{ Name = 'learning-service'; Url = 'http://localhost:8088/actuator/health' },
+    @{ Name = 'notification';     Url = 'http://localhost:8089/actuator/health' }
+)
+if ($IncludeAI) {
+    $beTargets += @{ Name = 'ai-service'; Url = 'http://localhost:8087/actuator/health' }
+}
+foreach ($t in $beTargets) {
+    if (-not (Wait-ForUrl -Url $t.Url -Name $t.Name -TimeoutSec 300)) {
+        Write-Host ("{0} failed. Check log: {1}" -f $t.Name, (Join-Path $logsDir ($t.Name + '.log'))) -ForegroundColor Red
+        exit 1
+    }
+}
+
+if (-not $SkipFE) {
+    Write-Host "==> [4/4] Starting frontends" -ForegroundColor Cyan
+    $pids['frontend-user']  = Start-BgProcess -Name 'frontend-user'  -WorkDir $feUserDir  -Command 'cmd.exe' -Arguments '/c npm run dev'
+    $pids['frontend-admin'] = Start-BgProcess -Name 'frontend-admin' -WorkDir $feAdminDir -Command 'cmd.exe' -Arguments '/c npm run dev'
+    if (-not (Wait-ForUrl -Url 'http://localhost:3000' -Name 'frontend-user'  -TimeoutSec 180)) { exit 1 }
+    if (-not (Wait-ForUrl -Url 'http://localhost:3001' -Name 'frontend-admin' -TimeoutSec 180)) { exit 1 }
+} else {
+    Write-Host "==> [4/4] Skipping frontends (-SkipFE)" -ForegroundColor Yellow
+}
+
+$pids | ConvertTo-Json | Out-File -FilePath $pidsFile -Encoding utf8
+
+Write-Host ""
+Write-Host "==> STACK READY. PIDs saved to $pidsFile" -ForegroundColor Green
+Write-Host "    Logs:  $logsDir"
+Write-Host "    Stop:  ./scripts/stop-stack.ps1"

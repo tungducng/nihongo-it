@@ -3,6 +3,7 @@ package com.example.apigateway.filter
 import io.github.bucket4j.Bandwidth
 import io.github.bucket4j.Bucket
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.gateway.filter.GatewayFilterChain
 import org.springframework.cloud.gateway.filter.GlobalFilter
 import org.springframework.core.Ordered
@@ -27,8 +28,11 @@ private data class BucketEntry(
 )
 
 @Component
-class RateLimitFilter :
-    GlobalFilter,
+class RateLimitFilter(
+    // Toggle off for E2E / load tests by setting RATE_LIMIT_ENABLED=false.
+    // Production must leave this true (the default).
+    @Value("\${app.rate-limit.enabled:true}") private val enabled: Boolean,
+) : GlobalFilter,
     Ordered {
     companion object {
         private const val FILTER_ORDER = -50
@@ -54,6 +58,7 @@ class RateLimitFilter :
         exchange: ServerWebExchange,
         chain: GatewayFilterChain,
     ): Mono<Void> {
+        if (!enabled) return chain.filter(exchange)
         val path = exchange.request.path.value()
         val rule = rules.firstOrNull { path.startsWith(it.pathPrefix) } ?: return chain.filter(exchange)
 

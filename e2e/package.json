@@ -1,0 +1,31 @@
+{
+  "name": "nihongo-it-e2e",
+  "version": "0.1.0",
+  "private": true,
+  "description": "End-to-end Playwright suite for Nihongo IT (user + admin frontends + BE services)",
+  "scripts": {
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:ui": "playwright test --ui",
+    "test:headed": "playwright test --headed",
+    "test:user": "playwright test --project=user",
+    "test:admin": "playwright test --project=admin",
+    "test:debug": "playwright test --debug",
+    "trace": "playwright show-trace",
+    "report": "playwright show-report",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.10",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3"
+  }
+}

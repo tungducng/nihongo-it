@@ -1,0 +1,9 @@
+node_modules/
+test-results/
+playwright-report/
+reports/
+.auth/
+.env
+*.log
+.stack-logs/
+.stack-pids.json

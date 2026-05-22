@@ -12,12 +12,12 @@ interface FeedbackRepository : JpaRepository<FeedbackEntity, UUID> {
         contentId: UUID,
     ): List<FeedbackEntity>
 
-    fun findByUserUserIdAndContentType(
+    fun findByUserIdAndContentType(
         userId: UUID,
         contentType: String,
     ): List<FeedbackEntity>
 
-    fun findByContentTypeAndContentIdAndUserUserId(
+    fun findByContentTypeAndContentIdAndUserId(
         contentType: String,
         contentId: UUID,
         userId: UUID,

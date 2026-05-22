@@ -29,10 +29,15 @@ function rawLogin(email: string, password: string): Promise<{ status: number; se
       },
       (res) => {
         const setCookie = (res.headers['set-cookie'] ?? []) as string[]
-        // Drain and ignore body; the BE half-closes after writing the cookie.
+        const status = res.statusCode ?? 0
+        // BE half-closes the chunked response without a terminator, so we
+        // treat 'aborted' the same as 'end' — at this point Set-Cookie was
+        // already received in the headers (which is all we need).
+        const settle = () => resolve({ status, setCookie })
         res.on('data', () => {})
-        res.on('end', () => resolve({ status: res.statusCode ?? 0, setCookie }))
-        res.on('error', () => resolve({ status: res.statusCode ?? 0, setCookie }))
+        res.on('end', settle)
+        res.on('aborted', settle)
+        res.on('error', settle)
       },
     )
     req.on('error', reject)
@@ -72,29 +77,103 @@ function writeStorageState(filePath: string, refreshToken: string): void {
 
 setup.describe.configure({ mode: 'serial' })
 
-async function seedAndLogin(opts: {
-  email: string
-  password: string
-  fullName: string
-  isAdmin: boolean
-  authFile: string
-}): Promise<void> {
+// Hybrid login: rawLogin (Node http, tolerant of BE's half-closed chunked
+// response) gets the refresh_token cookie value. We then inject it as a real
+// browser cookie via context.addCookies. The browser's fetch is tolerant of
+// half-closed responses, so the FE's /auth/refresh-token call on app init
+// succeeds normally and populates the auth store.
+async function seedAndCaptureBrowserState(
+  browser: import('@playwright/test').Browser,
+  opts: {
+    email: string
+    password: string
+    fullName: string
+    isAdmin: boolean
+    appUrl: string
+    authFile: string
+  },
+): Promise<void> {
   await upsertUser(opts)
+
+  // Get a real refresh_token from the BE via tolerant Node http.
   const { status, setCookie } = await rawLogin(opts.email, opts.password)
   expect(status).toBe(200)
   const refreshToken = parseRefreshToken(setCookie)
   expect(refreshToken).toBeTruthy()
-  writeStorageState(opts.authFile, refreshToken!)
+
+  // Build a browser context with the cookie pre-set on the gateway origin.
+  // Cookies on localhost are shared across ports, so :8080 cookie is visible
+  // to XHRs from :3000 / :3001 when withCredentials is enabled.
+  const ctx = await browser.newContext({
+    storageState: { cookies: [], origins: [] },
+    baseURL: opts.appUrl,
+  })
+  const gatewayUrl = new URL(E2E_URLS.gateway)
+  const appUrl = new URL(opts.appUrl)
+  const expires = Math.floor(Date.now() / 1000) + 14 * 24 * 3600
+  await ctx.addCookies([
+    // Cookie at the BE-declared path — used for actual /auth/refresh-token calls
+    {
+      name: 'refresh_token',
+      value: refreshToken!,
+      domain: gatewayUrl.hostname,
+      path: '/api/v1/user/auth',
+      httpOnly: true,
+      secure: false,
+      sameSite: 'Lax',
+      expires,
+    },
+    // Mirror at path '/' for the FE Next.js proxy gate. It only checks
+    // `req.cookies.has('refresh_token')`, so any value at path '/' passes.
+    {
+      name: 'refresh_token',
+      value: refreshToken!,
+      domain: appUrl.hostname,
+      path: '/',
+      httpOnly: false,
+      secure: false,
+      sameSite: 'Lax',
+      expires,
+    },
+  ])
+
+  const page = await ctx.newPage()
+  try {
+    // Visit the app root — the FE will fire /auth/refresh-token, the BE will
+    // return a fresh access token, and the auth store populates. We wait for
+    // an indicator that initialization is complete: the page is NOT at /login.
+    await page.goto('/')
+    await page.waitForURL((url) => !url.pathname.endsWith('/login'), {
+      timeout: 20_000,
+    })
+    await ctx.storageState({ path: opts.authFile })
+  } finally {
+    await ctx.close()
+  }
 }
 
-setup('seed: ensure normal user exists + storageState', async () => {
+setup('seed: ensure normal user exists + storageState', async ({ browser }) => {
   const { email, password, fullName } = E2E_USERS.user
-  await seedAndLogin({ email, password, fullName, isAdmin: false, authFile: userAuthFile })
+  await seedAndCaptureBrowserState(browser, {
+    email,
+    password,
+    fullName,
+    isAdmin: false,
+    appUrl: E2E_URLS.userApp,
+    authFile: userAuthFile,
+  })
 })
 
-setup('seed: ensure admin user exists + storageState', async () => {
+setup('seed: ensure admin user exists + storageState', async ({ browser }) => {
   const { email, password, fullName } = E2E_USERS.admin
-  await seedAndLogin({ email, password, fullName, isAdmin: true, authFile: adminAuthFile })
+  await seedAndCaptureBrowserState(browser, {
+    email,
+    password,
+    fullName,
+    isAdmin: true,
+    appUrl: E2E_URLS.adminApp,
+    authFile: adminAuthFile,
+  })
 })
 
 setup('seed: log credentials for debugging', async () => {

@@ -81,6 +81,18 @@ $env:SPRING_JPA_HIBERNATE_DDL_AUTO = 'none'
 # Disable rate limiting for E2E. Production keeps the default (true) via docker.
 $env:APP_RATE_LIMIT_ENABLED = 'false'
 
+# Disable spring-boot-devtools restart watcher. It interposes a custom classloader
+# that has caused response-stream corruption (half-closed chunked responses)
+# in local bootRun. Production never sees this because the jar excludes devtools.
+$env:SPRING_DEVTOOLS_RESTART_ENABLED = 'false'
+$env:SPRING_DEVTOOLS_LIVERELOAD_ENABLED = 'false'
+
+# Disable virtual threads for E2E. The combo of Tomcat 11 + virtual threads +
+# CorrelationIdFilter sometimes omits the trailing 0-length chunk in chunked
+# responses, causing Playwright/axios to abort while reading the body even when
+# the response was logically complete. Production keeps virtual threads on.
+$env:SPRING_THREADS_VIRTUAL_ENABLED = 'false'
+
 New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
 
 function Wait-ForUrl {

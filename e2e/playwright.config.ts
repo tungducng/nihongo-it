@@ -10,7 +10,8 @@ const ADMIN_APP_URL = process.env.E2E_ADMIN_APP_URL ?? 'http://localhost:3001'
 const isCi = !!process.env.CI
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: path.resolve(__dirname, 'tests'),
+  testMatch: '**/*.spec.ts',
   fullyParallel: false,
   workers: 1,
   retries: isCi ? 1 : 0,
@@ -38,13 +39,13 @@ export default defineConfig({
   projects: [
     {
       name: 'setup',
-      testMatch: /seed\.spec\.ts/,
+      testMatch: 'seed.spec.ts',
       use: { ...devices['Desktop Chrome'] },
     },
     {
       name: 'user',
       dependencies: ['setup'],
-      testMatch: /tests\/user\/.*\.spec\.ts/,
+      testMatch: 'user/**/*.spec.ts',
       use: {
         ...devices['Desktop Chrome'],
         baseURL: USER_APP_URL,
@@ -54,7 +55,7 @@ export default defineConfig({
     {
       name: 'admin',
       dependencies: ['setup'],
-      testMatch: /tests\/admin\/.*\.spec\.ts/,
+      testMatch: 'admin/**/*.spec.ts',
       use: {
         ...devices['Desktop Chrome'],
         baseURL: ADMIN_APP_URL,

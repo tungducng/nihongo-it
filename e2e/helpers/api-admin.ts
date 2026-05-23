@@ -140,6 +140,42 @@ export function uniqueName(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 }
 
+// === Throwaway users (for admin user-management tests) ===
+
+export async function createThrowawayUser(email: string, password: string, fullName: string): Promise<string> {
+  // Signup via gateway (public). Returns userId via DB lookup.
+  const lr = await axios.post(
+    `${E2E_URLS.gateway}/api/v1/user/auth/signup`,
+    { email, password, fullName, currentLevel: 'N5', jlptGoal: 'N3' },
+    { validateStatus: () => true },
+  )
+  // Already-exists is acceptable; we'll look up the id below.
+  if (lr.status !== 201 && lr.status !== 200 && lr.status !== 400) {
+    throw new Error(`createThrowawayUser signup ${lr.status}: ${JSON.stringify(lr.data)}`)
+  }
+  // Mark verified + active via SQL.
+  const { withClient } = await import('./db')
+  return await withClient('user', async (c) => {
+    await c.query(
+      `UPDATE users SET is_email_verified = true, is_active = true WHERE email = $1`,
+      [email],
+    )
+    const r = await c.query<{ user_id: string }>(
+      `SELECT user_id FROM users WHERE email = $1`,
+      [email],
+    )
+    if (r.rowCount === 0) throw new Error(`user ${email} not found after signup`)
+    return r.rows[0].user_id
+  })
+}
+
+export async function deleteThrowawayUser(email: string): Promise<void> {
+  const { withClient } = await import('./db')
+  await withClient('user', async (c) => {
+    await c.query(`DELETE FROM users WHERE email = $1`, [email])
+  })
+}
+
 // === Vocabulary ===
 
 export interface VocabularyItem {
@@ -170,6 +206,13 @@ export async function createVocabulary(
 }
 
 export async function deleteVocabulary(vocabId: string): Promise<void> {
+  // First clean up references in saved_vocabulary + flashcards so the
+  // admin delete doesn't trip an FK constraint.
+  const { withClient } = await import('./db')
+  await withClient('learning', async (c) => {
+    await c.query(`DELETE FROM saved_vocabulary WHERE vocab_id = $1`, [vocabId])
+    await c.query(`DELETE FROM flashcards WHERE vocabulary_id = $1`, [vocabId])
+  })
   const api = await adminApi()
   const r = await api.delete(`/api/v1/learning/admin/vocabulary/${vocabId}`)
   if (r.status >= 400 && r.status !== 404) {

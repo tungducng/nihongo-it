@@ -42,6 +42,14 @@ class AuthService(
 ) {
     private val logger = LoggerFactory.getLogger(AuthService::class.java)
 
+    // E2E / test only. Production must keep this true so a leaked refresh
+    // token only buys one access token before the family is rotated. When
+    // false, refreshToken() reuses the same cookie value across calls so
+    // Playwright's storageState (which captures the cookie ONCE during seed)
+    // stays valid for every subsequent test.
+    @Value("\${app.refresh-token.rotation-enabled:true}")
+    private var rotationEnabled: Boolean = true
+
     @Value("\${jwt.refresh-expiration}")
     private val refreshExpiration: Long = 1209600000L
 
@@ -173,10 +181,17 @@ class AuthService(
             userRepository.findById(stored.userId).orElse(null)
                 ?: throw UnauthorizedException("User not found")
 
+        val newAccessToken = jwtTokenUtil.generateToken(user)
+
+        if (!rotationEnabled) {
+            // E2E mode: reuse the same refresh token so Playwright's
+            // captured storageState remains valid for every subsequent test.
+            return LoginResponseDto(token = newAccessToken, refreshToken = token)
+        }
+
         // Mark the old token as revoked (kept for theft detection) rather than deleting it
         refreshTokenRepository.save(stored.copy(isRevoked = true, revokedAt = LocalDateTime.now()))
 
-        val newAccessToken = jwtTokenUtil.generateToken(user)
         val newRefreshToken =
             createRefreshToken(
                 requireNotNull(user.userId) { "User ID missing after refresh" },

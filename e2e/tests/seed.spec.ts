@@ -108,29 +108,19 @@ async function seedAndCaptureBrowserState(
     storageState: { cookies: [], origins: [] },
     baseURL: opts.appUrl,
   })
-  const gatewayUrl = new URL(E2E_URLS.gateway)
-  const appUrl = new URL(opts.appUrl)
+  // Single cookie at path '/' covers BOTH the FE proxy.ts gate (which only
+  // checks presence of `refresh_token`) AND the /auth/refresh-token XHR call
+  // that browser sends to gateway:8080. Duplicating the cookie at multiple
+  // paths sends two Cookie headers which can confuse middleware that picks
+  // the "wrong" one.
   const expires = Math.floor(Date.now() / 1000) + 14 * 24 * 3600
   await ctx.addCookies([
-    // Cookie at the BE-declared path — used for actual /auth/refresh-token calls
     {
       name: 'refresh_token',
       value: refreshToken!,
-      domain: gatewayUrl.hostname,
-      path: '/api/v1/user/auth',
-      httpOnly: true,
-      secure: false,
-      sameSite: 'Lax',
-      expires,
-    },
-    // Mirror at path '/' for the FE Next.js proxy gate. It only checks
-    // `req.cookies.has('refresh_token')`, so any value at path '/' passes.
-    {
-      name: 'refresh_token',
-      value: refreshToken!,
-      domain: appUrl.hostname,
+      domain: 'localhost',
       path: '/',
-      httpOnly: false,
+      httpOnly: true,
       secure: false,
       sameSite: 'Lax',
       expires,

@@ -42,13 +42,19 @@ class CorrelationIdGlobalFilter :
                 .header(CORRELATION_ID_HEADER, correlationId)
                 .build()
 
-        return chain
-            .filter(exchange.mutate().request(mutatedRequest).build())
-            .then(
-                Mono.fromRunnable {
-                    exchange.response.headers.set(CORRELATION_ID_HEADER, correlationId)
-                },
-            )
+        // Set the response header BEFORE commit. A previous version of this
+        // filter set the header in `.then { ... }` after the upstream chain
+        // finished — by that point the gateway had already flushed the
+        // response headers/body, and writing to the immutable header map
+        // raised UnsupportedOperationException. Reactor would then close the
+        // socket WITHOUT the final 0-length chunked terminator, making axios
+        // and Playwright's APIRequestContext abort while reading the body
+        // (the BE's "half-closed chunked response" symptom we've been chasing).
+        exchange.response.beforeCommit {
+            exchange.response.headers.set(CORRELATION_ID_HEADER, correlationId)
+            Mono.empty<Void>()
+        }
+        return chain.filter(exchange.mutate().request(mutatedRequest).build())
     }
 
     override fun getOrder(): Int = FILTER_ORDER

@@ -81,6 +81,12 @@ $env:SPRING_JPA_HIBERNATE_DDL_AUTO = 'none'
 # Disable rate limiting for E2E. Production keeps the default (true) via docker.
 $env:APP_RATE_LIMIT_ENABLED = 'false'
 
+# Disable refresh-token rotation for E2E so Playwright's storageState (captured
+# once during seed) remains valid across every test in the run. Production
+# keeps the default true — a leaked token there buys one access token before
+# the family rotates.
+$env:APP_REFRESH_TOKEN_ROTATION_ENABLED = 'false'
+
 # Disable spring-boot-devtools restart watcher. It interposes a custom classloader
 # that has caused response-stream corruption (half-closed chunked responses)
 # in local bootRun. Production never sees this because the jar excludes devtools.

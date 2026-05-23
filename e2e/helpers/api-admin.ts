@@ -139,3 +139,56 @@ export async function deleteTopicsByPrefix(prefix: string): Promise<void> {
 export function uniqueName(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 }
+
+// === Vocabulary ===
+
+export interface VocabularyItem {
+  vocabId: string
+  term: string
+  meaning: string
+  pronunciation?: string
+  jlptLevel: string
+  topicId?: string
+  topicName?: string
+}
+
+export async function createVocabulary(
+  term: string,
+  meaning: string,
+  topicName: string,
+  jlptLevel: 'N1' | 'N2' | 'N3' | 'N4' | 'N5' = 'N5',
+): Promise<VocabularyItem> {
+  const api = await adminApi()
+  const r = await api.post<VocabularyItem>('/api/v1/learning/admin/vocabulary', {
+    term,
+    meaning,
+    topicName,
+    jlptLevel,
+  })
+  if (r.status >= 400) throw new Error(`createVocabulary ${r.status}: ${JSON.stringify(r.data)}`)
+  return r.data
+}
+
+export async function deleteVocabulary(vocabId: string): Promise<void> {
+  const api = await adminApi()
+  const r = await api.delete(`/api/v1/learning/admin/vocabulary/${vocabId}`)
+  if (r.status >= 400 && r.status !== 404) {
+    throw new Error(`deleteVocabulary ${r.status}`)
+  }
+}
+
+export async function listVocabularyPage(): Promise<VocabularyItem[]> {
+  const api = await adminApi()
+  const r = await api.get<{ content: VocabularyItem[] }>(
+    '/api/v1/learning/admin/vocabulary?page=0&size=100',
+  )
+  if (r.status >= 400) throw new Error(`listVocabularyPage ${r.status}`)
+  return r.data.content ?? []
+}
+
+export async function deleteVocabularyByPrefix(prefix: string): Promise<void> {
+  const items = await listVocabularyPage()
+  for (const v of items.filter((x) => x.term.startsWith(prefix))) {
+    await deleteVocabulary(v.vocabId)
+  }
+}

@@ -38,7 +38,9 @@ object AuthenticationUtils {
             ?.removePrefix("ROLE_")
     }
 
-    fun currentEmail(): String? = currentRequestHeader("X-Email")
+    // Gateway injects this as X-User-Email (matches X-User-Id, X-User-Role pattern).
+    // Falls back to legacy X-Email for any leftover docker compose env.
+    fun currentEmail(): String? = currentRequestHeader("X-User-Email") ?: currentRequestHeader("X-Email")
 
     private fun currentRequestHeader(name: String): String? {
         val attrs =

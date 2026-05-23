@@ -50,12 +50,12 @@ fun TopicEntity.toDTO(vocabularyCount: Int? = null): TopicDTO =
         updatedAt = this.updatedAt,
     )
 
-// Data class for creating a new topic
+// Primitive fields nullable for Jackson — see CategoryDTO.kt comment.
 data class CreateTopicRequest(
     val name: String,
     val meaning: String,
-    val displayOrder: Int = 0,
-    val isActive: Boolean = true,
+    val displayOrder: Int? = 0,
+    val isActive: Boolean? = true,
     val categoryId: UUID,
 )
 

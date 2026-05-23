@@ -56,8 +56,8 @@ class TopicService(
             TopicEntity(
                 name = request.name,
                 meaning = request.meaning,
-                displayOrder = request.displayOrder,
-                isActive = request.isActive,
+                displayOrder = request.displayOrder ?: 0,
+                isActive = request.isActive ?: true,
                 category = category,
             )
 

@@ -46,7 +46,8 @@ class CategoryService(
             CategoryEntity(
                 name = request.name,
                 meaning = request.meaning,
-                displayOrder = request.displayOrder,
+                displayOrder = request.displayOrder ?: 0,
+                isActive = request.isActive ?: true,
             )
 
         val savedCategory = categoryRepository.save(category)

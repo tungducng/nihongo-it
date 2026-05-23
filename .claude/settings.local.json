@@ -19,7 +19,8 @@
       "Bash(npx playwright *)",
       "Bash(docker exec *)",
       "Bash(npx tsc *)",
-      "PowerShell(Get-Process *)"
+      "PowerShell(Get-Process *)",
+      "Bash(node -e ' *)"
     ]
   }
 }

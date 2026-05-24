@@ -35,4 +35,33 @@ test.describe('12 — Admin user management', () => {
 
     await expect(page.getByText(/Đã vô hiệu hoá/i)).toBeVisible({ timeout: 10_000 })
   })
+
+  test('TC-12-02 promote throwaway user to ADMIN via detail page + revert', async ({ page }) => {
+    // Look up the userId from DB so we can navigate straight to the detail
+    // page (faster + avoids row-search flakiness).
+    const { withClient } = await import('@helpers/db')
+    const userId = await withClient('user', async (c) => {
+      const r = await c.query<{ user_id: string }>(
+        `SELECT user_id FROM users WHERE email = $1`,
+        [throwawayEmail],
+      )
+      return r.rows[0].user_id
+    })
+
+    await page.goto(`/users/${userId}`)
+    await expect(page.getByText(throwawayEmail)).toBeVisible({ timeout: 30_000 })
+
+    // Promote
+    await page.getByRole('button', { name: /Cấp Admin/i }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: /Cấp quyền/i }).click()
+    await expect(page.getByText(/Đã cấp quyền Admin/i)).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: /Thu hồi Admin/i })).toBeVisible({
+      timeout: 10_000,
+    })
+
+    // Revert
+    await page.getByRole('button', { name: /Thu hồi Admin/i }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: /Thu hồi/i }).click()
+    await expect(page.getByText(/Đã thu hồi quyền Admin/i)).toBeVisible({ timeout: 10_000 })
+  })
 })

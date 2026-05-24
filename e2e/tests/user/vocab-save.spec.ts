@@ -58,4 +58,28 @@ test.describe('13 — User vocab save/unsave', () => {
       timeout: 15_000,
     })
   })
+
+  test('TC-13-02 unsave vocabulary — bookmark icon flips back', async ({ page }) => {
+    const catName = uniqueName(CAT_PREFIX)
+    const topicName = uniqueName(TOPIC_PREFIX)
+    const term = uniqueName(VOCAB_PREFIX)
+    const cat = await createCategory(catName, 'Unsave-test cat')
+    await createTopic(topicName, 'Unsave-test topic', cat.categoryId)
+    await createVocabulary(term, 'E2E test meaning', topicName)
+
+    await page.goto('/vocabulary')
+    await page.getByPlaceholder('Nhập từ hoặc nghĩa...').fill(term)
+    const card = page.locator('a').filter({ hasText: term }).first()
+    await expect(card).toBeVisible({ timeout: 15_000 })
+
+    // Save then unsave round-trip
+    await card.getByRole('button', { name: 'Lưu từ vựng' }).click()
+    await expect(card.getByRole('button', { name: 'Bỏ lưu' })).toBeVisible({
+      timeout: 10_000,
+    })
+    await card.getByRole('button', { name: 'Bỏ lưu' }).click()
+    await expect(card.getByRole('button', { name: 'Lưu từ vựng' })).toBeVisible({
+      timeout: 10_000,
+    })
+  })
 })

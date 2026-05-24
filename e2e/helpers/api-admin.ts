@@ -1,27 +1,36 @@
 import axios, { type AxiosInstance } from 'axios'
 import { E2E_URLS, E2E_USERS } from './feature-flags'
 
-// Cached admin access token — login once per process. The BE rotation toggle
-// (APP_REFRESH_TOKEN_ROTATION_ENABLED=false in E2E mode) keeps this valid for
+// Cached access tokens — login once per process. The BE rotation toggle
+// (APP_REFRESH_TOKEN_ROTATION_ENABLED=false in E2E mode) keeps these valid for
 // the lifetime of the test run.
-let cachedToken: string | null = null
+let cachedAdminToken: string | null = null
+let cachedUserToken: string | null = null
 
-export async function adminAccessToken(): Promise<string> {
-  if (cachedToken) return cachedToken
+async function loginAs(email: string, password: string): Promise<string> {
   const resp = await axios.post<{ token: string }>(
     `${E2E_URLS.gateway}/api/v1/user/auth/login`,
-    { email: E2E_USERS.admin.email, password: E2E_USERS.admin.password },
+    { email, password },
     { withCredentials: true, validateStatus: () => true },
   )
   if (resp.status !== 200 || !resp.data.token) {
-    throw new Error(`adminAccessToken: login failed ${resp.status}`)
+    throw new Error(`loginAs ${email}: ${resp.status} ${JSON.stringify(resp.data)}`)
   }
-  cachedToken = resp.data.token
-  return cachedToken
+  return resp.data.token
 }
 
-// Build an axios instance pre-authed as admin. Use for setup/cleanup helpers
-// that bypass the FE and talk directly to the gateway.
+export async function adminAccessToken(): Promise<string> {
+  if (cachedAdminToken) return cachedAdminToken
+  cachedAdminToken = await loginAs(E2E_USERS.admin.email, E2E_USERS.admin.password)
+  return cachedAdminToken
+}
+
+export async function userAccessToken(): Promise<string> {
+  if (cachedUserToken) return cachedUserToken
+  cachedUserToken = await loginAs(E2E_USERS.user.email, E2E_USERS.user.password)
+  return cachedUserToken
+}
+
 export async function adminApi(): Promise<AxiosInstance> {
   const token = await adminAccessToken()
   return axios.create({
@@ -30,6 +39,26 @@ export async function adminApi(): Promise<AxiosInstance> {
     timeout: 15_000,
     validateStatus: () => true,
   })
+}
+
+export async function userApi(): Promise<AxiosInstance> {
+  const token = await userAccessToken()
+  return axios.create({
+    baseURL: E2E_URLS.gateway,
+    headers: { Authorization: `Bearer ${token}` },
+    timeout: 15_000,
+    validateStatus: () => true,
+  })
+}
+
+export async function createFlashcardFromVocab(vocabId: string): Promise<{ flashcardId: string }> {
+  const api = await userApi()
+  const r = await api.post(`/api/v1/learning/flashcards/vocabulary/${vocabId}`, {})
+  if (r.status >= 400) {
+    throw new Error(`createFlashcardFromVocab ${r.status}: ${JSON.stringify(r.data)}`)
+  }
+  const card = (r.data?.data ?? r.data) as { flashcardId: string }
+  return { flashcardId: card.flashcardId }
 }
 
 // === Categories ===
@@ -206,12 +235,16 @@ export async function createVocabulary(
 }
 
 export async function deleteVocabulary(vocabId: string): Promise<void> {
-  // First clean up references in saved_vocabulary + flashcards so the
-  // admin delete doesn't trip an FK constraint.
+  // FK cascade order: review_logs → flashcards → saved_vocabulary → vocab.
   const { withClient } = await import('./db')
   await withClient('learning', async (c) => {
-    await c.query(`DELETE FROM saved_vocabulary WHERE vocab_id = $1`, [vocabId])
+    await c.query(
+      `DELETE FROM review_logs WHERE flashcard_id IN
+         (SELECT flashcard_id FROM flashcards WHERE vocabulary_id = $1)`,
+      [vocabId],
+    )
     await c.query(`DELETE FROM flashcards WHERE vocabulary_id = $1`, [vocabId])
+    await c.query(`DELETE FROM saved_vocabulary WHERE vocab_id = $1`, [vocabId])
   })
   const api = await adminApi()
   const r = await api.delete(`/api/v1/learning/admin/vocabulary/${vocabId}`)

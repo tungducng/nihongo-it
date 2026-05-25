@@ -176,37 +176,269 @@ Hiện dùng `lucide-react` — giữ. Add custom set:
 
 ## 4. Feature Roadmap
 
-3 tier × 5 feature = 15 feature. Mỗi feature có **size estimate** (S/M/L), **dependency**, **success signal**.
+3 tier × 5 feature = **15 feature**. Mỗi feature: **vì sao** (problem nó giải quyết), **ý tưởng cụ thể** (implementation đề xuất), **size** (S=1d, M=2-3d, L=5-7d), **dependency**, **success signal** (đo bằng gì).
+
+---
 
 ### Tier 1 — Quick wins (target: 2 tuần)
 
-| ID | Feature | Size | Depends | Success signal |
-|---|---|---|---|---|
-| **F1** | Today Dashboard (`(app)/page.tsx`) | M | UserProgress API, brand color | DAU +20% sau 2 tuần |
-| **F2** | Streak freeze + grace | S | F1 | day-7 retention +15% |
-| **F3** | Type-to-answer flashcard mode | M | flashcards store | Avg cards/session +30% |
-| **F4** | Audio speed control + auto-replay | S | useAudioRecorder | Audio play count +50% |
-| **F5** | Furigana toggle granularity | S | typography update | Setting opt-in rate ≥40% |
+#### **F1. "Hôm nay" Dashboard** · M · depends: UserProgress API + brand color
+
+**Vì sao.** Giảm decision fatigue — đa số bỏ học vì không biết bắt đầu từ đâu. Login xong hiện đang lạc về landing page (xem §2.2).
+
+**Ý tưởng cụ thể.** Trang home mới `(app)/page.tsx`:
+- Card "Hôm nay": due flashcards (N thẻ), CTA duy nhất "Bắt đầu →" chạy chuỗi flow tự động (study → vocab mới → conversation snippet)
+- 5 từ mới gợi ý từ vocab N+1 level
+- 1 conversation snippet ngắn
+- Daily goal progress (15 phút default, configurable)
+- Streak chip 7 ngày + heatmap 30 ngày GitHub-style
+
+**Success signal.** DAU +20% sau 2 tuần. Avg time-to-first-action sau login ≤5s.
+
+---
+
+#### **F2. Streak freeze + grace period** · S · depends: F1
+
+**Vì sao.** Streak là retention driver mạnh nhất, nhưng "mất 1 ngày = mất hết" làm user demoralize và quit. Duolingo có freeze cũng vì lý do này.
+
+**Ý tưởng cụ thể.**
+- Cho phép 2 freeze/tháng (auto-claim khi miss day, không cần user click)
+- Cuối tuần streak giữ nguyên nếu user opt-in setting "Weekend rest"
+- Visualize: streak chip có icon ❄ khi freeze active, đếm freeze còn lại
+- Notification khi freeze sắp hết tháng
+
+**Success signal.** Day-7 retention +15%. Average streak length tăng từ ~3 ngày → 7+ ngày.
+
+---
+
+#### **F3. Type-to-answer flashcard mode** · M · depends: flashcards store
+
+**Vì sao.** Active recall (gõ ra) hiệu quả gấp ~2× so với passive recall (xem-rồi-rate) theo nghiên cứu của Karpicke & Roediger 2008.
+
+**Ý tưởng cụ thể.**
+- Toggle "Mode" trong study session: **Reveal** (hiện tại) | **Type** (mới)
+- Type mode: user gõ nghĩa tiếng Việt HOẶC kanji/kana
+- Fuzzy match tolerant:
+  - Hiragana ↔ Katakana (デプロイ = でぷろい)
+  - Gõ romaji được nhận (depuroi)
+  - Tolerance synonym tiếng Việt (triển khai = deploy = cài đặt sản phẩm)
+- FSRS rating tự động: correct = `Good`, wrong = `Again`, gần đúng = `Hard`
+- Settings: chọn type kanji-only / meaning-only / both
+
+**Success signal.** Avg cards/session +30%. Retention rate đo qua FSRS log sau 4 tuần (compare type-mode users vs reveal-mode users).
+
+---
+
+#### **F4. Audio speed control + auto-replay** · S · depends: useAudioRecorder
+
+**Vì sao.** TTS Japanese tốc độ chuẩn quá nhanh cho beginner. Beginner phải tua đi tua lại nhiều lần — friction cao.
+
+**Ý tưởng cụ thể.**
+- Slider speed: 0.5× / 0.75× / 1× / 1.25× / 1.5×
+- Auto-replay 2 lần khi flip card (configurable 1-5 lần)
+- Persist preference vào localStorage + UserProgress backend
+- Shortcut keyboard: `R` để replay, `[` `]` để giảm/tăng speed
+
+**Success signal.** Audio play count/session +50%. Slider/replay được dùng ≥60% session beginner.
+
+---
+
+#### **F5. Furigana toggle granularity** · S · depends: typography update (D0)
+
+**Vì sao.** All-or-nothing furigana làm khó học kanji — advanced user thấy thừa, beginner thấy thiếu.
+
+**Ý tưởng cụ thể.**
+- 3 mode global trong Profile settings:
+  - **Off** — không bao giờ hiện furigana
+  - **Smart** — chỉ hiện trên kanji ≥ JLPT-N của user (vd user N4 → hiện trên N3+ kanji)
+  - **Always** — hiện trên mọi kanji
+- Trong study session: tap-and-hold (mobile) hoặc hover (desktop) hiện furigana tạm thời, không đổi global setting
+- Backend lưu reading per-kanji để render chính xác (đã có Python NLP integration)
+
+**Success signal.** Setting opt-in rate ≥40% (user khác default). Average study completion rate +10%.
+
+---
 
 ### Tier 2 — Medium bets (target: 4-6 tuần)
 
-| ID | Feature | Size | Depends | Success signal |
-|---|---|---|---|---|
-| **F6** | AI Roleplay scenarios | L | ai-service P9.4 fix | Convs/user/week ≥3 |
-| **F7** | Pronunciation drill scored | M | Python NLP, F6 vibe | Drill completion ≥60% |
-| **F8** | Cloze trong IT context | M | seed real text corpus | Cards reviewed +25% |
-| **F9** | Smart reminder time | S | UserProgress activity log | Reminder→app open CTR +40% |
-| **F10** | Multi-facet vocab filter | S | vocabulary store | Search→study conversion +20% |
+#### **F6. AI Roleplay scenarios** · L · depends: ai-service unblock (P9.4)
+
+**Vì sao.** ai-service có sẵn nhưng đang dùng conservatively (chỉ chat đơn giản). AI roleplay là **differentiator lớn nhất** so với Duolingo/Anki — không ai làm tốt cho Japanese-IT niche.
+
+**Ý tưởng cụ thể.** 5 scenario built-in, mỗi cái 5-10 phút:
+- **Daily Standup** với sếp Yamada-buchou (báo cáo tiến độ, blocker, plan today)
+- **Code Review** với senior Tanaka-san (giải thích logic, defend choice, accept feedback)
+- **Sprint Planning** với PM Sato-san (estimate, prioritize, push back unrealistic deadline)
+- **Báo cáo lỗi sản phẩm** qua email cho khách hàng (apology + root cause + fix plan)
+- **Phỏng vấn xin việc** mock với HR Tanabe-san (giới thiệu, kinh nghiệm, hỏi văn hóa)
+
+Mỗi scenario:
+- Nhân vật có persona (tuổi, position, tính cách, expectations)
+- AI generate phản hồi theo persona, không phải robot
+- User trả lời bằng voice (STT → text) HOẶC type
+- End-of-session feedback: từ vựng sai/thiếu, ngữ pháp cần ôn, suggestion phrase chuyên nghiệp hơn
+
+**Success signal.** Conversations/user/week ≥3. Session completion ≥70%. Vocab từ scenario được added vào flashcard ≥5/user/week.
+
+---
+
+#### **F7. Pronunciation drill có chấm điểm** · M · depends: Python NLP, vibe từ F6
+
+**Vì sao.** Python NLP service (SudachiPy + pronunciation analysis) đã có nhưng chưa tận dụng — chỉ dùng cho furigana hiện tại.
+
+**Ý tưởng cụ thể.**
+- Drill mode: lấy 1 câu IT (vd "デプロイが失敗しました — Triển khai thất bại")
+- TTS đọc câu → user record giọng → service so sánh:
+  - **Mora-by-mora**: chuẩn so với recording, highlight mora sai
+  - **Pitch accent**:平板型 vs 頭高型 — visualize bằng waveform
+  - **Length** (long vs short vowel, sokuon): điểm 0-100
+- Lưu top 10 lỗi cá nhân vào `pronunciation_drill_log`
+- Weekly "Drill of the Week" — top 5 câu user sai nhiều nhất tuần
+
+**Success signal.** Drill completion ≥60%. Avg score tăng theo tuần (track per-user trend). Top-10 errors reduce ≥30% sau 4 tuần drill.
+
+---
+
+#### **F8. Cloze trong IT context thật** · M · depends: seed real text corpus
+
+**Vì sao.** Học từ rời rạc không dùng được. Cloze trong real sentence tăng recall ~1.5× và bridge gap "biết từ" → "dùng được từ".
+
+**Ý tưởng cụ thể.**
+- Crawl/curate 100-200 đoạn JP từ:
+  - Tech blog Qiita, Zenn (CC-BY license check)
+  - Stack Overflow JP QA
+  - Real error log (Sentry, Datadog) — anonymized
+  - Japanese OSS commit message
+- AI gen cloze: che 1-2 từ ở level N+1 của user
+- Mode: user fill in blank (type) hoặc multiple choice (4 lựa chọn)
+- Reading exercise + cloze = 1 module mới `/reading` (route mới)
+
+**Success signal.** Cards reviewed/week +25%. New route `/reading` có ≥30% DAU touch.
+
+---
+
+#### **F9. Smart reminder time** · S · depends: UserProgress activity log
+
+**Vì sao.** Notification 8pm cứng không match nhịp sinh hoạt — engineer làm overtime, commute time variable.
+
+**Ý tưởng cụ thể.**
+- Track 14 ngày activity: timestamp mỗi `study_session_end` event
+- Sang tuần 3, scheduled job tính:
+  - Hour có completion rate cao nhất (vd 22:15)
+  - Day-of-week pattern (weekday vs weekend)
+- Auto-điều chỉnh `reminder_time` trong UserEntity
+- UI: Profile show analytics "Bạn học hiệu quả nhất lúc 22:15, mỗi session 12 phút trung bình"
+- User vẫn override được manual
+
+**Success signal.** Reminder → app open CTR +40%. Sessions starting within 30min of reminder +60%.
+
+---
+
+#### **F10. JLPT/IT-domain multi-facet filter** · S · depends: vocabulary store + topic tag schema
+
+**Vì sao.** 5000+ từ trong DB nhưng search/filter còn yếu — chỉ filter theo topic. Engineer muốn focus, vd "chỉ học term DevOps level N3".
+
+**Ý tưởng cụ thể.**
+- Multi-select facet chip trên `/vocabulary`:
+  - **JLPT level** (N5-N1, multi)
+  - **IT domain** (backend/frontend/devops/PM/design/QA/business)
+  - **Mastery** (chưa học / đang học / đã thuộc theo FSRS state)
+- Saved filter: user save combo "DevOps N3 chưa học" → quick-access từ sidebar
+- URL stateful (share filter qua link)
+
+**Success signal.** Search → study conversion +20%. Saved filters used ≥3/user.
+
+---
 
 ### Tier 3 — Big bets (target: 2-3 tháng)
 
-| ID | Feature | Size | Depends | Success signal |
-|---|---|---|---|---|
-| **F11** | Team workspace (B2B) | L | new entity, billing | 1 paying team |
-| **F12** | Voice conversation mode | L | F6, STT, TTS streaming | Sessions ≥5min |
-| **F13** | Document → personal deck | M | SudachiPy, file upload | Decks/user ≥1 |
-| **F14** | AI mnemonic generator | M | ai-service | Mnemonic save rate ≥30% |
-| **F15** | Offline-first PWA | M | service worker | Install rate ≥10% |
+#### **F11. Cohort / Team Workspace** · L · depends: new entity + billing
+
+**Vì sao.** Sale B2B vào cty outsource Nhật. ARPU cao hơn ~10× so với individual user. Có sẵn admin app — extend cho team admin role.
+
+**Ý tưởng cụ thể.**
+- Admin tạo workspace cty (custom domain optional)
+- Invite member (email or bulk CSV)
+- Share custom deck: "Bộ từ dự án X", "Glossary nội bộ"
+- Leaderboard nội bộ tuần (opt-in privacy)
+- Slack/Teams bot daily summary: "Team studied 145 reviews, avg streak 4.2 ngày"
+- Billing: $5/user/month, min 10 user
+
+**Success signal.** 1 paying team (10+ user) trong 60 ngày sau launch. Workspace retention day-30 ≥60%.
+
+---
+
+#### **F12. Voice Conversation Mode** · L · depends: F6, STT, TTS streaming
+
+**Vì sao.** Speech recognition + TTS + AI = full immersive conversation. Closest thing đến luyện nói với native speaker.
+
+**Ý tưởng cụ thể.**
+- User nói → STT (OpenAI Whisper hoặc Azure Speech) → AI hiểu intent → AI generate reply tiếng Nhật → TTS đọc → loop
+- Recording được save (privacy: opt-in) để review pronunciation sau session
+- Mode "free conversation" (không scenario, AI làm conversation partner)
+- Pricing: usage-based với OpenAI cost — free 10 phút/tuần, paid unlimited
+- Visualize: waveform real-time, turn indicator (đến lượt bạn)
+
+**Success signal.** Sessions ≥5 phút trung bình. Conversion free → paid ≥5% trong cohort dùng feature ≥3 lần.
+
+---
+
+#### **F13. Personal Vocabulary từ Document** · M · depends: SudachiPy + file upload
+
+**Vì sao.** User thật sự có spec/email/PR description tiếng Nhật cần đọc → muốn extract vocab chưa biết để học trước khi đọc.
+
+**Ý tưởng cụ thể.**
+- Drop PDF/text/image (OCR) vào `/import`
+- SudachiPy tokenize → cross-reference với vocab user đã thuộc (FSRS state ≥ Mature)
+- Suggest cards mới chỉ cho từ chưa biết, prioritize theo frequency trong document
+- Convert document → personalized deck trong 30s
+- Optional: AI generate context sentence cho mỗi từ ("trong document của bạn, X xuất hiện trong câu Y")
+
+**Success signal.** Decks/user ≥1 sau 30 ngày. Card retention từ document-derived deck > generic deck (đo qua FSRS log).
+
+---
+
+#### **F14. AI Mnemonic Generator** · M · depends: ai-service
+
+**Vì sao.** Kanji khó nhớ. Mnemonic là technique được prove (Heisig method), nhưng generic mnemonic không match người dùng. AI có thể personalize.
+
+**Ý tưởng cụ thể.**
+- Gặp kanji khó nhớ (vd 構築 kōchiku), nút "🧠 Mnemonic" trên card
+- AI gen dựa trên kanji user đã biết:
+  > "構 (cấu trúc) + 築 (xây) = build (構築). Liên tưởng: bạn đã biết 構造 (kōzō, structure), giờ thay 造 bằng 築 (xây) = action build something."
+- Visual mnemonic (optional): AI gen 1 ASCII art hoặc emoji story
+- Lưu mnemonic vào card → hiện lại mỗi lần review
+- Community: user upvote mnemonic hay (sau Tier 1+2 stable)
+
+**Success signal.** Mnemonic save rate ≥30%. Cards có mnemonic retention rate > cards không có (FSRS log compare).
+
+---
+
+#### **F15. Offline-first PWA** · M · depends: service worker
+
+**Vì sao.** Engineer hay đi tàu/máy bay, lúc đó là **prime study time** — bị tắt mạng = mất cơ hội học.
+
+**Ý tưởng cụ thể.**
+- Service worker cache deck đến local IndexedDB (last 30 days due + saved decks)
+- Sync FSRS review_logs khi online lại (conflict resolution: latest-wins on review_timestamp)
+- Install banner cho mobile/desktop (`beforeinstallprompt`)
+- Lock-screen widget Android: streak counter + due count (Android Widget API)
+- Offline indicator UI: chip "Offline — sẽ sync sau" khi mất mạng
+
+**Success signal.** Install rate ≥10% DAU. Offline session ≥15% total sessions.
+
+---
+
+### Đề xuất ưu tiên (cá nhân — owner decide)
+
+Nếu budget 1 sprint 2 tuần (D0 + D1 + D2):
+1. **D0** Design system foundation (xem §5)
+2. **F1** Today Dashboard (base cho mọi feature engagement)
+3. **F3** Type-to-answer (quick win, retention impact rõ)
+4. **F2** Streak freeze (1 ngày code, retention impact lớn)
+5. **F4** Audio speed (1 ngày, quality-of-life)
+
+Sau 2 tuần → measure baseline metrics. Quyết Tier 2 features dựa data thật, không guess.
 
 ---
 

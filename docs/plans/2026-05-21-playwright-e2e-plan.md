@@ -564,6 +564,7 @@ description: Use when adding, debugging, or running Playwright end-to-end tests 
 | **P6** | Stabilize + Healer | Run full suite; for each failure, spawn Healer; iterate until green or escalate true regressions | 1-2 days |
 | **P7** | CI | `.github/workflows/e2e.yml` smoke + nightly | 0.5 day |
 | **P8** | Docs | Update root README + CLAUDE.md to point at the new skill | 0.25 day |
+| **P9** | Tech-debt cleanup so the stack is **production-realistic** (Flyway on, `ddl-auto=validate`) — see §16 for discoveries | 0.5 day |
 
 **Total**: ~7-10 days realistic.
 
@@ -602,3 +603,65 @@ description: Use when adding, debugging, or running Playwright end-to-end tests 
 After approval of this plan, **start with P1** (~1-2 days) which establishes the skeleton. P1 deliverables alone provide value (skeleton + seed + auth fixture + 1 smoke test) — if the project pauses there, the work isn't wasted.
 
 I do NOT recommend doing P1-P8 in one session — each phase has a clear stopping point and benefits from human review of the output before the next phase starts.
+
+---
+
+## 16. P9 — Production-realistic stack (Discoveries)
+
+Status: **done** — committed in `e629e08`. E2E baseline 48 passed / 2 skipped (gated AI) ~1.5m.
+
+Goal: remove the workarounds added during P6–P8 so the local E2E stack matches docker-compose / production. Specifically:
+- `ddl-auto=validate` (not `none`)
+- Flyway migrations run on startup (not pre-applied + `SPRING_FLYWAY_ENABLED=false`)
+- entity ↔ schema fully consistent
+
+### P9.1 — Schema-entity audit
+
+Hibernate strict `validate` mode failed for ~14 columns across 9 entities. Two patterns:
+
+1. **Kotlin non-null primitive without `nullable = false`.** Default `@Column` annotation reports nullable to Hibernate, but the Kotlin type (`Boolean`, `Int`, `Double`, `LocalDateTime`) cannot hold null. Hibernate validator therefore disagrees with the DB's `NOT NULL`. Fix: add `nullable = false` explicitly to every such `@Column` / `@JoinColumn`.
+
+2. **Tables extending `AbstractAuditEntity` missing `created_by` / `updated_by` cols.** The audit superclass declares 4 columns (`created_at`, `created_by`, `updated_at`, `updated_by`) but earlier migrations only created the timestamp pair. Fix: new migrations adding the `_by` columns:
+   - `learning-service V8__audit_columns.sql` — categories, topics, conversations, flashcards
+   - `user-service V9__audit_columns.sql` — users
+   - `notification V4__notifications_audit_columns.sql` — full quartet
+
+### P9.2 — Flyway autoconfig moved in Spring Boot 4
+
+**Discovery:** In Spring Boot 3.x, Flyway autoconfig was bundled in `spring-boot-autoconfigure.jar`. In **Spring Boot 4.0**, it was extracted into a separate `spring-boot-flyway` module. Depending only on `org.flywaydb:flyway-core` is **no longer sufficient** — Spring won't wire it up. Symptom: zero Flyway log lines on startup, no `flyway_schema_history` table created, yet no error either (silent skip).
+
+Fix (in 3 build.gradle.kts):
+```kotlin
+// before
+implementation("org.flywaydb:flyway-core")
+// after
+implementation("org.springframework.boot:spring-boot-starter-flyway")
+```
+
+The starter pulls in `spring-boot-flyway` (which contains `FlywayAutoConfiguration`) plus `flyway-core`. Keep `flyway-database-postgresql` separately.
+
+### P9.3 — Jackson + Kotlin null primitives: keep the nullable workaround
+
+Attempted to revert `Int? = 0` / `Boolean? = true` on `CreateCategoryRequest` / `CreateTopicRequest` back to non-null with defaults. Failed: admin FE form serializes `{"isActive": null}` explicitly (zod schema omits the field but axios/RHF surfaces it as null in the body). Jackson cannot map `null` into Kotlin `Boolean`, returns 400 → category create fails in E2E (`TC-07-01`, `TC-08-01`).
+
+Decision: **keep the nullable workaround in the BE DTO** with a comment explaining the contract. Cleaner than adding a custom Jackson deserializer or scrubbing nulls in an axios interceptor — the DTO layer is exactly where the FE/BE contract lives.
+
+### P9.4 — Spring AI 1.0.0 ↔ Spring Boot 4: deferred
+
+`spring-ai-starter-model-openai:1.0.0` (current pin) depends on autoconfig classes that moved between SB3 and SB4 (`RestClientAutoConfiguration` shape changed). `ai-service` therefore stays gated behind `-IncludeAI` switch; default `start-stack.ps1` skips it. All E2E tests touching AI gate on `E2E_OPENAI=1` and SKIP cleanly without the service.
+
+Unblocking requires Spring AI 1.1.x (when released) or replacing the starter with direct `RestClient` calls.
+
+### P9.5 — Verification
+
+- BE all 4 services UP with `ddl-auto=validate` (zero `SchemaManagementException`)
+- Flyway populates `flyway_schema_history` on all 3 DBs (8/9/4 rows respectively)
+- Full Playwright suite: **48 passed / 2 skipped (gated AI) / 0 failed** — same baseline as P8
+
+### What's still legacy in the E2E stack vs production
+
+- `APP_RATE_LIMIT_ENABLED=false` — kept off in E2E so the seed can hammer login. Production-default is on (docker-compose).
+- Refresh-token rotation disabled in E2E so `storageState` captured at seed remains valid across the suite. Production rotates normally.
+- `ai-service` skipped (see P9.4).
+
+These three remaining deviations are documented in `e2e/scripts/start-stack.ps1` and intentional, not debt.

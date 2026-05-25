@@ -27,9 +27,9 @@ data class UserEntity(
     @Enumerated(EnumType.STRING)
     @Column(name = "jlpt_goal")
     val jlptGoal: JlptLevel?,
-    @Column(name = "is_active")
+    @Column(name = "is_active", nullable = false)
     val isActive: Boolean = true,
-    @Column(name = "is_email_verified")
+    @Column(name = "is_email_verified", nullable = false)
     val isEmailVerified: Boolean = false,
     @Column(name = "verification_token")
     val verificationToken: String? = null,
@@ -41,7 +41,7 @@ data class UserEntity(
     val lastLogin: LocalDateTime?,
     // Learning activity stats (streak, last_study_date, points, daily_goal_minutes)
     // moved to learning-service.user_progress in P6.A.
-    @Column(name = "reminder_enabled")
+    @Column(name = "reminder_enabled", nullable = false)
     val reminderEnabled: Boolean = true,
     @Column(name = "reminder_time")
     val reminderTime: LocalTime? = LocalTime.of(20, 0),
@@ -50,7 +50,7 @@ data class UserEntity(
         name = "user_notification_preferences",
         joinColumns = [JoinColumn(name = "user_id")],
     )
-    @Column(name = "preference", length = 50)
+    @Column(name = "preference", length = 50, nullable = false)
     val notificationPreferences: MutableSet<String> = mutableSetOf("email", "app"),
     @Column(name = "min_card_threshold")
     val minCardThreshold: Int? = 5,

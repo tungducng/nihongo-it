@@ -29,10 +29,10 @@ data class VocabularyEntity(
     @Column(name = "audio_path")
     val audioPath: String?,
     @Enumerated(EnumType.STRING)
-    @Column(name = "jlpt_level")
+    @Column(name = "jlpt_level", nullable = false)
     val jlptLevel: JlptLevel,
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "topic_id")
+    @JoinColumn(name = "topic_id", nullable = false)
     val topic: TopicEntity,
     @Column(name = "created_at", columnDefinition = "TIMESTAMP")
     val createdAt: Instant? = null,

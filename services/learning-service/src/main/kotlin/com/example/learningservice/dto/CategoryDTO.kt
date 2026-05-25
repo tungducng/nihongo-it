@@ -44,9 +44,8 @@ fun CategoryEntity.toDTO(topicCount: Int? = null): CategoryDTO =
         updatedAt = this.updatedAt,
     )
 
-// Data class for creating a new category. Primitive fields are nullable so
-// Jackson can deserialize requests that omit them (clients like the admin FE
-// don't send isActive). The service treats null as the documented default.
+// Primitive fields are nullable so Jackson can deserialize requests that omit
+// or explicitly null them. Clients (admin FE) may send `isActive: null`.
 data class CreateCategoryRequest(
     val name: String,
     val meaning: String,

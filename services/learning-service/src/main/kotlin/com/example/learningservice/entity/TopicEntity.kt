@@ -15,9 +15,9 @@ data class TopicEntity(
     val name: String, // japanese name
     @Column(name = "meaning", nullable = false)
     val meaning: String, // vietnamese meaning
-    @Column(name = "display_order")
+    @Column(name = "display_order", nullable = false)
     val displayOrder: Int = 0,
-    @Column(name = "is_active")
+    @Column(name = "is_active", nullable = false)
     val isActive: Boolean = true,
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)

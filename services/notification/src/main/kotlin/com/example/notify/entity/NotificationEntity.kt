@@ -18,19 +18,19 @@ data class NotificationEntity(
     val userId: UUID,
     @Column(name = "title", nullable = false)
     val title: String,
-    @Column(name = "message", columnDefinition = "text")
+    @Column(name = "message", columnDefinition = "text", nullable = false)
     val message: String,
-    @Column(name = "type")
+    @Column(name = "type", nullable = false)
     @Enumerated(EnumType.STRING)
     val type: NotificationType,
-    @Column(name = "is_read")
+    @Column(name = "is_read", nullable = false)
     val isRead: Boolean = false,
     @Column(name = "action_url")
     val actionUrl: String? = null,
-    @Column(name = "notification_channel")
+    @Column(name = "notification_channel", nullable = false)
     @Enumerated(EnumType.STRING)
     val notificationChannel: NotificationChannel = NotificationChannel.EMAIL,
-    @Column(name = "sent_at")
+    @Column(name = "sent_at", nullable = false)
     val sentAt: LocalDateTime = LocalDateTime.now(),
     @Column(name = "read_at")
     val readAt: LocalDateTime? = null,
@@ -38,7 +38,7 @@ data class NotificationEntity(
     val reviewCount: Int? = null,
     @Column(name = "review_category")
     val reviewCategory: String? = null,
-    @Column(name = "priority_level")
+    @Column(name = "priority_level", nullable = false)
     val priorityLevel: Int = 0,
     @Column(name = "scheduled_for")
     val scheduledFor: LocalDateTime? = null,

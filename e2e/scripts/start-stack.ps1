@@ -66,17 +66,15 @@ if (-not $env:SPRING_PROFILES_ACTIVE) { $env:SPRING_PROFILES_ACTIVE = 'default' 
 $env:JAVA_TOOL_OPTIONS = '-Duser.timezone=Asia/Ho_Chi_Minh'
 $env:TZ = 'Asia/Ho_Chi_Minh'
 
-# Disable Flyway for E2E runs. Reason: Spring Boot 4 + devtools auto-restart
-# triggers JPA validate before Flyway migrations finish, breaking bootRun on
-# a fresh DB. E2E uses a one-time SQL apply (scripts/init-dbs.ps1) to bootstrap
-# the schema, then disables Flyway so the service skips its migration step.
-$env:SPRING_FLYWAY_ENABLED = 'false'
+# P9.2 — re-enable Flyway so E2E matches production. Each service runs its own
+# migrations on startup. init-dbs.ps1 only creates empty databases now; schema
+# is owned by Flyway.
+# $env:SPRING_FLYWAY_ENABLED = 'false'
 
-# Skip Hibernate schema validation for E2E. The pre-applied migrations match the
-# entity layout closely enough for runtime; strict validation flags edge cases
-# (NOT NULL with no @Column(nullable=false) annotation, etc.) that don't affect
-# functional tests. Production keeps ddl-auto=validate via docker compose.
-$env:SPRING_JPA_HIBERNATE_DDL_AUTO = 'none'
+# P9.1 — production-realistic: re-enable Hibernate schema validation
+# (matches the docker compose / production setup). Comment back out only if a
+# real entity-schema mismatch is discovered and can't be fixed locally.
+# $env:SPRING_JPA_HIBERNATE_DDL_AUTO = 'none'
 
 # Disable rate limiting for E2E. Production keeps the default (true) via docker.
 $env:APP_RATE_LIMIT_ENABLED = 'false'

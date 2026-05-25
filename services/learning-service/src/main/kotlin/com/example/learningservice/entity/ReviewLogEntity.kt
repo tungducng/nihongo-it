@@ -15,20 +15,20 @@ data class ReviewLogEntity(
     @Column(name = "review_log_id", updatable = false, nullable = false)
     val reviewLogId: UUID? = null,
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "flashcard_id")
+    @JoinColumn(name = "flashcard_id", nullable = false)
     val flashcard: FlashcardEntity,
-    @Column(name = "user_id")
+    @Column(name = "user_id", nullable = false)
     val userId: UUID,
-    @Column(name = "rating")
+    @Column(name = "rating", nullable = false)
     val rating: Int, // 1-4 scale (Again, Hard, Good, Easy)
-    @Column(name = "scheduled_days")
+    @Column(name = "scheduled_days", nullable = false)
     val scheduledDays: Double, // Days scheduled for next review
-    @Column(name = "elapsed_days")
+    @Column(name = "elapsed_days", nullable = false)
     val elapsedDays: Double, // Days elapsed since due date
-    @Column(name = "review_timestamp")
+    @Column(name = "review_timestamp", nullable = false)
     val reviewTimestamp: LocalDateTime = LocalDateTime.now(), // When the review happened
-    @Column(name = "state")
+    @Column(name = "state", nullable = false)
     val state: Int, // Card state when reviewed (0=New, 1=Learning, 2=Review, 3=Relearning)
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     val createdAt: LocalDateTime = LocalDateTime.now(),
 )

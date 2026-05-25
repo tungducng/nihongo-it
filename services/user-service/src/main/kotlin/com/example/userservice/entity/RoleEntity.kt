@@ -6,9 +6,9 @@ import jakarta.persistence.*
 @Table(name = "roles")
 data class RoleEntity(
     @Id
-    @Column(name = "role_id")
+    @Column(name = "role_id", nullable = false)
     val roleId: Int,
-    @Column(name = "role_name", length = 20)
+    @Column(name = "role_name", length = 20, nullable = false)
     val roleName: String,
 ) {
     companion object {

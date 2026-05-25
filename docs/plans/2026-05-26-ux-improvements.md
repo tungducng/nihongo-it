@@ -639,6 +639,102 @@ Không recommend làm D0-D5 trong 1 stretch. Mỗi phase có giá trị độc l
 
 ---
 
+## 13. Autonomous Design → Implement → Verify Workflow
+
+User chỉ review async qua PNG/diff trong git. Mỗi feature đi qua 4 stage, tất cả output commit vào repo để review không cần re-engage chat.
+
+### 13.1 Stage A — Design mockup (HTML + screenshot)
+
+```
+docs/mockups/<NN>-<feature>/
+  ├── design.html       ← standalone HTML, Tailwind 4 CDN + brand palette + Noto Sans JP
+  ├── design.png        ← screenshot 1440×900 từ design.html
+  ├── design-mobile.png ← screenshot 375×812 cho mobile preview
+  └── notes.md          ← rationale, edge cases, copy/spec
+```
+
+**Quy ước:**
+- HTML self-contained, không cần build step. Mở file → render đúng production look.
+- Dùng exact palette (Option A) + Inter + Noto Sans JP via Google Fonts CDN.
+- Component primitive copy shadcn class signature (`bg-card`, `text-muted-foreground`, etc.) — sau migrate sang Next.js dễ.
+- Screenshot tự động qua `npx playwright screenshot file:///path/to/design.html design.png --viewport-size=1440,900 --wait-for-timeout=500`.
+
+### 13.2 Stage B — Implement trong Next.js
+
+- Migrate markup từ `design.html` → React component thật trong `frontend-user/src/`
+- Hook up data: stores, services, hooks hiện có
+- Compile clean: `npm run type-check && npm run lint && npm run build` PASS
+- Existing E2E suite (50 test) phải STAY GREEN — nếu phá test cũ là regression, fix trước khi tiếp.
+
+### 13.3 Stage C — E2E coverage cho feature mới
+
+- Spawn `playwright-test-planner` agent → spec `e2e/specs/<NN>-<feature>.md`
+- Spawn `playwright-test-generator` agent → `e2e/tests/.../<NN>-<feature>.spec.ts`
+- Chạy full suite — feature mới phải pass, baseline 50 vẫn green.
+
+### 13.4 Stage D — Screenshot implementation (LIVE app)
+
+Chạy stack thật, screenshot live UI sau khi land code:
+
+```
+docs/mockups/<NN>-<feature>/
+  ├── impl.png         ← screenshot LIVE app, cùng viewport 1440×900
+  └── impl-mobile.png  ← cùng 375×812
+```
+
+Script `e2e/scripts/screenshot-features.ts` — list (route, viewport, output) → loop:
+1. Login via storageState
+2. Navigate route
+3. `page.screenshot({path, fullPage: true})`
+
+Commit cả 2 PNG (`design.png` + `impl.png`) → user review side-by-side trong git diff GitHub UI.
+
+### 13.5 Stage E — Review (async, user-side)
+
+User pull → mở `docs/mockups/<NN>-<feature>/`:
+- Compare `design.png` vs `impl.png` → drift acceptable?
+- Đọc `notes.md` → có miss edge case nào?
+- Comment qua git issue HOẶC paste path vào chat next session
+
+Nếu approve: feature merge thẳng vào main (đã có E2E coverage).
+Nếu reject: agent fix theo comment, re-run B+C+D, push update.
+
+### 13.6 Commit convention
+
+Mỗi feature 4 commit (hoặc gộp 2-2):
+
+```
+1. design(F1): mockup HTML + screenshot for Today Dashboard
+2. feat(fe): F1 Today Dashboard implementation
+3. test(e2e): F1 — Today Dashboard 5 test cases (login → dashboard → CTA)
+4. design(F1): impl screenshot — ready for review
+```
+
+### 13.7 Halt conditions
+
+Agent tự dừng và escalate khi:
+- Existing 50 E2E test bị phá và không thể auto-fix qua Healer agent → comment fail reason
+- Type-check / lint / build fail sau 2 lần retry
+- Mockup HTML render khác mạnh impl (>30% layout drift) → cần user decide kéo theo hướng nào
+- Feature đụng schema thay đổi DB → cần migration → cần human approval (1 commit `db(F1)` riêng)
+
+### 13.8 Scope khi chạy autonomous
+
+Chạy được full autonomous **Tier 1 (F1-F5)** vì:
+- Không thay schema DB (chỉ thêm read endpoint nếu cần)
+- Có sẵn entity UserProgress backend
+- shadcn primitive đủ build UI
+- Existing E2E pattern cover được
+
+**Tier 2 (F6-F10)** cần human checkpoint vì:
+- F6 AI Roleplay đụng P9.4 (Spring AI compat) — cần decide BOM/replace
+- F8 cần crawl/curate text corpus có quyết định legal (CC license)
+- F9 cần thay schema (`app_event` table) — migration approval
+
+**Tier 3 (F11-F15)** không autonomous — quá nhiều business decision.
+
+---
+
 ## 12. Reference
 
 - FSRS visualization patterns: https://github.com/open-spaced-repetition/fsrs4anki

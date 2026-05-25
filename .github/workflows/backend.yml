@@ -87,7 +87,7 @@ jobs:
 
       - name: Post coverage comment on PR
         if: github.event_name == 'pull_request' && always()
-        uses: madrapps/jacoco-report@v1.7.1
+        uses: madrapps/jacoco-report@v1.7.2
         continue-on-error: true
         with:
           paths: services/${{ matrix.service }}/build/reports/jacoco/test/jacocoTestReport.xml

@@ -93,12 +93,13 @@ nihongo-it/
 
 1. **Common module**: Reuse `BusinessException`, `GlobalExceptionHandler`, `ErrorResponseDto`, `GatewayHeaderAuthFilter`, `JwtAuthenticationEntryPoint`, `AbstractAuditEntity`, `AuditConfig`, `AuthenticationUtils` from `services/common/`. Do NOT copy-paste them into individual services.
 2. **Auth**: Services do NOT validate JWTs — the gateway has already done that and injected `X-User-Id`, `X-Role`, `X-Email` headers. Services read them via `GatewayHeaderAuthFilter`. Inside business code, prefer `AuthenticationUtils.currentUserId()` (returns the user-id string) or `currentUserUuid()` over inlined `SecurityContextHolder` reads.
-3. **New entities**: extend `com.example.common.entity.AbstractAuditEntity` to get `created_at` / `created_by` / `updated_at` / `updated_by` auto-populated (Spring Data JPA auditing via `AuditConfig`; `AuditorAware` returns the gateway-injected user id). Tables only need the four columns; the listener handles the rest.
-3. **Error response**: Throw `BusinessException(code, message, status)` — the centralized handler formats `ErrorResponseDto`. Do not return ad-hoc `ResponseEntity.badRequest()`.
-4. **Logging**: Structured JSON (Logstash encoder) + correlation ID. Do NOT use `println` or `System.err.println`.
-5. **Migrations**: Flyway under `src/main/resources/db/migration/V{version}__{name}.sql`. Versions increment; NEVER edit a migration that has already been merged.
-6. **CORS**: `app.cors.allowed-origins` default covers `localhost:3000` (user) + `localhost:3002` (admin). Set `CORS_ALLOWED_ORIGINS` env var in staging/prod for real domains.
-7. **Frontend URL for emails**: `APP_FRONTEND_URL` env var (default `http://localhost:3000`) is used by `NotificationService` to build email action links (verify-email, reset-password, disable-notifications, study-reminder). MUST point at `frontend-user`.
+3. **New entities**: extend `com.example.common.entity.AbstractAuditEntity` to get `created_at` / `created_by` / `updated_at` / `updated_by` auto-populated (Spring Data JPA auditing via `AuditConfig`; `AuditorAware` returns the gateway-injected user id). **All 4 columns must exist in the DB** — the listener writes to all of them and `ddl-auto=validate` (the default) will refuse to start the service if any are missing. Write the migration for `_at` AND `_by` together.
+4. **Kotlin non-null primitives on entity columns**: Spring Boot's strict `ddl-auto=validate` does NOT infer NOT NULL from a Kotlin `Boolean` / `Int` / `Double` / `LocalDateTime` field. Add `@Column(name = "...", nullable = false)` (or `@JoinColumn(..., nullable = false)`) explicitly, or the service won't start. Nullable Kotlin types (`String?`, `Int?`) on `@Column` defaults work as expected.
+5. **Error response**: Throw `BusinessException(code, message, status)` — the centralized handler formats `ErrorResponseDto`. Do not return ad-hoc `ResponseEntity.badRequest()`.
+6. **Logging**: Structured JSON (Logstash encoder) + correlation ID. Do NOT use `println` or `System.err.println`.
+7. **Migrations**: Flyway under `src/main/resources/db/migration/V{version}__{name}.sql`. Versions increment; NEVER edit a migration that has already been merged. **Spring Boot 4 requires `org.springframework.boot:spring-boot-starter-flyway`** in `build.gradle.kts` — the autoconfig was extracted out of `spring-boot-autoconfigure` in SB4. Adding only `org.flywaydb:flyway-core` results in Flyway silently NOT running (no logs, no `flyway_schema_history` table, no error).
+8. **CORS**: `app.cors.allowed-origins` default covers `localhost:3000` (user) + `localhost:3002` (admin). Set `CORS_ALLOWED_ORIGINS` env var in staging/prod for real domains.
+9. **Frontend URL for emails**: `APP_FRONTEND_URL` env var (default `http://localhost:3000`) is used by `NotificationService` to build email action links (verify-email, reset-password, disable-notifications, study-reminder). MUST point at `frontend-user`.
 
 ## Daily workflow
 

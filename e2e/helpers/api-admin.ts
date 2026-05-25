@@ -169,6 +169,60 @@ export function uniqueName(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 }
 
+// === Conversations ===
+
+export interface ConversationDto {
+  conversationId: string
+  title: string
+  description?: string
+  jlptLevel?: string
+  unit?: number
+}
+
+export async function listConversations(): Promise<ConversationDto[]> {
+  const api = await adminApi()
+  const r = await api.get<{ content: ConversationDto[] }>(
+    '/api/v1/learning/admin/conversations?page=0&size=100',
+  )
+  if (r.status >= 400) throw new Error(`listConversations ${r.status}`)
+  return r.data.content ?? []
+}
+
+export async function createConversation(
+  title: string,
+  description = 'E2E created',
+  jlptLevel: 'N1' | 'N2' | 'N3' | 'N4' | 'N5' = 'N5',
+): Promise<ConversationDto> {
+  const api = await adminApi()
+  // The BE CreateConversationRequest requires `lines: []` (non-null List).
+  const r = await api.post<ConversationDto>('/api/v1/learning/admin/conversations', {
+    title,
+    description,
+    jlptLevel,
+    unit: 0,
+    lines: [],
+  })
+  if (r.status >= 400) {
+    throw new Error(`createConversation ${r.status}: ${JSON.stringify(r.data)}`)
+  }
+  return r.data
+}
+
+export async function deleteConversation(conversationId: string): Promise<void> {
+  const api = await adminApi()
+  const r = await api.delete(`/api/v1/learning/admin/conversations/${conversationId}`)
+  if (r.status >= 400 && r.status !== 404) {
+    throw new Error(`deleteConversation ${r.status}`)
+  }
+}
+
+export async function deleteConversationsByPrefix(prefix: string): Promise<void> {
+  const items = await listConversations()
+  for (const c of items.filter((x) => x.title.startsWith(prefix))) {
+    await deleteConversation(c.conversationId)
+  }
+}
+
 // === Throwaway users (for admin user-management tests) ===
 
 export async function createThrowawayUser(email: string, password: string, fullName: string): Promise<string> {

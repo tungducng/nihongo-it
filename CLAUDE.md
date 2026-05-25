@@ -25,8 +25,11 @@ Modular skills hold layer-specific best practices. When working with:
 | Backend Kotlin service (controller, exception, security) | `backend-microservice` |
 | Build verification, running tests, gradle/npm workflow | `build-and-verify` |
 | End-to-end feature spanning BE + FE | `feature-implementation-workflow` |
+| Playwright E2E — adding tests, debugging failures, running the stack | `playwright-e2e` |
 
 Skills live at `.claude/skills/<name>/SKILL.md`. Invoke them via the `Skill` tool.
+
+The Playwright work also ships a 3-agent flow in `.claude/agents/`: `playwright-test-planner` (explores app, writes Markdown specs), `playwright-test-generator` (spec → `.spec.ts`), `playwright-test-healer` (diagnoses failures, auto-fixes selector/timing drift). See `docs/plans/2026-05-21-playwright-e2e-plan.md` for the full design.
 
 > **Note on frontend skills:** The previous `frontend-conventions`, `frontend-state-management`, `frontend-composables`, `frontend-router-auth`, `frontend-error-handling` skills were Vue/Pinia/Vuetify-specific and were removed when the frontend was rewritten to Next.js. Patterns for the new stack live inline in this document below — keep it that way until enough Next.js-specific quirks accumulate to warrant a dedicated skill.
 

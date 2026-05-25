@@ -20,7 +20,11 @@
       "Bash(docker exec *)",
       "Bash(npx tsc *)",
       "PowerShell(Get-Process *)",
-      "Bash(node -e ' *)"
+      "Bash(node -e ' *)",
+      "Bash(curl -sS -o /dev/null -w \"gateway: %{http_code} | fe: \" http://localhost:8080/actuator/health)",
+      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

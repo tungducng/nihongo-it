@@ -1,0 +1,31 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tone {
+    border-radius: 10px;
+    padding: 14px;
+    display: flex; flex-direction: column; gap: 6px;
+    min-height: 90px;
+    border: 1px solid var(--border);
+  }
+  .tone .swatch-dot { width: 28px; height: 28px; border-radius: 8px; }
+  .tone .name { font: 600 13px var(--font-sans); color: var(--washi-800); }
+  .tone .var { font: 500 10px var(--font-mono); color: var(--washi-500); }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Semantic state colours</div>
+    <div class="meta">success · warning · danger · info</div>
+  </div>
+  <div class="grid">
+    <div class="tone"><div class="swatch-dot" style="background:var(--success)"></div><div class="name">Success</div><div class="var">--success</div></div>
+    <div class="tone"><div class="swatch-dot" style="background:var(--warning)"></div><div class="name">Warning</div><div class="var">--warning</div></div>
+    <div class="tone"><div class="swatch-dot" style="background:var(--danger)"></div><div class="name">Danger</div><div class="var">--danger</div></div>
+    <div class="tone"><div class="swatch-dot" style="background:var(--info)"></div><div class="name">Info</div><div class="var">--info (= ai-500)</div></div>
+  </div>
+  <p style="margin-top: 12px; font: 400 12px/18px var(--font-sans); color: var(--washi-500);">Use 15% tinted backgrounds with the saturated base as foreground for chips. Info ≡ primary; the system intentionally collapses brand and informational tones.</p>
+</body></html>

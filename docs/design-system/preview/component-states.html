@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; }
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .col { display: flex; flex-direction: column; gap: 8px; }
+  .col .lbl { font: 500 10px var(--font-mono); color: var(--washi-500); text-transform: uppercase; letter-spacing: 0.06em;}
+  .btn {
+    height: 34px; padding: 0 14px; border-radius: 8px;
+    font: 500 14px var(--font-sans); display: inline-flex; align-items: center; justify-content: center;
+    background: var(--ai-500); color: #fff; border: 1px solid transparent;
+  }
+  .btn.hover { background: var(--ai-600); }
+  .btn.press { background: var(--ai-700); transform: translateY(1px); }
+  .btn.focus { box-shadow: var(--shadow-focus); border-color: var(--ai-400); }
+  .row { display: flex; flex-direction: column; gap: 6px; }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Interaction states</div>
+    <div class="meta">rest · hover · press · focus</div>
+  </div>
+  <div class="grid">
+    <div class="col">
+      <div class="lbl">REST</div>
+      <button class="btn">Lưu</button>
+      <div style="font: 400 11px/1.5 var(--font-mono); color: var(--washi-500);">--ai-500</div>
+    </div>
+    <div class="col">
+      <div class="lbl">HOVER</div>
+      <button class="btn hover">Lưu</button>
+      <div style="font: 400 11px/1.5 var(--font-mono); color: var(--washi-500);">→ --ai-600<br>120ms ease-out</div>
+    </div>
+    <div class="col">
+      <div class="lbl">PRESS</div>
+      <button class="btn press">Lưu</button>
+      <div style="font: 400 11px/1.5 var(--font-mono); color: var(--washi-500);">→ --ai-700<br>translateY(1px)</div>
+    </div>
+    <div class="col">
+      <div class="lbl">FOCUS</div>
+      <button class="btn focus">Lưu</button>
+      <div style="font: 400 11px/1.5 var(--font-mono); color: var(--washi-500);">3px ai-500/25%<br>visible on keyboard</div>
+    </div>
+  </div>
+</body></html>

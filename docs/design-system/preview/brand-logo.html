@@ -1,0 +1,29 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  body { width: 700px; padding: 0; }
+  .card { display: flex; align-items: center; gap: 28px; padding: 28px 32px; background: var(--washi-100); border-radius: 12px; }
+  .mark-wrap { display: flex; flex-direction: column; gap: 10px; }
+  .mark-box { width: 88px; height: 88px; border-radius: 14px; display:flex; align-items:center; justify-content:center; font-family: var(--font-jp-serif); font-weight: 700; font-size: 60px; color: #fff7f1; }
+  .mark-shu { background: var(--shu-500); }
+  .mark-ai { background: var(--ai-500); color: var(--washi-50); }
+  .word { display: flex; flex-direction: column; gap: 6px; }
+  .wordmark { font: 700 38px var(--font-sans); letter-spacing: -0.025em; color: var(--washi-900); }
+  .wordmark .it { color: var(--ai-500); margin-left: 6px; }
+  .tagline { font: 600 11px var(--font-sans); letter-spacing: 0.18em; text-transform: uppercase; color: var(--washi-500); }
+  .tagline .jp { font-family: var(--font-jp); letter-spacing: 0.05em; text-transform: none; }
+</style></head>
+<body>
+  <div class="card">
+    <div class="mark-wrap">
+      <div class="mark-box mark-shu">日</div>
+    </div>
+    <div class="word">
+      <div class="wordmark">Nihongo<span class="it">IT</span></div>
+      <div class="tagline"><span class="jp">日本語 × エンジニア</span> &nbsp;·&nbsp; for IT professionals</div>
+    </div>
+    <div style="margin-left:auto;">
+      <div class="mark-box mark-ai">日</div>
+    </div>
+  </div>
+</body></html>

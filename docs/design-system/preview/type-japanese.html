@@ -1,0 +1,32 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; min-height: 140px; display:flex; flex-direction:column; justify-content:center; align-items:center; gap: 12px; text-align:center; }
+  .card .label { color: var(--washi-500); font: 500 10px var(--font-mono); }
+  .jp-display { font-family: var(--font-jp-serif); font-weight: 500; line-height: 1.05; color: var(--washi-800); letter-spacing: -0.005em; }
+  ruby { display: inline-block; }
+  ruby rt { font-size: 0.45em; color: var(--washi-500); font-weight: 400; }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Japanese display & furigana</div>
+    <div class="meta">--jp-display · Noto Serif JP · ruby/rt</div>
+  </div>
+  <div class="grid">
+    <div class="card">
+      <div class="label">FLASHCARD FRONT · 64px</div>
+      <div class="jp-display" style="font-size: 64px;">会議</div>
+    </div>
+    <div class="card">
+      <div class="label">VOCAB DETAIL · WITH FURIGANA</div>
+      <div class="jp-display" style="font-size: 56px;">
+        <ruby>会議<rt>かいぎ</rt></ruby>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top: 12px; font: 400 12px/18px var(--font-sans); color: var(--washi-500);">Use Noto Serif JP for Japanese on big surfaces (flashcards, vocab headers). Furigana ride above the kanji at 0.45em in <code style="font-family:var(--font-mono); font-size:11px">--washi-500</code>.</p>
+</body></html>

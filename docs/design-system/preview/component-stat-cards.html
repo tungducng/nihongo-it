@@ -1,0 +1,56 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; background: var(--washi-100); }
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .lbl { font: 500 10px var(--font-sans); text-transform: uppercase; letter-spacing: 0.04em; color: var(--washi-500); }
+  .val { font: 600 26px var(--font-sans); color: var(--washi-900); margin-top: 6px; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+  .ic { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; }
+  .ic.p { color: var(--ai-500); }
+  .ic.g { color: var(--success); }
+  .ic.a { color: var(--warning); }
+  .ic.r { color: var(--jlpt-n1); }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Dashboard stat cards</div>
+    <div class="meta">DashboardClient.tsx — neutral card + accent icon</div>
+  </div>
+  <div class="grid">
+    <div class="stat">
+      <div>
+        <div class="lbl">Tổng người dùng</div>
+        <div class="val">2,847</div>
+      </div>
+      <div class="ic p"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+    </div>
+    <div class="stat">
+      <div>
+        <div class="lbl">Từ vựng</div>
+        <div class="val">1,204</div>
+      </div>
+      <div class="ic g"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+    </div>
+    <div class="stat">
+      <div>
+        <div class="lbl">Danh mục</div>
+        <div class="val">28</div>
+      </div>
+      <div class="ic a"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M9 9h8"/><path d="M9 15h5"/></svg></div>
+    </div>
+    <div class="stat">
+      <div>
+        <div class="lbl">Chủ đề</div>
+        <div class="val">142</div>
+      </div>
+      <div class="ic r"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.2"/></svg></div>
+    </div>
+  </div>
+</body></html>

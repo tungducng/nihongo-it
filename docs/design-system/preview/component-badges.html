@@ -1,0 +1,54 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; }
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .label { font: 500 11px var(--font-mono); color: var(--washi-500); min-width: 70px; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    height: 22px; padding: 0 9px; border-radius: 999px;
+    font: 600 11px var(--font-sans);
+  }
+  .badge-secondary { background: var(--washi-200); color: var(--washi-800); }
+  .badge-outline   { background: transparent; color: var(--washi-700); border: 1px solid var(--border); }
+  .jlpt-n5 { background: oklch(from var(--jlpt-n5) l c h / 14%); color: oklch(from var(--jlpt-n5) calc(l - 0.20) c h); }
+  .jlpt-n4 { background: oklch(from var(--jlpt-n4) l c h / 14%); color: oklch(from var(--jlpt-n4) calc(l - 0.20) c h); }
+  .jlpt-n3 { background: oklch(from var(--jlpt-n3) l c h / 16%); color: oklch(from var(--jlpt-n3) calc(l - 0.24) c h); }
+  .jlpt-n2 { background: oklch(from var(--jlpt-n2) l c h / 14%); color: oklch(from var(--jlpt-n2) calc(l - 0.20) c h); }
+  .jlpt-n1 { background: oklch(from var(--jlpt-n1) l c h / 14%); color: oklch(from var(--jlpt-n1) calc(l - 0.16) c h); }
+  .badge-success { background: oklch(from var(--success) l c h / 14%); color: oklch(from var(--success) calc(l - 0.18) c h); }
+  .badge-warn { background: oklch(from var(--warning) l c h / 18%); color: oklch(from var(--warning) calc(l - 0.24) c h); }
+  .badge-danger { background: oklch(from var(--danger) l c h / 14%); color: var(--danger); }
+  .dot { width: 6px; height: 6px; border-radius: 999px; background: currentColor; }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Badges & JLPT chips</div>
+    <div class="meta">JLPT N1–N5 · secondary · outline · states</div>
+  </div>
+
+  <div class="row">
+    <div class="label">JLPT</div>
+    <span class="badge jlpt-n5">N5</span>
+    <span class="badge jlpt-n4">N4</span>
+    <span class="badge jlpt-n3">N3</span>
+    <span class="badge jlpt-n2">N2</span>
+    <span class="badge jlpt-n1">N1</span>
+  </div>
+  <div class="row">
+    <div class="label">Neutral</div>
+    <span class="badge badge-secondary">Bài 3</span>
+    <span class="badge badge-outline">IT cơ bản</span>
+    <span class="badge badge-outline">Bảo mật</span>
+    <span class="badge badge-secondary">12 từ</span>
+  </div>
+  <div class="row">
+    <div class="label">State</div>
+    <span class="badge badge-success"><span class="dot"></span>Đã thuộc</span>
+    <span class="badge badge-warn"><span class="dot"></span>Cần ôn</span>
+    <span class="badge badge-danger"><span class="dot"></span>Quên</span>
+  </div>
+</body></html>

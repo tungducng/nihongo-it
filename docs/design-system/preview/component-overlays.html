@@ -1,0 +1,65 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; background: var(--washi-100); }
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .stage { display: flex; gap: 16px; align-items: flex-start; }
+  .menu {
+    background: var(--popover); border: 1px solid var(--border); border-radius: 10px;
+    padding: 6px; min-width: 220px; box-shadow: var(--shadow-lg);
+  }
+  .menu .label { padding: 8px 10px; display: flex; flex-direction: column; gap: 1px; }
+  .menu .label .n { font: 500 13px var(--font-sans); color: var(--washi-800); }
+  .menu .label .e { font: 400 11px var(--font-sans); color: var(--washi-500); }
+  .sep { height: 1px; background: var(--border); margin: 4px 2px; }
+  .mi { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 6px; font: 400 13px var(--font-sans); color: var(--washi-800); cursor: pointer; }
+  .mi:hover { background: var(--washi-100); }
+  .mi.danger { color: var(--danger); }
+  .mi .ic { color: var(--washi-500); }
+  .mi.danger .ic { color: var(--danger); }
+
+  .toast {
+    display: flex; gap: 10px; align-items: flex-start;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 14px; box-shadow: var(--shadow-md); width: 280px;
+  }
+  .toast .ic { width: 18px; height: 18px; flex-shrink: 0; }
+  .toast .body .t { font: 600 13px var(--font-sans); color: var(--washi-800); }
+  .toast .body .d { font: 400 12px var(--font-sans); color: var(--washi-500); margin-top: 1px; }
+  .toast.success .ic { color: var(--success); }
+  .toast.error .ic { color: var(--danger); }
+  .toasts { display: flex; flex-direction: column; gap: 10px; }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Overlays — dropdown & toast</div>
+    <div class="meta">Radix dropdown-menu · sonner</div>
+  </div>
+  <div class="stage">
+    <div class="menu">
+      <div class="label">
+        <div class="n">Hoàng Văn Anh</div>
+        <div class="e">hoa@nihongo-it.vn</div>
+      </div>
+      <div class="sep"></div>
+      <div class="mi"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>Hồ sơ</div>
+      <div class="mi"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg></span>Cài đặt</div>
+      <div class="mi"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>Đổi mật khẩu</div>
+      <div class="sep"></div>
+      <div class="mi danger"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg></span>Đăng xuất</div>
+    </div>
+
+    <div class="toasts">
+      <div class="toast success">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg></span>
+        <div class="body"><div class="t">Đăng nhập thành công</div><div class="d">Chào mừng quay lại.</div></div>
+      </div>
+      <div class="toast error">
+        <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span>
+        <div class="body"><div class="t">Không tải được từ vựng</div><div class="d">Kiểm tra kết nối mạng.</div></div>
+      </div>
+    </div>
+  </div>
+</body></html>

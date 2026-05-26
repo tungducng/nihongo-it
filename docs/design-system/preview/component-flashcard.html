@@ -1,0 +1,45 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; background: var(--washi-100); }
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .flash {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    height: 200px; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 18px; box-shadow: var(--shadow-sm);
+  }
+  .term { font-family: var(--font-jp-serif); font-weight: 500; font-size: 56px; color: var(--washi-900); letter-spacing: -0.005em; }
+  .hint { font: 400 11px var(--font-mono); color: var(--washi-500); display: flex; align-items: center; gap: 6px; }
+  .rating { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 14px; }
+  .r-btn {
+    height: 38px; border-radius: 10px; font: 600 13px var(--font-sans); cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    border: 1px solid;
+  }
+  .r-btn .k { font: 500 10px var(--font-mono); opacity: 0.7; line-height: 1; }
+  .again { background: oklch(from var(--jlpt-n1) l c h / 12%); border-color: oklch(from var(--jlpt-n1) l c h / 30%); color: oklch(from var(--jlpt-n1) calc(l - 0.16) c h); }
+  .hard  { background: oklch(from var(--jlpt-n3) l c h / 14%); border-color: oklch(from var(--jlpt-n3) l c h / 35%); color: oklch(from var(--jlpt-n3) calc(l - 0.24) c h); }
+  .good  { background: oklch(from var(--jlpt-n4) l c h / 12%); border-color: oklch(from var(--jlpt-n4) l c h / 30%); color: oklch(from var(--jlpt-n4) calc(l - 0.20) c h); }
+  .easy  { background: oklch(from var(--jlpt-n5) l c h / 12%); border-color: oklch(from var(--jlpt-n5) l c h / 30%); color: oklch(from var(--jlpt-n5) calc(l - 0.20) c h); }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Flashcard — front & SRS rating</div>
+    <div class="meta">FlashcardReview.tsx · RatingButtons.tsx</div>
+  </div>
+  <div class="flash">
+    <div class="term">会議</div>
+    <div class="hint">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      Bấm để lật
+    </div>
+  </div>
+  <div class="rating">
+    <button class="r-btn again">Quên<span class="k">1</span></button>
+    <button class="r-btn hard">Khó<span class="k">2</span></button>
+    <button class="r-btn good">Tốt<span class="k">3</span></button>
+    <button class="r-btn easy">Dễ<span class="k">4</span></button>
+  </div>
+</body></html>

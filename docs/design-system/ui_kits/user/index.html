@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <title>Nihongo IT — User UI Kit</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="../../colors_and_type.css">
+  <link rel="stylesheet" href="kit.css">
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="ui-primitives.jsx"></script>
+  <script type="text/babel" src="mock-data.jsx"></script>
+  <script type="text/babel" src="Header.jsx"></script>
+  <script type="text/babel" src="LoginScreen.jsx"></script>
+  <script type="text/babel" src="VocabularyScreen.jsx"></script>
+  <script type="text/babel" src="VocabularyDetail.jsx"></script>
+  <script type="text/babel" src="FlashcardScreen.jsx"></script>
+  <script type="text/babel" src="ConversationScreen.jsx"></script>
+  <script type="text/babel" src="StatisticsScreen.jsx"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="react">
+    function App() {
+      const [user, setUser] = React.useState(null);
+      const [screen, setScreen] = React.useState('vocabulary'); // 'vocabulary' | 'conversation' | 'flashcards' | 'statistics' | 'detail'
+      const [detailItem, setDetailItem] = React.useState(null);
+
+      if (!user) return <LoginScreen onLogin={u => setUser(u)} />;
+
+      function navigate(target) {
+        if (target === 'home') { setScreen('vocabulary'); return; }
+        setScreen(target);
+        setDetailItem(null);
+      }
+
+      function openVocabDetail(id) {
+        const item = window.MOCK.VOCAB.find(v => v.id === id);
+        setDetailItem(item);
+        setScreen('detail');
+      }
+
+      function toggleSaveDetail(id) {
+        setDetailItem(it => ({ ...it, saved: !it.saved }));
+        const idx = window.MOCK.VOCAB.findIndex(v => v.id === id);
+        if (idx >= 0) window.MOCK.VOCAB[idx].saved = !window.MOCK.VOCAB[idx].saved;
+      }
+
+      const headerActive = screen === 'detail' ? 'vocabulary' : screen;
+
+      return (
+        <div className="nh-app">
+          <Header
+            active={headerActive}
+            user={user}
+            onNavigate={navigate}
+            onLogout={() => setUser(null)}
+          />
+          <main className="nh-main">
+            {screen === 'vocabulary'   && <VocabularyScreen onOpenDetail={openVocabDetail}/>}
+            {screen === 'detail'       && <VocabularyDetail item={detailItem} onBack={() => setScreen('vocabulary')} onToggleSave={toggleSaveDetail}/>}
+            {screen === 'conversation' && <ConversationScreen/>}
+            {screen === 'flashcards'   && <FlashcardScreen/>}
+            {screen === 'statistics'   && <StatisticsScreen/>}
+          </main>
+        </div>
+      );
+    }
+
+    // Wait one tick so the deferred Babel scripts finish before mounting
+    requestAnimationFrame(() => {
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    });
+  </script>
+</body>
+</html>

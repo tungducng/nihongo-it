@@ -1,0 +1,36 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .level {
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 6px;
+    min-height: 88px; justify-content: space-between;
+  }
+  .level .code { font: 800 22px var(--font-sans); letter-spacing: -0.02em; }
+  .level .desc { font: 500 11px var(--font-sans); opacity: 0.85; }
+  .level .hex  { font: 400 10px var(--font-mono); opacity: 0.7; }
+  .n5 { background: oklch(from var(--jlpt-n5) l c h / 14%); color: oklch(from var(--jlpt-n5) calc(l - 0.20) c h); }
+  .n4 { background: oklch(from var(--jlpt-n4) l c h / 14%); color: oklch(from var(--jlpt-n4) calc(l - 0.20) c h); }
+  .n3 { background: oklch(from var(--jlpt-n3) l c h / 16%); color: oklch(from var(--jlpt-n3) calc(l - 0.24) c h); }
+  .n2 { background: oklch(from var(--jlpt-n2) l c h / 14%); color: oklch(from var(--jlpt-n2) calc(l - 0.20) c h); }
+  .n1 { background: oklch(from var(--jlpt-n1) l c h / 14%); color: oklch(from var(--jlpt-n1) calc(l - 0.16) c h); }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">JLPT level chromas — one hue per level, applied consistently</div>
+    <div class="meta">--jlpt-n5 → --jlpt-n1</div>
+  </div>
+  <div class="grid">
+    <div class="level n5"><div class="code">N5</div><div class="desc">easiest</div><div class="hex">emerald</div></div>
+    <div class="level n4"><div class="code">N4</div><div class="desc">elementary</div><div class="hex">sky</div></div>
+    <div class="level n3"><div class="code">N3</div><div class="desc">intermediate</div><div class="hex">amber</div></div>
+    <div class="level n2"><div class="code">N2</div><div class="desc">advanced</div><div class="hex">orange</div></div>
+    <div class="level n1"><div class="code">N1</div><div class="desc">hardest</div><div class="hex">rose</div></div>
+  </div>
+  <p style="margin-top: 12px; font: 400 12px/18px var(--font-sans); color: var(--washi-500);">The same hue appears on the vocab badge, JLPT filter dropdown, stats charts and progress rings for that level. Difficulty reads as cool→warm.</p>
+</body></html>

@@ -1,0 +1,30 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  td { padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  td.tok { font-family: var(--font-mono); font-size: 11px; color: var(--washi-700); }
+  td.val { font-family: var(--font-mono); font-size: 11px; color: var(--washi-500); }
+  td.sw { width: 80px; }
+  .chip { display: inline-block; width: 56px; height: 24px; border-radius: 6px; border: 1px solid oklch(0 0 0 / 6%); vertical-align: middle;}
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Semantic token map — shadcn variables</div>
+    <div class="meta">how brand colours wire into shadcn slots</div>
+  </div>
+  <table>
+    <tr><td class="sw"><span class="chip" style="background:var(--background)"></span></td><td class="tok">--background</td><td class="val">washi-50</td><td>page canvas</td></tr>
+    <tr><td class="sw"><span class="chip" style="background:var(--foreground)"></span></td><td class="tok">--foreground</td><td class="val">washi-800</td><td>body text</td></tr>
+    <tr><td class="sw"><span class="chip" style="background:var(--primary)"></span></td><td class="tok">--primary</td><td class="val">ai-500</td><td>buttons, links, active nav</td></tr>
+    <tr><td class="sw"><span class="chip" style="background:var(--accent)"></span></td><td class="tok">--accent</td><td class="val">shu-500</td><td>brand mark, emphasis</td></tr>
+    <tr><td class="sw"><span class="chip" style="background:var(--muted)"></span></td><td class="tok">--muted</td><td class="val">washi-100</td><td>subtle backgrounds</td></tr>
+    <tr><td class="sw"><span class="chip" style="background:var(--muted-foreground)"></span></td><td class="tok">--muted-foreground</td><td class="val">washi-500</td><td>secondary text</td></tr>
+    <tr><td class="sw"><span class="chip" style="background:var(--border)"></span></td><td class="tok">--border</td><td class="val">washi-300</td><td>hairlines, dividers</td></tr>
+    <tr><td class="sw"><span class="chip" style="background:var(--destructive)"></span></td><td class="tok">--destructive</td><td class="val">danger</td><td>delete, error states</td></tr>
+    <tr><td class="sw"><span class="chip" style="background:var(--sidebar)"></span></td><td class="tok">--sidebar</td><td class="val">tinted washi-50</td><td>admin sidebar bg</td></tr>
+  </table>
+</body></html>

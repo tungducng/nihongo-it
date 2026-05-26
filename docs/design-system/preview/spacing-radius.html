@@ -1,0 +1,27 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .item { display:flex; flex-direction:column; align-items:center; gap: 6px; }
+  .box { width: 80px; height: 56px; background: var(--ai-100); border: 1.5px solid var(--ai-400); }
+  .name { font: 500 10px var(--font-mono); color: var(--washi-700); }
+  .px { font: 400 10px var(--font-mono); color: var(--washi-500); }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Radius scale</div>
+    <div class="meta">--radius-sm → --radius-2xl · pill</div>
+  </div>
+  <div class="grid">
+    <div class="item"><div class="box" style="border-radius: var(--radius-sm)"></div><div class="name">sm</div><div class="px">6px</div></div>
+    <div class="item"><div class="box" style="border-radius: var(--radius-md)"></div><div class="name">md</div><div class="px">8px</div></div>
+    <div class="item"><div class="box" style="border-radius: var(--radius-lg)"></div><div class="name">lg ★</div><div class="px">10px</div></div>
+    <div class="item"><div class="box" style="border-radius: var(--radius-xl)"></div><div class="name">xl</div><div class="px">14px</div></div>
+    <div class="item"><div class="box" style="border-radius: var(--radius-2xl)"></div><div class="name">2xl</div><div class="px">18px</div></div>
+    <div class="item"><div class="box" style="border-radius: var(--radius-pill); width: 80px;"></div><div class="name">pill</div><div class="px">999px</div></div>
+  </div>
+  <p style="margin-top: 14px; font: 400 12px/18px var(--font-sans); color: var(--washi-500);">★ <strong style="color:var(--washi-800)">lg</strong> is the default for cards and inputs. <strong style="color:var(--washi-800)">sm</strong> for chips/badges, <strong style="color:var(--washi-800)">pill</strong> for JLPT level capsules and avatars.</p>
+</body></html>

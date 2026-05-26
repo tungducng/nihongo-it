@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .family { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+  .family .name { font: 600 12px var(--font-mono); color: var(--washi-500); margin-bottom: 8px; letter-spacing: 0.02em; }
+  .family .sample { font-size: 30px; line-height: 1.1; color: var(--washi-800); letter-spacing: -0.01em; }
+  .family .desc { margin-top: 8px; font: 400 11px/16px var(--font-sans); color: var(--washi-500); }
+  .inter { font-family: var(--font-sans); font-weight: 600; }
+  .jp { font-family: var(--font-jp); font-weight: 600; }
+  .jp-serif { font-family: var(--font-jp-serif); font-weight: 700; }
+  .mono { font-family: var(--font-mono); font-weight: 500; font-size: 22px; }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Type families</div>
+    <div class="meta">Inter · Noto Sans JP · Noto Serif JP · JetBrains Mono</div>
+  </div>
+  <div class="grid">
+    <div class="family">
+      <div class="name">--font-sans · INTER</div>
+      <div class="sample inter">Học tiếng Nhật — Aa</div>
+      <div class="desc">UI chrome, Vietnamese & Latin. 400 / 500 / 600 / 700.</div>
+    </div>
+    <div class="family">
+      <div class="name">--font-jp · NOTO SANS JP</div>
+      <div class="sample jp">日本語の学習 — あア</div>
+      <div class="desc">Inline Japanese in body text. <code class="mono" style="font-size:11px">:lang(ja)</code>.</div>
+    </div>
+    <div class="family">
+      <div class="name">--font-jp-serif · NOTO SERIF JP</div>
+      <div class="sample jp-serif">会議の準備</div>
+      <div class="desc">Display Japanese — flashcard fronts, vocab headers.</div>
+    </div>
+    <div class="family">
+      <div class="name">--font-mono · JETBRAINS MONO</div>
+      <div class="sample mono">--ai-500 / N5</div>
+      <div class="desc">Code, romaji, tabular numbers in stats.</div>
+    </div>
+  </div>
+</body></html>

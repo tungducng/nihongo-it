@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; }
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .group { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    height: 32px; padding: 0 12px; border-radius: 8px;
+    font: 500 14px var(--font-sans);
+    border: 1px solid transparent;
+    cursor: pointer; transition: background var(--duration-base) var(--ease-out);
+  }
+  .btn-default { background: var(--ai-500); color: #fff; }
+  .btn-default:hover { background: var(--ai-600); }
+  .btn-secondary { background: var(--washi-200); color: var(--washi-800); }
+  .btn-secondary:hover { background: var(--washi-300); }
+  .btn-outline { background: #fff; color: var(--washi-800); border-color: var(--border); }
+  .btn-outline:hover { background: var(--washi-100); }
+  .btn-ghost { background: transparent; color: var(--washi-800); }
+  .btn-ghost:hover { background: var(--washi-200); }
+  .btn-destructive { background: oklch(from var(--danger) l c h / 14%); color: var(--danger); }
+  .btn-destructive:hover { background: oklch(from var(--danger) l c h / 22%); }
+  .btn-link { background: transparent; color: var(--ai-500); text-decoration: underline; text-underline-offset: 4px; height: auto; padding: 0;}
+  .btn.sm { height: 26px; padding: 0 10px; font-size: 12.5px; border-radius: 7px; }
+  .btn.lg { height: 36px; padding: 0 14px; font-size: 14.5px; }
+  .row-label { font: 500 11px var(--font-mono); color: var(--washi-500); margin-right: 6px; min-width: 64px; display: inline-block; }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Buttons — variants</div>
+    <div class="meta">default · secondary · outline · ghost · destructive · link</div>
+  </div>
+  <div class="group">
+    <button class="btn btn-default">Đăng nhập</button>
+    <button class="btn btn-secondary">Huỷ</button>
+    <button class="btn btn-outline">Tạo tài khoản</button>
+    <button class="btn btn-ghost">Hồ sơ</button>
+    <button class="btn btn-destructive">Xoá</button>
+    <a class="btn btn-link">Quên mật khẩu?</a>
+  </div>
+  <div class="group">
+    <span class="row-label">sm</span>
+    <button class="btn btn-default sm">Lưu</button>
+    <button class="btn btn-outline sm">Huỷ</button>
+    <span class="row-label" style="margin-left: 20px;">lg</span>
+    <button class="btn btn-default lg">Bắt đầu học</button>
+    <button class="btn btn-outline lg">Xem thống kê</button>
+  </div>
+</body></html>

@@ -1,0 +1,70 @@
+/* Shared base for preview cards. Imported by every preview/*.html.
+   Each card is ~700px wide; height is left to content. */
+@import url("../colors_and_type.css");
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--washi-50);
+  color: var(--washi-800);
+  font-family: var(--font-sans);
+}
+
+body {
+  padding: 24px;
+  width: 700px;
+}
+
+/* Compact label used on swatches/specimens */
+.label {
+  font: 500 11px/1 var(--font-mono);
+  color: var(--washi-500);
+  letter-spacing: 0.02em;
+}
+
+.row { display: flex; gap: 12px; align-items: stretch; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.stack { display: flex; flex-direction: column; gap: 16px; }
+
+/* Swatch primitives */
+.swatch {
+  flex: 1;
+  border-radius: 8px;
+  height: 56px;
+  position: relative;
+  border: 1px solid oklch(0 0 0 / 5%);
+  overflow: hidden;
+}
+.swatch .name {
+  position: absolute; left: 8px; bottom: 6px;
+  font: 600 11px/1 var(--font-mono);
+  color: var(--washi-50);
+  text-shadow: 0 1px 2px oklch(0 0 0 / 30%);
+}
+.swatch .hex {
+  position: absolute; right: 8px; bottom: 6px;
+  font: 400 10px/1 var(--font-mono);
+  color: oklch(1 0 0 / 70%);
+}
+.swatch.light .name, .swatch.light .hex {
+  color: var(--washi-800);
+  text-shadow: none;
+}
+.swatch.light .hex { color: var(--washi-500); }
+
+/* Specimen card for type cards */
+.specimen {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+}
+
+/* "Frame" used for component previews */
+.frame {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: var(--shadow-sm);
+}

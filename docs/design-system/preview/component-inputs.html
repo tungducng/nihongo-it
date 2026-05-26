@@ -1,0 +1,61 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; }
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font: 500 13px var(--font-sans); color: var(--washi-800); }
+  .input {
+    height: 34px; padding: 0 11px; border-radius: 8px;
+    border: 1px solid var(--border); background: #fff;
+    font: 400 14px var(--font-sans); color: var(--washi-800);
+    transition: border-color var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
+    outline: none;
+  }
+  .input:focus { border-color: var(--ai-400); box-shadow: var(--shadow-focus); }
+  .input.invalid { border-color: var(--danger); box-shadow: 0 0 0 3px oklch(from var(--danger) l c h / 20%); }
+  .input.with-icon { padding-left: 32px; }
+  .icon-wrap { position: relative; }
+  .icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--washi-500); display: flex; }
+  .help { font: 400 11px var(--font-sans); color: var(--washi-500); }
+  .err  { font: 400 11px var(--font-sans); color: var(--danger); }
+  .textarea { min-height: 70px; padding: 9px 11px; line-height: 1.5; resize: vertical; font-family: var(--font-sans); }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Form inputs</div>
+    <div class="meta">text · search · invalid · textarea · select</div>
+  </div>
+  <div class="grid">
+    <div class="field">
+      <label>Email</label>
+      <input class="input" type="email" value="hoa@nihongo-it.vn">
+      <div class="help">Sẽ dùng để đăng nhập</div>
+    </div>
+    <div class="field">
+      <label>Mật khẩu</label>
+      <input class="input invalid" type="password" value="••••">
+      <div class="err">Mật khẩu phải có ít nhất 8 ký tự</div>
+    </div>
+    <div class="field">
+      <label>Tìm kiếm</label>
+      <div class="icon-wrap">
+        <span class="icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+        <input class="input with-icon" placeholder="Tìm theo tiêu đề…">
+      </div>
+    </div>
+    <div class="field">
+      <label>JLPT</label>
+      <select class="input" style="padding-right: 28px;">
+        <option>Tất cả</option><option>N5</option><option>N4</option><option>N3</option><option>N2</option><option>N1</option>
+      </select>
+    </div>
+    <div class="field" style="grid-column: span 2;">
+      <label>Ghi chú</label>
+      <textarea class="input textarea">この単語は会議でよく使います。</textarea>
+    </div>
+  </div>
+</body></html>

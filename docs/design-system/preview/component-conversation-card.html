@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 24px; background: var(--washi-100); }
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .ccard {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px; transition: border-color var(--duration-base) var(--ease-out);
+  }
+  .ccard:hover { border-color: oklch(from var(--ai-500) l c h / 50%); }
+  .top { display: flex; align-items: flex-start; gap: 8px; }
+  .top .ic { color: var(--ai-500); margin-top: 2px; flex-shrink: 0; }
+  .t { font: 600 14px/1.35 var(--font-sans); color: var(--washi-900); }
+  .desc { font: 400 12.5px/1.45 var(--font-sans); color: var(--washi-500); margin-top: 8px;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .chips { margin-top: 12px; display: flex; gap: 6px; }
+  .chip { display: inline-flex; height: 22px; padding: 0 9px; border-radius: 999px; font: 600 11px var(--font-sans); align-items: center; }
+  .chip.n3 { background: oklch(from var(--jlpt-n3) l c h / 16%); color: oklch(from var(--jlpt-n3) calc(l - 0.24) c h); }
+  .chip.n4 { background: oklch(from var(--jlpt-n4) l c h / 14%); color: oklch(from var(--jlpt-n4) calc(l - 0.20) c h); }
+  .chip.out { background: transparent; color: var(--washi-700); border: 1px solid var(--border); }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Conversation card</div>
+    <div class="meta">ConversationList.tsx</div>
+  </div>
+  <div class="grid">
+    <div class="ccard">
+      <div class="top">
+        <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+        <div class="t">Báo cáo tiến độ dự án trong cuộc họp hàng tuần</div>
+      </div>
+      <div class="desc">Mẫu hội thoại trong cuộc họp giữa Project Manager và developer về tiến độ phát triển sprint.</div>
+      <div class="chips"><span class="chip n3">N3</span><span class="chip out">Bài 7</span></div>
+    </div>
+    <div class="ccard">
+      <div class="top">
+        <span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+        <div class="t">Phỏng vấn xin việc kỹ sư cầu nối (BrSE)</div>
+      </div>
+      <div class="desc">Tự giới thiệu, mô tả kinh nghiệm và trả lời các câu hỏi phổ biến trong phỏng vấn tại công ty Nhật.</div>
+      <div class="chips"><span class="chip n4">N4</span><span class="chip out">Bài 12</span></div>
+    </div>
+  </div>
+</body></html>

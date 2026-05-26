@@ -1,0 +1,81 @@
+/* Admin-only layout & data table styles. Loaded on top of kit.css. */
+
+.adm-shell { min-height: 100vh; display: flex; background: var(--washi-50); }
+
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+.adm-sidebar {
+  width: 240px; flex-shrink: 0;
+  background: var(--sidebar); border-right: 1px solid var(--sidebar-border);
+  display: flex; flex-direction: column;
+  position: sticky; top: 0; height: 100vh;
+}
+.adm-sb-head { padding: 18px 16px 14px; border-bottom: 1px solid var(--sidebar-border); }
+.adm-sb-brand { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.adm-sb-tag { font: 600 10px var(--font-sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--washi-500); margin: 6px 0 0 34px; }
+.adm-sb-nav { padding: 10px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.adm-sb-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  border-radius: 8px; font: 500 13px var(--font-sans); color: var(--washi-500);
+  cursor: pointer; background: transparent; border: 0; text-align: left; width: 100%;
+  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+.adm-sb-item:hover { background: var(--washi-100); color: var(--washi-800); }
+.adm-sb-item.active { background: var(--ai-500); color: var(--washi-50); }
+.adm-sb-item.active svg { color: currentColor; }
+.adm-sb-foot { padding: 14px 16px; border-top: 1px solid var(--sidebar-border); display: flex; align-items: center; gap: 10px; }
+.adm-sb-foot .who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.adm-sb-foot .who .n { font: 500 13px var(--font-sans); color: var(--washi-800); }
+.adm-sb-foot .who .e { font: 400 11px var(--font-sans); color: var(--washi-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Topbar ──────────────────────────────────────────────────────────── */
+.adm-topbar {
+  height: 56px; padding: 0 28px; background: var(--background);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 12px;
+}
+.adm-crumbs { display: flex; align-items: center; gap: 6px; font: 400 13px var(--font-sans); color: var(--washi-500); }
+.adm-crumbs strong { color: var(--washi-800); font-weight: 500; }
+
+.adm-main-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.adm-main { padding: 28px 32px 48px; flex: 1; }
+
+/* ── Tables ─────────────────────────────────────────────────────────── */
+.adm-table-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow-xs); }
+.adm-table-toolbar { display: flex; gap: 10px; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.adm-table-toolbar .nh-input-icon { flex: 1; max-width: 320px; }
+.adm-table { width: 100%; border-collapse: collapse; font: 400 13px var(--font-sans); }
+.adm-table th {
+  text-align: left; padding: 11px 18px; border-bottom: 1px solid var(--border);
+  font: 500 11px var(--font-sans); text-transform: uppercase; letter-spacing: 0.06em; color: var(--washi-500); background: var(--washi-100);
+}
+.adm-table td { padding: 14px 18px; border-bottom: 1px solid var(--border); color: var(--washi-800); vertical-align: middle; }
+.adm-table tr:last-child td { border-bottom: 0; }
+.adm-table tr.row:hover td { background: var(--washi-100); cursor: pointer; }
+.adm-table .jp { font-family: var(--font-jp); white-space: nowrap; }
+.adm-table .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.adm-row-actions { display: flex; gap: 4px; justify-content: flex-end; }
+
+/* ── Activity feed ───────────────────────────────────────────────────── */
+.adm-activity-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+}
+.adm-activity-row:last-child { border-bottom: 0; }
+.adm-activity-row .left { min-width: 0; flex: 1; }
+.adm-activity-row .left .n { font: 500 13px var(--font-sans); color: var(--washi-800); }
+.adm-activity-row .left .a { font: 400 12px var(--font-sans); color: var(--washi-500); margin-top: 2px; }
+.adm-activity-row .t { font: 400 11px var(--font-mono); color: var(--washi-500); white-space: nowrap; }
+
+/* ── Misc layout helpers ─────────────────────────────────────────────── */
+.adm-section-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+}
+.adm-section-head h2 { font: 600 11px var(--font-sans); text-transform: uppercase; letter-spacing: 0.08em; color: var(--washi-500); margin: 0; }
+.adm-h1 { font: 700 22px var(--font-sans); letter-spacing: -0.015em; color: var(--washi-900); }
+.adm-page-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; gap: 16px; }
+.adm-page-head .sub { font: 400 13px var(--font-sans); color: var(--washi-500); margin-top: 4px; }
+
+.adm-status { display: inline-flex; gap: 5px; align-items: center; font: 500 12px var(--font-sans); }
+.adm-status .dot { width: 7px; height: 7px; border-radius: 999px; background: var(--success); }
+.adm-status.off .dot { background: var(--washi-400); }
+.adm-status.off { color: var(--washi-500); }

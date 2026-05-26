@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  body { padding: 0; width: 700px; background: var(--washi-100); display: flex; min-height: 360px; }
+  aside {
+    width: 240px; background: var(--sidebar); border-right: 1px solid var(--sidebar-border);
+    display: flex; flex-direction: column;
+  }
+  .sb-head { padding: 18px 16px 14px; border-bottom: 1px solid var(--sidebar-border); display: flex; flex-direction: column; gap: 6px; }
+  .sb-brand { display: flex; align-items: center; gap: 8px; }
+  .sb-brand .mark { width: 22px; height: 22px; border-radius: 5px; background: var(--shu-500); color: #fff7f1; display:flex; align-items:center; justify-content:center; font: 700 12px var(--font-jp); }
+  .sb-brand .word { font: 600 15px var(--font-sans); color: var(--washi-900); letter-spacing: -0.01em; }
+  .sb-tag { font: 600 10px var(--font-sans); letter-spacing: 0.12em; text-transform: uppercase; color: var(--washi-500); margin-left: 30px;}
+  nav { padding: 10px; display: flex; flex-direction: column; gap: 2px; }
+  .item {
+    display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+    border-radius: 8px; font: 500 13px var(--font-sans); color: var(--washi-500);
+    text-decoration: none;
+  }
+  .item:hover { background: var(--washi-100); color: var(--washi-800); }
+  .item.active { background: var(--ai-500); color: #fff; }
+  .item .ic { display: inline-flex; }
+  main { flex: 1; padding: 24px; }
+  .label { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  .h { font: 700 22px var(--font-sans); color: var(--washi-900); letter-spacing: -0.015em; margin-top: 6px; }
+</style></head>
+<body>
+  <aside>
+    <div class="sb-head">
+      <div class="sb-brand"><div class="mark">日</div><div class="word">Nihongo IT</div></div>
+      <div class="sb-tag">Quản trị</div>
+    </div>
+    <nav>
+      <a class="item active"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span>Dashboard</a>
+      <a class="item"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Người dùng</a>
+      <a class="item"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M9 9h8"/><path d="M9 15h5"/></svg></span>Danh mục</a>
+      <a class="item"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><circle cx="7" cy="7" r="1.2"/></svg></span>Chủ đề</a>
+      <a class="item"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>Từ vựng</a>
+      <a class="item"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>Hội thoại</a>
+      <a class="item"><span class="ic"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 5-5"/></svg></span>Thống kê</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="label">Sidebar.tsx</div>
+    <div class="h">Dashboard</div>
+    <p style="margin-top: 8px; font: 400 13px/20px var(--font-sans); color: var(--washi-500); max-width: 320px;">240px sidebar with a subtle indigo wash (<code style="font-family: var(--font-mono); font-size: 11px;">--sidebar</code>). Active item uses solid <strong style="color: var(--ai-600)">ai-500</strong>, hover is washi-100.</p>
+  </main>
+</body></html>

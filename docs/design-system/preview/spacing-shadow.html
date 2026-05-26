@@ -1,0 +1,27 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><link rel="stylesheet" href="_base.css">
+<style>
+  .header { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .title { font: 600 14px var(--font-sans); color: var(--washi-800); }
+  .meta { font: 500 11px var(--font-mono); color: var(--washi-500); }
+  body { background: var(--washi-100); }
+  .grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .item { display:flex; flex-direction:column; align-items:center; gap: 10px; padding: 8px 0 4px; }
+  .box { width: 96px; height: 64px; background: #fff; border-radius: 10px; border: 1px solid oklch(0 0 0 / 4%); }
+  .name { font: 500 10px var(--font-mono); color: var(--washi-700); }
+  .label { font: 400 10px var(--font-mono); color: var(--washi-500); text-align: center; }
+</style></head>
+<body>
+  <div class="header">
+    <div class="title">Elevation ramp — soft paper-on-paper</div>
+    <div class="meta">--shadow-xs → --shadow-xl</div>
+  </div>
+  <div class="grid">
+    <div class="item"><div class="box" style="box-shadow: var(--shadow-xs)"></div><div class="name">xs</div><div class="label">hairline</div></div>
+    <div class="item"><div class="box" style="box-shadow: var(--shadow-sm)"></div><div class="name">sm ★</div><div class="label">cards</div></div>
+    <div class="item"><div class="box" style="box-shadow: var(--shadow-md)"></div><div class="name">md</div><div class="label">hover</div></div>
+    <div class="item"><div class="box" style="box-shadow: var(--shadow-lg)"></div><div class="name">lg</div><div class="label">popovers</div></div>
+    <div class="item"><div class="box" style="box-shadow: var(--shadow-xl)"></div><div class="name">xl</div><div class="label">modals</div></div>
+  </div>
+  <p style="margin-top: 14px; font: 400 12px/18px var(--font-sans); color: var(--washi-500);">All shadows are black-translucent, never coloured. The system prefers a single border + tiny shadow over a heavy drop-shadow.</p>
+</body></html>

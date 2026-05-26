@@ -97,39 +97,67 @@ export function UsersClient() {
     () => [
       {
         accessorKey: 'email',
-        header: 'Email',
-        cell: ({ row }) => <span className="font-medium">{row.original.email}</span>,
+        header: 'Người dùng',
+        cell: ({ row }) => {
+          const u = row.original
+          const initials =
+            u.fullName
+              ?.split(' ')
+              .map((w) => w[0])
+              .slice(0, 2)
+              .join('')
+              .toUpperCase() ?? '?'
+          return (
+            <div className="flex items-center gap-2.5">
+              <span className="bg-primary text-primary-foreground inline-flex h-8 w-8 items-center justify-center rounded-full text-[13px] font-semibold">
+                {initials}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[13px] font-medium text-[color:var(--washi-900)]">
+                  {u.fullName || '—'}
+                </p>
+                <p className="text-muted-foreground truncate text-[12px]">{u.email}</p>
+              </div>
+            </div>
+          )
+        },
       },
-      { accessorKey: 'fullName', header: 'Họ tên' },
       {
         accessorKey: 'roleId',
         header: 'Quyền',
         cell: ({ row }) =>
           row.original.roleId === ROLES.ADMIN ? (
-            <Badge>Admin</Badge>
+            <Badge className="bg-primary text-primary-foreground">admin</Badge>
           ) : (
-            <Badge variant="secondary">User</Badge>
+            <Badge variant="outline">user</Badge>
           ),
       },
       {
         accessorKey: 'isActive',
         header: 'Trạng thái',
-        cell: ({ row }) =>
-          row.original.isActive ? (
-            <Badge variant="outline" className="border-emerald-500 text-emerald-700">
-              Hoạt động
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="border-rose-500 text-rose-700">
-              Vô hiệu hoá
-            </Badge>
-          ),
+        cell: ({ row }) => {
+          const active = row.original.isActive
+          return (
+            <span
+              className={`inline-flex items-center gap-1.5 text-[12px] font-medium ${
+                active ? 'text-[color:var(--success)]' : 'text-muted-foreground'
+              }`}
+            >
+              <span
+                className={`inline-block size-2 rounded-full ${
+                  active ? 'bg-[color:var(--success)]' : 'bg-[color:var(--washi-400)]'
+                }`}
+              />
+              {active ? 'Hoạt động' : 'Đã khoá'}
+            </span>
+          )
+        },
       },
       {
         accessorKey: 'lastLogin',
         header: 'Đăng nhập gần nhất',
         cell: ({ row }) => (
-          <span className="text-muted-foreground text-xs tabular-nums">
+          <span className="text-muted-foreground mono text-[12px]">
             {fmtDate(row.original.lastLogin)}
           </span>
         ),
@@ -178,9 +206,13 @@ export function UsersClient() {
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Người dùng</h1>
-          <p className="text-muted-foreground text-sm">
-            {totalItems > 0 ? `${totalItems} tài khoản` : 'Quản lý tài khoản người dùng'}
+          <h1 className="text-[24px] font-bold tracking-tight text-[color:var(--washi-900)]">
+            Người dùng
+          </h1>
+          <p className="text-muted-foreground mt-1 text-[13px]">
+            {totalItems > 0
+              ? `${totalItems} tài khoản · sắp xếp theo ngày tham gia gần nhất`
+              : 'Quản lý tài khoản người dùng'}
           </p>
         </div>
       </div>

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Bookmark, BookmarkCheck, Sparkles } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Loader } from '@/components/common/Loader'
@@ -78,6 +78,17 @@ export function VocabularyDetailClient({ vocabId }: Props) {
     )
   }
 
+  const jlptClass =
+    vocab.jlptLevel === 'N5'
+      ? 'jlpt-n5'
+      : vocab.jlptLevel === 'N4'
+        ? 'jlpt-n4'
+        : vocab.jlptLevel === 'N3'
+          ? 'jlpt-n3'
+          : vocab.jlptLevel === 'N2'
+            ? 'jlpt-n2'
+            : 'jlpt-n1'
+
   return (
     <div className="space-y-6">
       <Button asChild variant="ghost" size="sm" className="-ml-2">
@@ -87,17 +98,35 @@ export function VocabularyDetailClient({ vocabId }: Props) {
         </Link>
       </Button>
 
-      <Card>
-        <CardHeader>
+      <Card className="px-9 py-8">
+        <CardContent className="p-0">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-3xl">{vocab.term}</CardTitle>
+              {vocab.pronunciation ? (
+                <p className="font-jp-serif font-medium text-[56px] leading-[1.05] text-[color:var(--washi-900)]">
+                  <ruby>
+                    {vocab.term}
+                    <rt>{vocab.pronunciation}</rt>
+                  </ruby>
+                </p>
+              ) : (
+                <p className="font-jp-serif font-medium text-[56px] leading-[1.05] text-[color:var(--washi-900)]">
+                  {vocab.term}
+                </p>
+              )}
+              <div className="mt-3.5 flex flex-wrap items-center gap-2">
+                <span
+                  className={`${jlptClass} inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-semibold`}
+                >
+                  {vocab.jlptLevel}
+                </span>
+                {vocab.topicName && (
+                  <Badge variant="outline" className="h-[22px] px-2.5 text-[11px] font-semibold">
+                    {vocab.topicName}
+                  </Badge>
+                )}
                 <AudioButton text={vocab.term} contentType="vocabulary" />
               </div>
-              {vocab.pronunciation && (
-                <p className="text-muted-foreground mt-1 text-lg">{vocab.pronunciation}</p>
-              )}
             </div>
             <Button
               variant={vocab.isSaved ? 'default' : 'outline'}
@@ -117,57 +146,68 @@ export function VocabularyDetailClient({ vocabId }: Props) {
               )}
             </Button>
           </div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Badge variant="secondary">{vocab.jlptLevel}</Badge>
-            {vocab.topicName && <Badge variant="outline">{vocab.topicName}</Badge>}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <section>
-            <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide">Nghĩa</h2>
-            <p>{vocab.meaning}</p>
-          </section>
 
-          {vocab.example && (
+          <hr className="border-border my-7 border-t" />
+
+          <div className="grid gap-6">
             <section>
-              <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide">Ví dụ</h2>
-              <div className="bg-muted/40 rounded-lg p-3">
-                <div className="flex items-start gap-2">
-                  <p className="flex-1 text-lg">{vocab.example}</p>
-                  <AudioButton text={vocab.example} contentType="example" size="sm" />
+              <p className="eyebrow mb-2.5">Nghĩa</p>
+              <p className="text-[15px] leading-[1.6] text-[color:var(--washi-800)]">
+                {vocab.meaning}
+              </p>
+            </section>
+
+            {vocab.example && (
+              <section>
+                <p className="eyebrow mb-2.5">Ví dụ</p>
+                <div className="border-border border-t">
+                  <div className="border-border flex items-start gap-3 border-b py-3">
+                    <div className="flex-1">
+                      <p className="font-jp text-[16px] text-[color:var(--washi-800)]">
+                        {vocab.example}
+                      </p>
+                      {vocab.exampleMeaning && (
+                        <p className="text-muted-foreground mt-1 text-[13px]">
+                          {vocab.exampleMeaning}
+                        </p>
+                      )}
+                    </div>
+                    <AudioButton text={vocab.example} contentType="example" size="sm" />
+                  </div>
                 </div>
-                {vocab.exampleMeaning && (
-                  <p className="text-muted-foreground mt-2 text-sm">{vocab.exampleMeaning}</p>
+              </section>
+            )}
+
+            <section>
+              <div className="mb-2.5 flex items-center justify-between">
+                <p className="eyebrow flex items-center gap-1.5">
+                  Trợ lý AI
+                  <Sparkles className="size-3 text-[color:var(--shu-500)]" />
+                </p>
+                {!aiExplanation && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={loadAiExplanation}
+                    disabled={explanationLoading}
+                  >
+                    {explanationLoading ? 'Đang tạo...' : 'Tạo giải thích'}
+                  </Button>
                 )}
               </div>
-            </section>
-          )}
-
-          <section>
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold uppercase tracking-wide">Giải thích AI</h2>
-              {!aiExplanation && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={loadAiExplanation}
-                  disabled={explanationLoading}
-                >
-                  <Sparkles className="mr-1 size-3.5" />
-                  {explanationLoading ? 'Đang tạo...' : 'Tạo giải thích'}
-                </Button>
+              {aiExplanation ? (
+                <Card className="border-[color:oklch(from_var(--ai-500)_l_c_h_/_30%)] bg-[color:var(--ai-50)] p-4">
+                  <p className="whitespace-pre-wrap text-[13.5px] leading-[1.55] text-[color:var(--washi-800)]">
+                    {aiExplanation}
+                  </p>
+                </Card>
+              ) : (
+                <p className="text-muted-foreground text-[13px]">
+                  Nhấn &ldquo;Tạo giải thích&rdquo; để AI giải thích chi tiết về từ này.
+                </p>
               )}
-            </div>
-            {aiExplanation ? (
-              <div className="bg-muted/40 whitespace-pre-wrap rounded-lg p-3 text-sm">
-                {aiExplanation}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">
-                Nhấn &ldquo;Tạo giải thích&rdquo; để AI giải thích chi tiết về từ này.
-              </p>
-            )}
-          </section>
+            </section>
+          </div>
         </CardContent>
       </Card>
 
@@ -175,7 +215,7 @@ export function VocabularyDetailClient({ vocabId }: Props) {
 
       {related.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Từ liên quan</h2>
+          <p className="eyebrow">Từ liên quan</p>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {related.map((item) => (
               <VocabularyCard key={item.vocabId} item={item} />

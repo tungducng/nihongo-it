@@ -151,9 +151,13 @@ export function VocabularyClient() {
         header: 'Từ',
         cell: ({ row }) => (
           <div>
-            <p className="font-semibold">{row.original.term}</p>
+            <p className="font-jp text-[16px] font-semibold leading-tight text-[color:var(--washi-900)]">
+              {row.original.term}
+            </p>
             {row.original.pronunciation && (
-              <p className="text-muted-foreground text-xs">{row.original.pronunciation}</p>
+              <p className="font-jp text-muted-foreground text-[12px]">
+                {row.original.pronunciation}
+              </p>
             )}
           </div>
         ),
@@ -162,14 +166,46 @@ export function VocabularyClient() {
         accessorKey: 'meaning',
         header: 'Nghĩa',
         cell: ({ row }) => (
-          <span className="line-clamp-2">{row.original.meaning}</span>
+          <span className="line-clamp-2 text-[13px] text-[color:var(--washi-800)]">
+            {row.original.meaning}
+          </span>
         ),
       },
-      { accessorKey: 'topicName', header: 'Chủ đề' },
+      {
+        accessorKey: 'topicName',
+        header: 'Chủ đề',
+        cell: ({ row }) =>
+          row.original.topicName ? (
+            <Badge variant="outline" className="text-[11px]">
+              {row.original.topicName}
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          ),
+      },
       {
         accessorKey: 'jlptLevel',
         header: 'JLPT',
-        cell: ({ row }) => <Badge variant="secondary">{row.original.jlptLevel}</Badge>,
+        cell: ({ row }) => {
+          const lvl = row.original.jlptLevel
+          const cls =
+            lvl === 'N5'
+              ? 'jlpt-n5'
+              : lvl === 'N4'
+                ? 'jlpt-n4'
+                : lvl === 'N3'
+                  ? 'jlpt-n3'
+                  : lvl === 'N2'
+                    ? 'jlpt-n2'
+                    : 'jlpt-n1'
+          return (
+            <span
+              className={`${cls} inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-semibold`}
+            >
+              {lvl}
+            </span>
+          )
+        },
       },
       {
         id: 'actions',
@@ -207,8 +243,14 @@ export function VocabularyClient() {
     <div className="space-y-4">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Từ vựng</h1>
-          <p className="text-muted-foreground text-sm">{totalElements} từ vựng</p>
+          <h1 className="text-[24px] font-bold tracking-tight text-[color:var(--washi-900)]">
+            Từ vựng
+          </h1>
+          <p className="text-muted-foreground mt-1 text-[13px]">
+            {totalElements > 0
+              ? `${totalElements} từ vựng · quản lý từ vựng IT trong hệ thống`
+              : 'Chưa có từ vựng'}
+          </p>
         </div>
         <Button
           onClick={() => {

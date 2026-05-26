@@ -28,35 +28,67 @@ function isActive(pathname: string, href: string, exact?: boolean): boolean {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
+function BrandHeader() {
+  return (
+    <div className="border-b px-5 py-4">
+      <Link href="/" className="flex items-center gap-2">
+        <span className="bg-accent text-accent-foreground font-jp grid h-[26px] w-[26px] place-items-center rounded-md text-[15px] font-bold leading-none">
+          日
+        </span>
+        <span className="text-[16px] font-semibold tracking-tight text-[color:var(--washi-900)]">
+          Nihongo IT
+        </span>
+      </Link>
+      <p className="eyebrow mt-1.5">Quản trị</p>
+    </div>
+  )
+}
+
+function NavLink({
+  href,
+  label,
+  Icon,
+  active,
+  onNavigate,
+}: {
+  href: string
+  label: string
+  Icon: typeof LayoutDashboard
+  active: boolean
+  onNavigate?: () => void
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      className={cn(
+        'flex items-center gap-2.5 rounded-md px-3 py-2 text-[13px] font-medium transition-colors',
+        active
+          ? 'bg-sidebar-primary text-sidebar-primary-foreground'
+          : 'text-[color:var(--washi-600)] hover:bg-[color:var(--sidebar-accent)] hover:text-[color:var(--sidebar-accent-foreground)]',
+      )}
+    >
+      <Icon className="size-4" />
+      {label}
+    </Link>
+  )
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   return (
-    <aside className="bg-card hidden w-60 shrink-0 border-r md:flex md:flex-col">
-      <div className="border-b p-4">
-        <Link href="/" className="text-primary text-lg font-semibold">
-          Nihongo IT
-        </Link>
-        <p className="text-muted-foreground text-xs uppercase tracking-wide">Quản trị</p>
-      </div>
+    <aside className="bg-sidebar hidden w-60 shrink-0 flex-col border-r md:flex">
+      <BrandHeader />
       <nav className="flex-1 space-y-1 p-3">
-        {NAV_ITEMS.map(({ href, label, Icon, exact }) => {
-          const active = isActive(pathname, href, exact)
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                active
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-              )}
-            >
-              <Icon className="size-4" />
-              {label}
-            </Link>
-          )
-        })}
+        {NAV_ITEMS.map(({ href, label, Icon, exact }) => (
+          <NavLink
+            key={href}
+            href={href}
+            label={label}
+            Icon={Icon}
+            active={isActive(pathname, href, exact)}
+          />
+        ))}
       </nav>
     </aside>
   )
@@ -65,26 +97,20 @@ export function Sidebar() {
 export function MobileNavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
   return (
-    <nav className="space-y-1 p-3">
-      {NAV_ITEMS.map(({ href, label, Icon, exact }) => {
-        const active = isActive(pathname, href, exact)
-        return (
-          <Link
+    <>
+      <BrandHeader />
+      <nav className="space-y-1 p-3">
+        {NAV_ITEMS.map(({ href, label, Icon, exact }) => (
+          <NavLink
             key={href}
             href={href}
-            onClick={onNavigate}
-            className={cn(
-              'flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-              active
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-            )}
-          >
-            <Icon className="size-4" />
-            {label}
-          </Link>
-        )
-      })}
-    </nav>
+            label={label}
+            Icon={Icon}
+            active={isActive(pathname, href, exact)}
+            onNavigate={onNavigate}
+          />
+        ))}
+      </nav>
+    </>
   )
 }

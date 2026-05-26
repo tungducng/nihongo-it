@@ -12,15 +12,11 @@ interface FlashcardReviewProps {
 }
 
 /**
- * Two-sided card. Click anywhere to flip. The 3D rotateY transform requires
- * `perspective` on the outer wrapper and `transform-style: preserve-3d` on the
- * inner element — both inlined here because Tailwind 4 ships these as utilities
- * (`perspective-[1000px]`, `transform-3d`, `backface-hidden`, `rotate-y-180`).
+ * Two-sided card. Click anywhere to flip. Uses Tailwind 4 custom utilities
+ * defined in globals.css (perspective-card, transform-3d, backface-hidden,
+ * rotate-y-180).
  */
 export function FlashcardReview({ card, flipped, onFlip }: FlashcardReviewProps) {
-  // Reset flip on card change is handled by parent (sets flipped=false when card switches).
-
-  // Keyboard: space/enter flips the card
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.key === ' ' || e.key === 'Enter') && !flipped) {
@@ -33,32 +29,42 @@ export function FlashcardReview({ card, flipped, onFlip }: FlashcardReviewProps)
   }, [flipped, onFlip])
 
   return (
-    <div className="perspective-card mx-auto w-full max-w-xl">
+    <div className="perspective-card mx-auto w-full max-w-[560px]">
       <button
         type="button"
         onClick={onFlip}
-        className="relative block h-72 w-full cursor-pointer text-left focus-visible:outline-none sm:h-80"
+        className="relative block h-[280px] w-full cursor-pointer text-left focus-visible:outline-none"
         aria-label={flipped ? 'Mặt sau thẻ' : 'Bấm để lật thẻ'}
       >
         <div
-          className={`transform-3d relative h-full w-full transition-transform duration-500 ${
+          className={`transform-3d relative h-full w-full transition-transform duration-500 ease-out ${
             flipped ? 'rotate-y-180' : ''
           }`}
         >
           {/* Front */}
-          <Card className="backface-hidden absolute inset-0 flex items-center justify-center p-6">
+          <Card className="backface-hidden bg-card absolute inset-0 flex items-center justify-center rounded-[14px] p-6 shadow-sm">
             <div className="text-center">
-              <p className="text-4xl font-semibold sm:text-5xl">{card.frontText}</p>
-              <div className="text-muted-foreground mt-6 inline-flex items-center gap-1 text-xs">
-                <RotateCw className="size-3" />
-                Bấm để lật
-              </div>
+              <p
+                data-testid="flashcard-front-term"
+                className="jp-display text-[color:var(--washi-900)]"
+              >
+                {card.frontText}
+              </p>
+            </div>
+            <div className="text-muted-foreground absolute bottom-[18px] left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 font-mono text-[11px]">
+              <RotateCw className="size-3" />
+              Bấm để lật · phím Space
             </div>
           </Card>
 
           {/* Back */}
-          <Card className="backface-hidden rotate-y-180 absolute inset-0 flex items-center justify-center p-6">
-            <p className="text-center text-2xl font-medium sm:text-3xl">{card.backText}</p>
+          <Card className="backface-hidden rotate-y-180 bg-card absolute inset-0 flex items-center justify-center rounded-[14px] p-6 shadow-sm">
+            <p
+              data-testid="flashcard-back-text"
+              className="font-jp text-[22px] font-medium text-[color:var(--washi-900)] sm:text-[24px] text-center"
+            >
+              {card.backText}
+            </p>
           </Card>
         </div>
       </button>

@@ -256,6 +256,12 @@
 .jlpt-n2 { background: oklch(from var(--jlpt-n2) l c h / 15%); color: oklch(from var(--jlpt-n2) calc(l - 0.18) c h); }
 .jlpt-n1 { background: oklch(from var(--jlpt-n1) l c h / 15%); color: oklch(from var(--jlpt-n1) calc(l - 0.14) c h); }
 
+/* Flashcard rating buttons — FSRS scale mapped to JLPT chromas */
+.rate-again { background: oklch(from var(--jlpt-n1) l c h / 10%); border-color: oklch(from var(--jlpt-n1) l c h / 30%); color: oklch(from var(--jlpt-n1) calc(l - 0.16) c h); }
+.rate-hard  { background: oklch(from var(--jlpt-n3) l c h / 12%); border-color: oklch(from var(--jlpt-n3) l c h / 35%); color: oklch(from var(--jlpt-n3) calc(l - 0.24) c h); }
+.rate-good  { background: oklch(from var(--jlpt-n4) l c h / 10%); border-color: oklch(from var(--jlpt-n4) l c h / 30%); color: oklch(from var(--jlpt-n4) calc(l - 0.20) c h); }
+.rate-easy  { background: oklch(from var(--jlpt-n5) l c h / 10%); border-color: oklch(from var(--jlpt-n5) l c h / 30%); color: oklch(from var(--jlpt-n5) calc(l - 0.20) c h); }
+
 /* Eyebrow label — uppercase metadata used on section headers (e.g. "TỔNG QUAN") */
 .eyebrow {
   font-weight: 600;

@@ -43,7 +43,7 @@ test.describe('14 — User flashcard study + rate', () => {
     // navigate forward until our term appears OR rate through to it.
     // For simplicity, just verify SOME card is showing then rate.
     // The FlashcardReview card has the front text; click it to flip.
-    await page.locator('p.text-4xl').first().click()
+    await page.getByTestId('flashcard-front-term').first().click()
 
     // After flip, rating buttons appear. Click "Tốt" (Good = rating 3).
     await page.getByRole('button', { name: /Tốt/ }).click()

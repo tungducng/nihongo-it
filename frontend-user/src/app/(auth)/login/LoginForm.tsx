@@ -61,12 +61,13 @@ export function LoginForm() {
   const busy = loading || isSubmitting
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-xl">Đăng nhập</CardTitle>
+    <Card className="p-7">
+      <CardHeader className="p-0">
+        <CardTitle className="text-[22px] font-bold tracking-tight">Đăng nhập</CardTitle>
+        <p className="text-muted-foreground mt-1 text-[13px]">Học tiếng Nhật chuyên ngành IT.</p>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+      <CardContent className="p-0 pt-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5" noValidate>
           <div className="space-y-1.5">
             <Label htmlFor="email">Email</Label>
             <Input

@@ -41,15 +41,30 @@ export function VocabularyCard({ item, onSavedChange }: VocabularyCardProps) {
     }
   }
 
+  const jlptClass =
+    item.jlptLevel === 'N5'
+      ? 'jlpt-n5'
+      : item.jlptLevel === 'N4'
+        ? 'jlpt-n4'
+        : item.jlptLevel === 'N3'
+          ? 'jlpt-n3'
+          : item.jlptLevel === 'N2'
+            ? 'jlpt-n2'
+            : 'jlpt-n1'
+
   return (
     <Link href={`/vocabulary/${item.vocabId}`} className="block">
       <Card className="hover:border-primary/50 h-full transition-colors">
         <CardContent className="p-4">
-          <div className="mb-2 flex items-start justify-between gap-2">
+          <div className="flex items-start justify-between gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="truncate text-lg font-semibold">{item.term}</h3>
+              <h3 className="font-jp truncate text-[22px] font-semibold leading-tight text-[color:var(--washi-900)]">
+                {item.term}
+              </h3>
               {item.pronunciation && (
-                <p className="text-muted-foreground truncate text-sm">{item.pronunciation}</p>
+                <p className="font-jp text-muted-foreground mt-1 truncate text-[13px]">
+                  {item.pronunciation}
+                </p>
               )}
             </div>
             <Button
@@ -61,17 +76,23 @@ export function VocabularyCard({ item, onSavedChange }: VocabularyCardProps) {
               className="-mr-2 h-8 w-8 shrink-0"
             >
               {isSaved ? (
-                <BookmarkCheck className="text-primary size-4" />
+                <BookmarkCheck className="size-4 text-[color:var(--ai-500)]" />
               ) : (
                 <Bookmark className="text-muted-foreground size-4" />
               )}
             </Button>
           </div>
-          <p className="line-clamp-2 text-sm">{item.meaning}</p>
-          <div className="mt-3 flex items-center gap-2">
-            <Badge variant="secondary">{item.jlptLevel}</Badge>
+          <p className="mt-2.5 line-clamp-2 min-h-[38px] text-[13px] leading-snug text-[color:var(--washi-800)]">
+            {item.meaning}
+          </p>
+          <div className="mt-3 flex items-center gap-1.5">
+            <span
+              className={`${jlptClass} inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-semibold`}
+            >
+              {item.jlptLevel}
+            </span>
             {item.topicName && (
-              <Badge variant="outline" className="truncate">
+              <Badge variant="outline" className="h-[22px] truncate px-2.5 text-[11px] font-semibold">
                 {item.topicName}
               </Badge>
             )}

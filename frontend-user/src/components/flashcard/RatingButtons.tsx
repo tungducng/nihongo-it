@@ -1,21 +1,14 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-
-// FSRS rating scale: 1=Again, 2=Hard, 3=Good, 4=Easy
+// FSRS rating scale mapped onto the JLPT chroma scale so the same colour
+// means the same difficulty everywhere: again=N1 rose, hard=N3 amber,
+// good=N4 sky, easy=N5 emerald.
 const RATINGS = [
-  { value: 1, label: 'Quên', shortcut: '1', tone: 'destructive' },
-  { value: 2, label: 'Khó', shortcut: '2', tone: 'warning' },
-  { value: 3, label: 'Tốt', shortcut: '3', tone: 'success' },
-  { value: 4, label: 'Dễ', shortcut: '4', tone: 'primary' },
+  { value: 1, label: 'Quên', shortcut: '1', cls: 'rate-again' },
+  { value: 2, label: 'Khó', shortcut: '2', cls: 'rate-hard' },
+  { value: 3, label: 'Tốt', shortcut: '3', cls: 'rate-good' },
+  { value: 4, label: 'Dễ', shortcut: '4', cls: 'rate-easy' },
 ] as const
-
-const TONE_CLASS: Record<(typeof RATINGS)[number]['tone'], string> = {
-  destructive: 'bg-destructive text-white hover:bg-destructive/90',
-  warning: 'bg-amber-500 text-white hover:bg-amber-500/90',
-  success: 'bg-emerald-600 text-white hover:bg-emerald-600/90',
-  primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
-}
 
 interface RatingButtonsProps {
   onRate: (rating: number) => void
@@ -24,18 +17,18 @@ interface RatingButtonsProps {
 
 export function RatingButtons({ onRate, disabled }: RatingButtonsProps) {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="mx-auto grid max-w-[560px] grid-cols-4 gap-2.5">
       {RATINGS.map((r) => (
-        <Button
+        <button
           key={r.value}
           type="button"
           disabled={disabled}
           onClick={() => onRate(r.value)}
-          className={`h-auto flex-col py-3 ${TONE_CLASS[r.tone]}`}
+          className={`${r.cls} flex h-11 flex-col items-center justify-center gap-0.5 rounded-[10px] border text-[14px] font-semibold transition-[filter] hover:brightness-[0.97] disabled:opacity-50 disabled:cursor-not-allowed`}
         >
-          <span className="text-base font-semibold">{r.label}</span>
-          <span className="text-xs opacity-80">[{r.shortcut}]</span>
-        </Button>
+          <span>{r.label}</span>
+          <span className="font-mono text-[10px] font-medium opacity-70">{r.shortcut}</span>
+        </button>
       ))}
     </div>
   )

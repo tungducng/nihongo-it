@@ -4,41 +4,54 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Font variables come from next/font in layout.tsx — see --font-inter,
+   --font-noto-sans-jp, --font-noto-serif-jp, --font-jetbrains-mono.
+   The CSS token aliases below (--font-sans, --font-jp, …) reference them. */
+
+/* ───────────────────────────────────────────────────────────────────────────
+   Theme bridge — exposes design tokens as Tailwind utilities (bg-primary,
+   text-muted-foreground, font-jp, …). Source of truth for the values
+   themselves lives in :root and .dark below.
+   ──────────────────────────────────────────────────────────────────────── */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-jp: var(--font-jp);
+  --font-jp-serif: var(--font-jp-serif);
+  --font-heading: var(--font-heading);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -48,73 +61,134 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* ───────────────────────────────────────────────────────────────────────────
+   Nihongo IT design tokens — Ai-iro indigo + Shu-iro vermillion + Washi
+   paper neutrals. Source: docs/design-system/colors_and_type.css
+   ──────────────────────────────────────────────────────────────────────── */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* Brand — ai (藍 ai-iro) indigo */
+  --ai-50:  oklch(0.97 0.012 260);
+  --ai-100: oklch(0.93 0.025 260);
+  --ai-200: oklch(0.86 0.05  260);
+  --ai-300: oklch(0.74 0.085 260);
+  --ai-400: oklch(0.60 0.115 260);
+  --ai-500: oklch(0.48 0.135 260);
+  --ai-600: oklch(0.39 0.125 260);
+  --ai-700: oklch(0.31 0.10  260);
+  --ai-800: oklch(0.23 0.07  260);
+  --ai-900: oklch(0.17 0.045 260);
+
+  /* Accent — shu (朱 shu-iro) vermillion. Use sparingly. */
+  --shu-50:  oklch(0.97 0.018 35);
+  --shu-100: oklch(0.93 0.04  35);
+  --shu-200: oklch(0.86 0.08  35);
+  --shu-300: oklch(0.78 0.13  35);
+  --shu-400: oklch(0.71 0.17  35);
+  --shu-500: oklch(0.65 0.185 35);
+  --shu-600: oklch(0.56 0.175 32);
+  --shu-700: oklch(0.46 0.15  30);
+  --shu-800: oklch(0.36 0.115 30);
+  --shu-900: oklch(0.26 0.075 30);
+
+  /* Warm-neutral "washi" paper scale — replaces shadcn cool greys */
+  --washi-50:  oklch(0.985 0.005 80);
+  --washi-100: oklch(0.97  0.008 80);
+  --washi-200: oklch(0.93  0.01  78);
+  --washi-300: oklch(0.87  0.012 75);
+  --washi-400: oklch(0.72  0.012 72);
+  --washi-500: oklch(0.56  0.012 70);
+  --washi-600: oklch(0.44  0.012 70);
+  --washi-700: oklch(0.32  0.012 68);
+  --washi-800: oklch(0.22  0.012 65);
+  --washi-900: oklch(0.14  0.012 65);
+
+  /* JLPT level chromas — also chart palette */
+  --jlpt-n5: oklch(0.65 0.16 152);
+  --jlpt-n4: oklch(0.66 0.14 220);
+  --jlpt-n3: oklch(0.74 0.16 80);
+  --jlpt-n2: oklch(0.66 0.17 45);
+  --jlpt-n1: oklch(0.58 0.21 15);
+
+  /* Semantic state */
+  --success: oklch(0.62 0.14 150);
+  --warning: oklch(0.74 0.16 80);
+  --danger:  oklch(0.58 0.22 25);
+  --info:    var(--ai-500);
+
+  /* shadcn-compatible mapping */
+  --background: var(--washi-50);
+  --foreground: var(--washi-800);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: var(--washi-800);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --popover-foreground: var(--washi-800);
+  --primary: var(--ai-500);
+  --primary-foreground: var(--washi-50);
+  --secondary: var(--washi-200);
+  --secondary-foreground: var(--washi-800);
+  --muted: var(--washi-100);
+  --muted-foreground: var(--washi-500);
+  --accent: var(--shu-500);
+  --accent-foreground: var(--washi-50);
+  --destructive: var(--danger);
+  --border: var(--washi-300);
+  --input: var(--washi-300);
+  --ring: var(--ai-400);
+
+  --sidebar: oklch(0.985 0.006 260);
+  --sidebar-foreground: var(--washi-800);
+  --sidebar-primary: var(--ai-500);
+  --sidebar-primary-foreground: var(--washi-50);
+  --sidebar-accent: var(--ai-50);
+  --sidebar-accent-foreground: var(--ai-700);
+  --sidebar-border: var(--washi-300);
+  --sidebar-ring: var(--ai-400);
+
+  --chart-1: var(--jlpt-n5);
+  --chart-2: var(--jlpt-n4);
+  --chart-3: var(--jlpt-n3);
+  --chart-4: var(--jlpt-n2);
+  --chart-5: var(--jlpt-n1);
+
+  /* Radius */
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+
+  /* Type stack — first family slot is the next/font CSS variable, then literal
+     fallback families for static contexts and OS fallbacks. */
+  --font-sans:    var(--font-inter), "Inter", "Noto Sans JP", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-jp:      var(--font-noto-sans-jp), "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+  --font-jp-serif:var(--font-noto-serif-jp), "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-mono:    var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-heading: var(--font-sans);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --background: oklch(0.16 0.012 260);
+  --foreground: var(--washi-100);
+  --card: oklch(0.21 0.015 260);
+  --card-foreground: var(--washi-100);
+  --popover: oklch(0.21 0.015 260);
+  --popover-foreground: var(--washi-100);
+  --primary: var(--ai-300);
+  --primary-foreground: oklch(0.16 0.012 260);
+  --secondary: oklch(0.26 0.015 260);
+  --secondary-foreground: var(--washi-100);
+  --muted: oklch(0.26 0.015 260);
+  --muted-foreground: var(--washi-400);
+  --accent: var(--shu-400);
+  --accent-foreground: oklch(0.16 0.012 260);
+  --destructive: oklch(0.68 0.19 22);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --ring: var(--ai-300);
+  --sidebar: oklch(0.18 0.015 260);
+  --sidebar-foreground: var(--washi-100);
+  --sidebar-primary: var(--ai-300);
+  --sidebar-primary-foreground: oklch(0.16 0.012 260);
+  --sidebar-accent: oklch(0.26 0.015 260);
+  --sidebar-accent-foreground: var(--washi-100);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: var(--ai-300);
 }
 
 @layer base {
@@ -123,15 +197,44 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "cv11", "ss01", "ss03";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
   html {
     @apply font-sans;
   }
+  /* Japanese text — anything wrapped in <span lang="ja"> or .jp gets the
+     Japanese stack. Used for vocabulary terms, conversation lines. */
+  :lang(ja),
+  .jp {
+    font-family: var(--font-jp);
+    font-feature-settings: "palt";
+  }
+  .jp-serif {
+    font-family: var(--font-jp-serif);
+  }
+  /* Display-size Japanese — flashcard fronts, kanji headers */
+  .jp-display {
+    font-family: var(--font-jp-serif);
+    font-weight: 500;
+    font-size: 64px;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  /* Furigana ruby <ruby>会議<rt>かいぎ</rt></ruby> */
+  ruby {
+    ruby-align: center;
+  }
+  ruby rt {
+    font-size: 0.5em;
+    font-weight: 400;
+    color: var(--washi-500);
+    font-feature-settings: normal;
+  }
 }
 
-/* 3D transform utilities for flashcard flip. Square brackets aren't allowed
-   in @utility names, so we use plain identifiers and the components reference
-   `perspective-card` instead of `perspective-[1000px]`. */
+/* 3D transform utilities for flashcard flip — required by the study screen */
 @utility perspective-card {
   perspective: 1000px;
 }
@@ -144,4 +247,21 @@
 }
 @utility rotate-y-180 {
   transform: rotateY(180deg);
+}
+
+/* JLPT chip helpers — apply to any badge to colour-code by level */
+.jlpt-n5 { background: oklch(from var(--jlpt-n5) l c h / 15%); color: oklch(from var(--jlpt-n5) calc(l - 0.18) c h); }
+.jlpt-n4 { background: oklch(from var(--jlpt-n4) l c h / 15%); color: oklch(from var(--jlpt-n4) calc(l - 0.18) c h); }
+.jlpt-n3 { background: oklch(from var(--jlpt-n3) l c h / 15%); color: oklch(from var(--jlpt-n3) calc(l - 0.22) c h); }
+.jlpt-n2 { background: oklch(from var(--jlpt-n2) l c h / 15%); color: oklch(from var(--jlpt-n2) calc(l - 0.18) c h); }
+.jlpt-n1 { background: oklch(from var(--jlpt-n1) l c h / 15%); color: oklch(from var(--jlpt-n1) calc(l - 0.14) c h); }
+
+/* Eyebrow label — uppercase metadata used on section headers (e.g. "TỔNG QUAN") */
+.eyebrow {
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--washi-500);
 }

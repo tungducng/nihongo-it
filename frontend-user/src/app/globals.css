@@ -271,3 +271,9 @@
   letter-spacing: 0.08em;
   color: var(--washi-500);
 }
+
+/* Monospace — used for tabular figures (counters, dates, stat values) */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}

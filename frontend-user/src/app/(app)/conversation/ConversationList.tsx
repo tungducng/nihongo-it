@@ -132,33 +132,59 @@ export function ConversationList() {
         <p className="text-muted-foreground py-10 text-center">Không tìm thấy hội thoại phù hợp.</p>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((c) => (
-            <Link
-              key={c.conversationId}
-              href={`/conversation/${c.conversationId}/practice`}
-              className="block"
-            >
-              <Card className="hover:border-primary/50 h-full transition-colors">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-2">
-                    <MessageSquare className="text-primary mt-0.5 size-4 shrink-0" />
-                    <h3 className="line-clamp-2 flex-1 font-semibold">{c.title}</h3>
-                  </div>
-                  {c.description && (
-                    <p className="text-muted-foreground mt-2 line-clamp-2 text-sm">
-                      {c.description}
-                    </p>
-                  )}
-                  <div className="mt-3 flex items-center gap-2">
-                    {c.jlptLevel && <Badge variant="secondary">{c.jlptLevel}</Badge>}
-                    {typeof c.unit === 'number' && (
-                      <Badge variant="outline">Bài {c.unit}</Badge>
+          {items.map((c) => {
+            const jlptClass = c.jlptLevel
+              ? c.jlptLevel === 'N5'
+                ? 'jlpt-n5'
+                : c.jlptLevel === 'N4'
+                  ? 'jlpt-n4'
+                  : c.jlptLevel === 'N3'
+                    ? 'jlpt-n3'
+                    : c.jlptLevel === 'N2'
+                      ? 'jlpt-n2'
+                      : 'jlpt-n1'
+              : null
+            return (
+              <Link
+                key={c.conversationId}
+                href={`/conversation/${c.conversationId}/practice`}
+                className="block"
+              >
+                <Card className="hover:border-primary/50 h-full transition-colors">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-2">
+                      <MessageSquare className="mt-0.5 size-4 shrink-0 text-[color:var(--ai-500)]" />
+                      <h3 className="line-clamp-2 flex-1 text-[14px] font-semibold leading-snug text-[color:var(--washi-900)]">
+                        {c.title}
+                      </h3>
+                    </div>
+                    {c.description && (
+                      <p className="mt-2 line-clamp-2 min-h-[38px] text-[13px] leading-snug text-[color:var(--washi-800)]">
+                        {c.description}
+                      </p>
                     )}
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
+                    <div className="mt-3 flex items-center gap-1.5">
+                      {c.jlptLevel && jlptClass && (
+                        <span
+                          className={`${jlptClass} inline-flex h-[22px] items-center rounded-full px-2.5 text-[11px] font-semibold`}
+                        >
+                          {c.jlptLevel}
+                        </span>
+                      )}
+                      {typeof c.unit === 'number' && (
+                        <Badge
+                          variant="outline"
+                          className="h-[22px] px-2.5 text-[11px] font-semibold"
+                        >
+                          Bài {c.unit}
+                        </Badge>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
+            )
+          })}
         </div>
       )}
 

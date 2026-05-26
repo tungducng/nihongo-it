@@ -77,27 +77,43 @@ export function StatsView() {
   }
 
   const summary = stats.summary ?? {}
+  const streak = summary.currentStreak ?? 0
   const summaryCards = [
-    { label: 'Tổng thẻ', value: summary.totalCards ?? 0, Icon: Layers, tone: 'text-primary' },
+    {
+      label: 'Tổng thẻ',
+      value: summary.totalCards ?? 0,
+      Icon: Layers,
+      tone: 'text-[color:var(--ai-500)]',
+    },
     {
       label: 'Đến hạn',
       value: summary.dueCardsNow ?? 0,
       Icon: CalendarClock,
-      tone: 'text-amber-500',
+      tone: 'text-[color:var(--jlpt-n3)]',
     },
     {
       label: 'Chuỗi ngày',
-      value: summary.currentStreak ?? 0,
+      value: streak,
       Icon: Flame,
-      tone: 'text-rose-500',
+      tone: 'text-[color:var(--shu-500)]',
     },
     {
       label: 'Ghi nhớ',
       value: fmtPercent(summary.overallRetentionRate),
       Icon: Brain,
-      tone: 'text-emerald-600',
+      tone: 'text-[color:var(--jlpt-n5)]',
     },
   ]
+
+  // Chart palette — pulls from --chart-1..5 (JLPT chromas) so colour meaning
+  // is consistent with badges and rating buttons.
+  const colorPrimary = 'oklch(0.48 0.135 260)' // --ai-500
+  const colorPrimaryFill = 'oklch(0.48 0.135 260 / 0.18)'
+  const colorWarn = 'oklch(0.74 0.16 80 / 0.7)' // --jlpt-n3
+  const colorN1 = 'oklch(0.58 0.21 15 / 0.7)'
+  const colorN3 = 'oklch(0.74 0.16 80 / 0.7)'
+  const colorN5 = 'oklch(0.65 0.16 152 / 0.7)'
+  const colorN4 = 'oklch(0.66 0.14 220 / 0.7)'
 
   // ---- Daily reviews (line chart) ----
   const dailyReviews = sortedEntries(stats.dailyReviews)
@@ -107,8 +123,8 @@ export function StatsView() {
       {
         label: 'Lượt ôn',
         data: dailyReviews.map(([, v]) => v),
-        borderColor: 'rgb(59, 130, 246)',
-        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+        borderColor: colorPrimary,
+        backgroundColor: colorPrimaryFill,
         fill: true,
         tension: 0.3,
       },
@@ -123,7 +139,7 @@ export function StatsView() {
       {
         label: 'Thẻ đến hạn',
         data: cardsDue.map(([, v]) => v),
-        backgroundColor: 'rgba(245, 158, 11, 0.7)',
+        backgroundColor: colorWarn,
       },
     ],
   }
@@ -135,12 +151,7 @@ export function StatsView() {
     datasets: [
       {
         data: [mem.weak ?? 0, mem.medium ?? 0, mem.strong ?? 0, mem.new ?? 0],
-        backgroundColor: [
-          'rgba(239, 68, 68, 0.7)',
-          'rgba(245, 158, 11, 0.7)',
-          'rgba(16, 185, 129, 0.7)',
-          'rgba(99, 102, 241, 0.7)',
-        ],
+        backgroundColor: [colorN1, colorN3, colorN5, colorN4],
       },
     ],
   }
@@ -156,17 +167,37 @@ export function StatsView() {
         </Link>
       </Button>
 
-      <h1 className="text-2xl font-bold">Thống kê học tập</h1>
+      <h1 className="text-[24px] font-bold tracking-tight text-[color:var(--washi-900)]">
+        Thống kê học tập
+      </h1>
+
+      {streak > 0 && (
+        <div className="flex items-center gap-3 rounded-[12px] border border-[color:oklch(from_var(--shu-500)_l_c_h_/_30%)] bg-[color:var(--shu-50)] px-[18px] py-[14px]">
+          <div className="bg-accent text-accent-foreground inline-flex h-10 w-10 items-center justify-center rounded-[10px]">
+            <Flame className="size-5" />
+          </div>
+          <div>
+            <div className="text-[16px] font-semibold text-[color:var(--shu-800)]">
+              {streak} ngày học liên tiếp
+            </div>
+            <div className="text-[12px] text-[color:var(--shu-700)]">
+              Tiếp tục thêm 1 thẻ hôm nay để giữ chuỗi.
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {summaryCards.map(({ label, value, Icon, tone }) => (
           <Card key={label}>
-            <CardContent className="flex items-center justify-between p-4">
+            <CardContent className="flex items-start justify-between p-4">
               <div>
-                <p className="text-muted-foreground text-xs uppercase tracking-wide">{label}</p>
-                <p className="mt-1 text-2xl font-semibold">{value}</p>
+                <p className="eyebrow">{label}</p>
+                <p className="mono mt-1.5 text-[26px] font-semibold tracking-tight text-[color:var(--washi-900)]">
+                  {value}
+                </p>
               </div>
-              <Icon className={`size-7 ${tone}`} />
+              <Icon className={`size-5 ${tone}`} />
             </CardContent>
           </Card>
         ))}

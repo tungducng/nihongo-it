@@ -98,4 +98,4 @@ logging:
     root: INFO
     org.springframework.cloud.gateway: INFO
     org.springframework.web: INFO
-    com.example.apigateway: INFO
+    io.github.ndtung723.nihongoit.apigateway: INFO

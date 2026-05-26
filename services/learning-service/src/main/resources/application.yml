@@ -53,6 +53,6 @@ jwt:
 logging:
   level:
     root: WARN
-    com.example.learningservice: INFO
+    io.github.ndtung723.nihongoit.learningservice: INFO
     org.springframework.web: WARN
     org.springframework.security: WARN

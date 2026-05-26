@@ -5,7 +5,7 @@
 ## Layout
 
 ```
-common/src/main/kotlin/com/example/common/
+common/src/main/kotlin/io/github/ndtung723/nihongoit/common/
 ├── dto/
 │   ├── ErrorResponseDto.kt
 │   └── FieldErrorDto.kt

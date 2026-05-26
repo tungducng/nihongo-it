@@ -45,7 +45,7 @@ Do NOT parse JWTs inside services — the gateway already did. Do NOT call `user
 `services/common/` provides:
 
 ```
-common/src/main/kotlin/com/example/common/
+common/src/main/kotlin/io/github/ndtung723/nihongoit/common/
 ├── dto/
 │   ├── ErrorResponseDto.kt       # Unified shape for error responses
 │   └── FieldErrorDto.kt          # Per-field validation error

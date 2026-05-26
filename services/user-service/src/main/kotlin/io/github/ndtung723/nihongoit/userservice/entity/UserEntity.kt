@@ -1,0 +1,62 @@
+package io.github.ndtung723.nihongoit.userservice.entity
+
+import io.github.ndtung723.nihongoit.common.entity.AbstractAuditEntity
+import jakarta.persistence.*
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.util.*
+
+@Entity
+@Table(name = "users")
+data class UserEntity(
+    @Id
+    @GeneratedValue(generator = "UUID")
+    @Column(name = "user_id", updatable = false, nullable = false)
+    val userId: UUID? = null,
+    @Column(name = "email", nullable = false, unique = true, length = 50)
+    val email: String,
+    @Column(name = "password", nullable = false)
+    val password: String,
+    @Column(name = "full_name", nullable = false, length = 100)
+    val fullName: String,
+    @Column(name = "profile_picture")
+    val profilePicture: String?,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "current_level")
+    val currentLevel: JlptLevel?,
+    @Enumerated(EnumType.STRING)
+    @Column(name = "jlpt_goal")
+    val jlptGoal: JlptLevel?,
+    @Column(name = "is_active", nullable = false)
+    val isActive: Boolean = true,
+    @Column(name = "is_email_verified", nullable = false)
+    val isEmailVerified: Boolean = false,
+    @Column(name = "verification_token")
+    val verificationToken: String? = null,
+    @Column(name = "reset_password_token")
+    val resetPasswordToken: String? = null,
+    @Column(name = "reset_password_expires")
+    val resetPasswordExpires: LocalDateTime? = null,
+    @Column(name = "last_login")
+    val lastLogin: LocalDateTime?,
+    // Learning activity stats (streak, last_study_date, points, daily_goal_minutes)
+    // moved to learning-service.user_progress in P6.A.
+    @Column(name = "reminder_enabled", nullable = false)
+    val reminderEnabled: Boolean = true,
+    @Column(name = "reminder_time")
+    val reminderTime: LocalTime? = LocalTime.of(20, 0),
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+        name = "user_notification_preferences",
+        joinColumns = [JoinColumn(name = "user_id")],
+    )
+    @Column(name = "preference", length = 50, nullable = false)
+    val notificationPreferences: MutableSet<String> = mutableSetOf("email", "app"),
+    @Column(name = "min_card_threshold")
+    val minCardThreshold: Int? = 5,
+    @Column(name = "firebase_token")
+    val firebaseToken: String? = null,
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id", nullable = false)
+    var role: RoleEntity,
+) : AbstractAuditEntity()

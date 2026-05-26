@@ -1,0 +1,12 @@
+package io.github.ndtung723.nihongoit.learningservice.dto
+
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonProperty
+
+@JsonInclude(JsonInclude.Include.NON_NULL)
+data class CreateVocabularyResponseDto(
+    @JsonProperty("message")
+    val message: String? = null,
+    @JsonProperty("data")
+    val data: VocabularyDto? = null,
+)

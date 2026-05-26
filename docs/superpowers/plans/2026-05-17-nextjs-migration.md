@@ -2054,7 +2054,7 @@ spring:
 **Local development (Vue + Next.js coexist) — DONE:**
 
 - [x] **Step 1: Update CORS allowed origins to include both new apps**
-  - `services/api-gateway/src/main/kotlin/com/example/apigateway/config/SecurityConfig.kt:21` — default fallback updated to include `http://localhost:3002`
+  - `services/api-gateway/src/main/kotlin/io/github/ndtung723/nihongoit/apigateway/config/SecurityConfig.kt:21` — default fallback updated to include `http://localhost:3002`
   - `services/api-gateway/src/main/resources/application.yml:89` — same default in YAML
   - Both files now list all three: `5173` (legacy Vue), `3000` (frontend-user), `3002` (frontend-admin host port)
   - Comments mark `5173` for removal in Phase 12.4

@@ -1,5 +1,5 @@
 <configuration>
-    <conversionRule conversionWord="maskedMsg" converterClass="com.example.common.logging.SensitiveMaskingConverter"/>
+    <conversionRule conversionWord="maskedMsg" converterClass="io.github.ndtung723.nihongoit.common.logging.SensitiveMaskingConverter"/>
     <springProperty name="appName" source="spring.application.name" defaultValue="unknown"/>
 
     <appender name="JSON_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">

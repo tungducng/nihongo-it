@@ -1,0 +1,25 @@
+﻿package io.github.ndtung723.nihongoit.learningservice.repository
+
+import io.github.ndtung723.nihongoit.learningservice.entity.FeedbackEntity
+import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.stereotype.Repository
+import java.util.UUID
+
+@Repository
+interface FeedbackRepository : JpaRepository<FeedbackEntity, UUID> {
+    fun findByContentTypeAndContentId(
+        contentType: String,
+        contentId: UUID,
+    ): List<FeedbackEntity>
+
+    fun findByUserIdAndContentType(
+        userId: UUID,
+        contentType: String,
+    ): List<FeedbackEntity>
+
+    fun findByContentTypeAndContentIdAndUserId(
+        contentType: String,
+        contentId: UUID,
+        userId: UUID,
+    ): List<FeedbackEntity>
+}

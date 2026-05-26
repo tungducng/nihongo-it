@@ -7,7 +7,7 @@
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
 }
 
-group = "com.example"
+group = "io.github.ndtung723.nihongoit"
 version = "0.0.1-SNAPSHOT"
 
 java {

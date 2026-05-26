@@ -148,7 +148,7 @@ Plan này chia 5 phase, ưu tiên giá trị-trên-công-sức. Phase 1 (DB spli
 
 ### 2.1 `AbstractAuditEntity`
 
-Tạo `services/common/src/main/kotlin/com/example/common/entity/AbstractAuditEntity.kt`:
+Tạo `services/common/src/main/kotlin/io/github/ndtung723/nihongoit/common/entity/AbstractAuditEntity.kt`:
 
 ```kotlin
 @MappedSuperclass
@@ -176,7 +176,7 @@ Plus `AuditConfig.kt` (`@EnableJpaAuditing` + `AuditorAware<String>` bean lấy 
 
 ### 2.2 `AuthenticationUtils`
 
-Tạo `services/common/src/main/kotlin/com/example/common/security/AuthenticationUtils.kt`:
+Tạo `services/common/src/main/kotlin/io/github/ndtung723/nihongoit/common/security/AuthenticationUtils.kt`:
 
 ```kotlin
 object AuthenticationUtils {
@@ -485,7 +485,7 @@ nihongo-it/
 │   └── start-source-connectors.sh          # P5
 ├── services/
 │   ├── common/
-│   │   └── src/main/kotlin/com/example/common/
+│   │   └── src/main/kotlin/io/github/ndtung723/nihongoit/common/
 │   │       ├── entity/
 │   │       │   └── AbstractAuditEntity.kt  # mới Phase 2
 │   │       ├── config/

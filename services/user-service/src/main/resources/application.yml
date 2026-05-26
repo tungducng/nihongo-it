@@ -66,6 +66,6 @@ app:
 logging:
   level:
     root: WARN
-    com.example.userservice: INFO
+    io.github.ndtung723.nihongoit.userservice: INFO
     org.springframework.web: WARN
     org.springframework.security: WARN

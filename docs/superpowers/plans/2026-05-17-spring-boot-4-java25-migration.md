@@ -115,7 +115,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
 }
 
-group = "com.example"
+group = "io.github.ndtung723.nihongoit"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -219,7 +219,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
 }
 
-group = "com.example"
+group = "io.github.ndtung723.nihongoit"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -324,7 +324,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
 }
 
-group = "com.example"
+group = "io.github.ndtung723.nihongoit"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -416,7 +416,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
 }
 
-group = "com.example"
+group = "io.github.ndtung723.nihongoit"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -560,7 +560,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
 }
 
-group = "com.example"
+group = "io.github.ndtung723.nihongoit"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -675,7 +675,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
 }
 
-group = "com.example"
+group = "io.github.ndtung723.nihongoit"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -794,7 +794,7 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "12.2.0"
 }
 
-group = "com.example"
+group = "io.github.ndtung723.nihongoit"
 version = "0.0.1-SNAPSHOT"
 
 java {
@@ -930,9 +930,9 @@ git commit -m "chore(user-service): migrate to Spring Boot 4.0.2, Kotlin 2.1.21,
 jjwt 0.12.x removed deprecated 0.11.x builder/parser methods. Three production files need updating.
 
 **Files:**
-- Modify: `services/api-gateway/src/main/kotlin/com/example/apigateway/filter/GatewayJwtFilter.kt`
-- Modify: `services/learning-service/src/main/kotlin/com/example/learningservice/security/JwtTokenUtil.kt`
-- Modify: `services/user-service/src/main/kotlin/com/example/userservice/security/JwtTokenUtil.kt`
+- Modify: `services/api-gateway/src/main/kotlin/io/github/ndtung723/nihongoit/apigateway/filter/GatewayJwtFilter.kt`
+- Modify: `services/learning-service/src/main/kotlin/io/github/ndtung723/nihongoit/learningservice/security/JwtTokenUtil.kt`
+- Modify: `services/user-service/src/main/kotlin/io/github/ndtung723/nihongoit/userservice/security/JwtTokenUtil.kt`
 
 ### API changes summary
 
@@ -953,7 +953,7 @@ jjwt 0.12.x removed deprecated 0.11.x builder/parser methods. Three production f
 
 ```bash
 grep -n "parserBuilder\|setSigningKey\|parseClaimsJws\|\.body" \
-  services/api-gateway/src/main/kotlin/com/example/apigateway/filter/GatewayJwtFilter.kt
+  services/api-gateway/src/main/kotlin/io/github/ndtung723/nihongoit/apigateway/filter/GatewayJwtFilter.kt
 ```
 
 - [x] **Step 2: Apply replacements**
@@ -1060,9 +1060,9 @@ Expected: `BUILD SUCCESSFUL` for all modules.
 - [x] **Step 9: Commit**
 
 ```bash
-git add services/api-gateway/src/main/kotlin/com/example/apigateway/filter/GatewayJwtFilter.kt
-git add services/learning-service/src/main/kotlin/com/example/learningservice/security/JwtTokenUtil.kt
-git add services/user-service/src/main/kotlin/com/example/userservice/security/JwtTokenUtil.kt
+git add services/api-gateway/src/main/kotlin/io/github/ndtung723/nihongoit/apigateway/filter/GatewayJwtFilter.kt
+git add services/learning-service/src/main/kotlin/io/github/ndtung723/nihongoit/learningservice/security/JwtTokenUtil.kt
+git add services/user-service/src/main/kotlin/io/github/ndtung723/nihongoit/userservice/security/JwtTokenUtil.kt
 git commit -m "fix: migrate jjwt 0.11.5 → 0.12.6 API in gateway filter and JWT utils"
 ```
 
@@ -1071,7 +1071,7 @@ git commit -m "fix: migrate jjwt 0.11.5 → 0.12.6 API in gateway filter and JWT
 ## Task 10: jjwt 0.12.x Migration — Test Sources
 
 **Files:**
-- Modify: `services/api-gateway/src/test/kotlin/com/example/apigateway/filter/GatewayJwtFilterTest.kt`
+- Modify: `services/api-gateway/src/test/kotlin/io/github/ndtung723/nihongoit/apigateway/filter/GatewayJwtFilterTest.kt`
 
 The test helper `buildToken()` uses the old builder API.
 
@@ -1156,7 +1156,7 @@ Expected: `common: 12 tests, 0 failures` / `api-gateway: 14 tests, 0 failures` /
 - [x] **Step 4: Commit**
 
 ```bash
-git add services/api-gateway/src/test/kotlin/com/example/apigateway/filter/GatewayJwtFilterTest.kt
+git add services/api-gateway/src/test/kotlin/io/github/ndtung723/nihongoit/apigateway/filter/GatewayJwtFilterTest.kt
 git commit -m "fix: update GatewayJwtFilterTest to jjwt 0.12.6 builder API"
 ```
 

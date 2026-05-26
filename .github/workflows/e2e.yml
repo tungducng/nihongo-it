@@ -210,8 +210,11 @@ jobs:
         if: failure()
         run: |
           for f in e2e/.stack-logs/*.log; do
-            echo "::group::$f"
-            tail -200 "$f" || true
+            echo "::group::$f (head -100)"
+            head -100 "$f" || true
+            echo "::endgroup::"
+            echo "::group::$f (errors only)"
+            grep -iE "error|exception|caused by|failed to start|application run failed|fatal" "$f" || echo "(no error lines)"
             echo "::endgroup::"
           done
 

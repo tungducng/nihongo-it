@@ -19,7 +19,7 @@ const hasGoogleClientId = !!process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 export function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const redirect = searchParams.get('redirect') || '/'
+  const redirect = searchParams.get('redirect') || '/dashboard'
   const toast = useAppToast()
   const login = useAuthStore((s) => s.login)
   const loginWithGoogle = useAuthStore((s) => s.loginWithGoogle)

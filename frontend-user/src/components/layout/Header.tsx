@@ -18,6 +18,7 @@ import {
 import { NotificationBell } from './NotificationBell'
 
 const NAV_LINKS = [
+  { href: '/dashboard', label: 'Hôm nay' },
   { href: '/vocabulary', label: 'Từ vựng' },
   { href: '/conversation', label: 'Hội thoại' },
   { href: '/flashcards/study', label: 'Flashcards' },

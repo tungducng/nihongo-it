@@ -1,30 +1,21 @@
 {
   "permissions": {
     "allow": [
-      "Bash(./gradlew --version)",
-      "Bash(./gradlew :learning-service:bootJar -x test --no-daemon)",
-      "Bash(./gradlew :user-service:bootJar -x test --no-daemon)",
       "Bash(./gradlew build *)",
-      "Bash(./gradlew :api-gateway:build -x test --no-daemon)",
       "Bash(docker compose *)",
       "Skill(superpowers:writing-plans)",
       "Bash(npm run *)",
       "Bash(npm test *)",
-      "Bash(./gradlew :learning-service:compileKotlin --no-daemon)",
       "Bash(gh api *)",
-      "Bash(./gradlew :ai-service:compileKotlin --no-daemon)",
-      "Bash(./gradlew :common:build --no-daemon)",
-      "Bash(./gradlew :common:ktlintFormat --no-daemon)",
       "Bash(./gradlew *)",
       "Bash(npx playwright *)",
       "Bash(docker exec *)",
       "Bash(npx tsc *)",
       "PowerShell(Get-Process *)",
       "Bash(node -e ' *)",
-      "Bash(curl -sS -o /dev/null -w \"gateway: %{http_code} | fe: \" http://localhost:8080/actuator/health)",
-      "Bash(curl -sS -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(curl *)"
     ]
   }
 }

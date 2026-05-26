@@ -206,6 +206,15 @@ jobs:
           ./e2e/scripts/wait-for-url.sh http://localhost:3000 180
           ./e2e/scripts/wait-for-url.sh http://localhost:3001 180
 
+      - name: Print stack logs on boot failure
+        if: failure()
+        run: |
+          for f in e2e/.stack-logs/*.log; do
+            echo "::group::$f"
+            tail -200 "$f" || true
+            echo "::endgroup::"
+          done
+
       - name: Run Playwright
         working-directory: e2e
         env:
@@ -229,6 +238,8 @@ jobs:
             e2e/test-results/
             e2e/.stack-logs/
           retention-days: 7
+          if-no-files-found: warn
+          include-hidden-files: true
 
   full:
     name: full-suite

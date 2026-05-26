@@ -147,7 +147,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Grant execute permission
-        run: chmod +x services/gradlew
+        run: chmod +x services/gradlew e2e/scripts/*.sh
 
       - name: Build BE jars (skip ai-service)
         working-directory: services

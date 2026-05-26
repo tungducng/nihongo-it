@@ -1,20 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+// Mock both default (axios-shaped helper) AND the named exports so calls to
+// either path are observable. `refreshAccessToken` is used by auth.store
+// initialize() — without mocking it the call returns undefined and the
+// session-restore branch silently fails.
 vi.mock('@/lib/api', () => ({
   default: {
     post: vi.fn(),
     get: vi.fn(),
   },
+  refreshAccessToken: vi.fn(),
 }))
 
-import api from '@/lib/api'
+import api, { refreshAccessToken } from '@/lib/api'
 import { useAuthStore } from '../auth.store'
-import { clearAccessToken, getAccessToken } from '@/lib/tokenStore'
+import { clearAccessToken, getAccessToken, setAccessToken } from '@/lib/tokenStore'
 
 const mockedApi = api as unknown as {
   post: ReturnType<typeof vi.fn>
   get: ReturnType<typeof vi.fn>
 }
+const mockedRefresh = refreshAccessToken as unknown as ReturnType<typeof vi.fn>
 
 const sampleUser = {
   userId: 'u1',
@@ -24,7 +30,6 @@ const sampleUser = {
 }
 
 beforeEach(() => {
-  // Reset Zustand store state between tests
   useAuthStore.setState({ user: null, loading: false, error: null, initialized: false })
   clearAccessToken()
   vi.clearAllMocks()
@@ -70,7 +75,12 @@ describe('auth.store', () => {
 
   describe('initialize', () => {
     it('restores session when refresh token is valid', async () => {
-      mockedApi.post.mockResolvedValueOnce({ data: { token: 'refreshed-jwt' } })
+      // refreshAccessToken returns a JWT and writes it into the token store
+      // (the real helper does both). Mirror that here.
+      mockedRefresh.mockImplementationOnce(async () => {
+        setAccessToken('refreshed-jwt')
+        return 'refreshed-jwt'
+      })
       mockedApi.get.mockResolvedValueOnce({ data: { status: 'OK', userInfo: sampleUser } })
 
       await useAuthStore.getState().initialize()
@@ -81,7 +91,7 @@ describe('auth.store', () => {
     })
 
     it('silently clears state when refresh fails', async () => {
-      mockedApi.post.mockRejectedValueOnce(new Error('no cookie'))
+      mockedRefresh.mockResolvedValueOnce(null)
 
       await useAuthStore.getState().initialize()
 
@@ -90,13 +100,16 @@ describe('auth.store', () => {
     })
 
     it('is idempotent — second call does not re-fetch', async () => {
-      mockedApi.post.mockResolvedValueOnce({ data: { token: 'jwt' } })
+      mockedRefresh.mockImplementationOnce(async () => {
+        setAccessToken('jwt')
+        return 'jwt'
+      })
       mockedApi.get.mockResolvedValueOnce({ data: { status: 'OK', userInfo: sampleUser } })
 
       await useAuthStore.getState().initialize()
       await useAuthStore.getState().initialize()
 
-      expect(mockedApi.post).toHaveBeenCalledTimes(1)
+      expect(mockedRefresh).toHaveBeenCalledTimes(1)
     })
   })
 

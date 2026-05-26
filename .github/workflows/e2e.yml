@@ -146,6 +146,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Grant execute permission
+        run: chmod +x services/gradlew
+
       - name: Build BE jars (skip ai-service)
         working-directory: services
         run: |

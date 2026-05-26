@@ -158,8 +158,9 @@ class AuthService(
     }
 
     fun refreshToken(request: RefreshTokenRequest): LoginResponseDto {
-        val token = request.refreshToken
-            ?: throw UnauthorizedException("Refresh token is required")
+        val token =
+            request.refreshToken
+                ?: throw UnauthorizedException("Refresh token is required")
         val stored =
             refreshTokenRepository.findByToken(token)
                 ?: throw UnauthorizedException("Invalid refresh token")

@@ -10,6 +10,7 @@ import { Loader } from '@/components/common/Loader'
 import { AudioButton } from '@/components/vocabulary/AudioButton'
 import { AIChat } from '@/components/vocabulary/AIChat'
 import { VocabularyCard } from '@/components/vocabulary/VocabularyCard'
+import { CommentSection } from '@/components/vocabulary/comments/CommentSection'
 import { useVocabularyStore } from '@/stores/vocabulary.store'
 import aiService from '@/services/ai.service'
 import { useAppToast } from '@/hooks/useAppToast'
@@ -212,6 +213,12 @@ export function VocabularyDetailClient({ vocabId }: Props) {
       </Card>
 
       <AIChat vocabWord={vocab.term} />
+
+      <Card className="px-9 py-7">
+        <CardContent className="p-0">
+          <CommentSection vocabId={vocab.vocabId} />
+        </CardContent>
+      </Card>
 
       {related.length > 0 && (
         <section className="space-y-3">

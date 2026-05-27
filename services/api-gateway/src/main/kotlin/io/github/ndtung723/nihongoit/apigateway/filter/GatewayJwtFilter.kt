@@ -85,6 +85,7 @@ class GatewayJwtFilter(
                 }
             val roleName = if (roleId == 1) "ADMIN" else "USER"
             val email = claims.subject.orEmpty()
+            val fullName = (claims["fullName"] as? String).orEmpty()
 
             val mutatedRequest =
                 request
@@ -92,6 +93,7 @@ class GatewayJwtFilter(
                     .header("X-User-Id", userId)
                     .header("X-User-Role", roleName)
                     .header("X-User-Email", email)
+                    .header("X-User-Full-Name", fullName)
                     .build()
 
             logger.debug("JWT validated for userId=$userId role=$roleName path=$path")

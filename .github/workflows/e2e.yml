@@ -60,6 +60,12 @@ env:
   JWT_SECRET: 'ci-jwt-secret-not-for-prod-min-64-chars-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'
   DB_USERNAME: 'postgres'
   DB_PASSWORD: 'ci-postgres-pw'
+  # Mirror DB creds for the Playwright `helpers/db.ts` which reads its own
+  # E2E_*_DB envs (default 'NihongoIT2024!' which doesn't match the CI service).
+  E2E_DB_HOST: 'localhost'
+  E2E_DB_PORT: '5433'
+  E2E_DB_USER: 'postgres'
+  E2E_DB_PASSWORD: 'ci-postgres-pw'
   OPENAI_API_KEY: 'sk-stub'
   MAIL_USERNAME: 'noreply@e2e.ci'
   MAIL_PASSWORD: 'ci-mail-pw'

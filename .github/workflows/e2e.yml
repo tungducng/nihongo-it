@@ -47,6 +47,13 @@ env:
   SPRING_THREADS_VIRTUAL_ENABLED: 'false'
   APP_RATE_LIMIT_ENABLED: 'false'
   APP_REFRESH_TOKEN_ROTATION_ENABLED: 'false'
+  # Disable the mail health-check actuator. The mail starter tries to reach
+  # smtp.gmail.com on every probe; with the CI fake creds auth fails, the
+  # mail indicator reports DOWN, and /actuator/health returns 503 — which
+  # then loops wait-for-url.sh until it times out at 240s.
+  MANAGEMENT_HEALTH_MAIL_ENABLED: 'false'
+  # Tighten the mail debug spam too (default 'debug: true' floods logs).
+  SPRING_MAIL_PROPERTIES_MAIL_DEBUG: 'false'
   JAVA_TOOL_OPTIONS: '-Duser.timezone=Asia/Ho_Chi_Minh'
   TZ: 'Asia/Ho_Chi_Minh'
   # Secrets the stack expects (CI-only fakes — production reads from env)

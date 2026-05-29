@@ -82,8 +82,9 @@ class VocabCommentController(
         servletRequest: HttpServletRequest,
     ): CommentDto {
         val userId = auth.getCurrentUserId() ?: throw BusinessException("Chưa đăng nhập")
-        val fullName = servletRequest.getHeader("X-User-Full-Name")?.takeIf { it.isNotBlank() }
-            ?: auth.getCurrentEmail().orEmpty()
+        val fullName =
+            servletRequest.getHeader("X-User-Full-Name")?.takeIf { it.isNotBlank() }
+                ?: auth.getCurrentEmail().orEmpty()
         return service.create(
             vocabId = vocabId,
             request = request,

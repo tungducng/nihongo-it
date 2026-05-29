@@ -1,6 +1,7 @@
 package io.github.ndtung723.nihongoit.learningservice.service
 
 import io.github.ndtung723.nihongoit.common.exception.BusinessException
+import io.github.ndtung723.nihongoit.learningservice.client.NotificationClient
 import io.github.ndtung723.nihongoit.learningservice.dto.CommentDto
 import io.github.ndtung723.nihongoit.learningservice.dto.CommentPageDto
 import io.github.ndtung723.nihongoit.learningservice.dto.CreateCommentRequest
@@ -24,7 +25,10 @@ enum class CommentSort {
     TOP,
     ;
 
-    fun toPageable(page: Int, size: Int): PageRequest =
+    fun toPageable(
+        page: Int,
+        size: Int,
+    ): PageRequest =
         when (this) {
             NEWEST -> PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"))
             TOP ->
@@ -49,6 +53,7 @@ class VocabCommentService(
     private val commentRepo: VocabCommentRepository,
     private val likeRepo: VocabCommentLikeRepository,
     private val vocabRepo: VocabularyRepository,
+    private val notificationClient: NotificationClient,
 ) {
     @Transactional(readOnly = true)
     fun listForVocab(
@@ -64,13 +69,15 @@ class VocabCommentService(
         }
         val pageable = sort.toPageable(page, size)
         val pageResult = commentRepo.findTopLevelByVocab(vocabId, pageable)
-        val likedIds = currentUserId?.let { uid ->
-            val ids = pageResult.content.mapNotNull { it.commentId }
-            if (ids.isEmpty()) emptySet() else likeRepo.findLikedCommentIds(uid, ids).toSet()
-        } ?: emptySet()
-        val dtos = pageResult.content.map { entity ->
-            CommentDto.from(entity, likedIds.contains(entity.commentId), currentUserId, isAdmin)
-        }
+        val likedIds =
+            currentUserId?.let { uid ->
+                val ids = pageResult.content.mapNotNull { it.commentId }
+                if (ids.isEmpty()) emptySet() else likeRepo.findLikedCommentIds(uid, ids).toSet()
+            } ?: emptySet()
+        val dtos =
+            pageResult.content.map { entity ->
+                CommentDto.from(entity, likedIds.contains(entity.commentId), currentUserId, isAdmin)
+            }
         return CommentPageDto(
             content = dtos,
             page = page,
@@ -92,13 +99,15 @@ class VocabCommentService(
         commentRepo.findById(parentId).orElseThrow { BusinessException("Không tìm thấy bình luận") }
         val pageable = PageRequest.of(page, size)
         val pageResult = commentRepo.findRepliesByParent(parentId, pageable)
-        val likedIds = currentUserId?.let { uid ->
-            val ids = pageResult.content.mapNotNull { it.commentId }
-            if (ids.isEmpty()) emptySet() else likeRepo.findLikedCommentIds(uid, ids).toSet()
-        } ?: emptySet()
-        val dtos = pageResult.content.map { entity ->
-            CommentDto.from(entity, likedIds.contains(entity.commentId), currentUserId, isAdmin)
-        }
+        val likedIds =
+            currentUserId?.let { uid ->
+                val ids = pageResult.content.mapNotNull { it.commentId }
+                if (ids.isEmpty()) emptySet() else likeRepo.findLikedCommentIds(uid, ids).toSet()
+            } ?: emptySet()
+        val dtos =
+            pageResult.content.map { entity ->
+                CommentDto.from(entity, likedIds.contains(entity.commentId), currentUserId, isAdmin)
+            }
         return CommentPageDto(
             content = dtos,
             page = page,
@@ -122,8 +131,10 @@ class VocabCommentService(
 
         // Validate parent: same vocab, top-level (depth limit = 1)
         request.parentCommentId?.let { parentId ->
-            val parent = commentRepo.findById(parentId)
-                .orElseThrow { BusinessException("Không tìm thấy bình luận cha") }
+            val parent =
+                commentRepo
+                    .findById(parentId)
+                    .orElseThrow { BusinessException("Không tìm thấy bình luận cha") }
             if (parent.vocabId != vocabId) {
                 throw BusinessException("Bình luận cha không thuộc từ vựng này")
             }
@@ -135,17 +146,31 @@ class VocabCommentService(
             }
         }
 
-        val entity = VocabCommentEntity(
-            vocabId = vocabId,
-            parentCommentId = request.parentCommentId,
-            userId = currentUserId,
-            userFullName = currentUserFullName.ifBlank { "Người dùng ẩn danh" },
-            content = content,
-        )
+        val entity =
+            VocabCommentEntity(
+                vocabId = vocabId,
+                parentCommentId = request.parentCommentId,
+                userId = currentUserId,
+                userFullName = currentUserFullName.ifBlank { "Người dùng ẩn danh" },
+                content = content,
+            )
         val saved = commentRepo.saveAndFlush(entity)
 
-        // Bump parent reply count if this is a reply
-        request.parentCommentId?.let { commentRepo.incrementReplyCount(it) }
+        // Bump parent reply count + push notification to parent author (skip self-reply).
+        request.parentCommentId?.let { parentId ->
+            commentRepo.incrementReplyCount(parentId)
+            val parent = commentRepo.findById(parentId).orElse(null)
+            val savedCommentId = saved.commentId
+            if (parent != null && parent.userId != currentUserId && savedCommentId != null) {
+                notificationClient.pushCommentReply(
+                    recipientUserId = parent.userId,
+                    actorFullName = saved.userFullName,
+                    replyPreview = saved.content,
+                    vocabId = vocabId,
+                    commentId = savedCommentId,
+                )
+            }
+        }
 
         return CommentDto.from(saved, liked = false, currentUserId = currentUserId, isAdmin = isAdmin)
     }
@@ -157,8 +182,10 @@ class VocabCommentService(
         currentUserId: UUID,
         isAdmin: Boolean,
     ): CommentDto {
-        val entity = commentRepo.findById(commentId)
-            .orElseThrow { BusinessException("Không tìm thấy bình luận") }
+        val entity =
+            commentRepo
+                .findById(commentId)
+                .orElseThrow { BusinessException("Không tìm thấy bình luận") }
         if (entity.userId != currentUserId && !isAdmin) {
             throw BusinessException("Không có quyền sửa bình luận này")
         }
@@ -174,9 +201,15 @@ class VocabCommentService(
     }
 
     @Transactional
-    fun softDelete(commentId: UUID, currentUserId: UUID, isAdmin: Boolean) {
-        val entity = commentRepo.findById(commentId)
-            .orElseThrow { BusinessException("Không tìm thấy bình luận") }
+    fun softDelete(
+        commentId: UUID,
+        currentUserId: UUID,
+        isAdmin: Boolean,
+    ) {
+        val entity =
+            commentRepo
+                .findById(commentId)
+                .orElseThrow { BusinessException("Không tìm thấy bình luận") }
         if (entity.userId != currentUserId && !isAdmin) {
             throw BusinessException("Không có quyền xoá bình luận này")
         }
@@ -188,9 +221,14 @@ class VocabCommentService(
     }
 
     @Transactional
-    fun like(commentId: UUID, currentUserId: UUID): LikeResult {
-        val entity = commentRepo.findById(commentId)
-            .orElseThrow { BusinessException("Không tìm thấy bình luận") }
+    fun like(
+        commentId: UUID,
+        currentUserId: UUID,
+    ): LikeResult {
+        val entity =
+            commentRepo
+                .findById(commentId)
+                .orElseThrow { BusinessException("Không tìm thấy bình luận") }
         if (entity.isDeleted()) throw BusinessException("Không thể thả tim bình luận đã xoá")
 
         if (likeRepo.existsByCommentIdAndUserId(commentId, currentUserId)) {
@@ -207,13 +245,18 @@ class VocabCommentService(
     }
 
     @Transactional
-    fun unlike(commentId: UUID, currentUserId: UUID): LikeResult {
+    fun unlike(
+        commentId: UUID,
+        currentUserId: UUID,
+    ): LikeResult {
         val deleted = likeRepo.deleteByCommentIdAndUserId(commentId, currentUserId)
         if (deleted > 0) {
             commentRepo.decrementLikeCount(commentId)
         }
-        val fresh = commentRepo.findById(commentId)
-            .orElseThrow { BusinessException("Không tìm thấy bình luận") }
+        val fresh =
+            commentRepo
+                .findById(commentId)
+                .orElseThrow { BusinessException("Không tìm thấy bình luận") }
         return LikeResult(likeCount = fresh.likeCount, liked = false)
     }
 }

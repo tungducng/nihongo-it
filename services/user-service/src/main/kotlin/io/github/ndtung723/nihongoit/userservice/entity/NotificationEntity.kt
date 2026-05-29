@@ -51,6 +51,7 @@ enum class NotificationType {
     STUDY_REMINDER, // General study reminder
     REVIEW_DUE, // FSRS-calculated flashcard review due
     SYSTEM_ANNOUNCEMENT, // System announcements
+    COMMENT_REPLY, // Someone replied to one of your vocab comments
 }
 
 /**

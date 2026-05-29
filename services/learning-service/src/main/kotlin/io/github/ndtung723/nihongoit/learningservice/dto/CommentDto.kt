@@ -41,11 +41,12 @@ data class CommentDto(
                 commentId = entity.commentId!!,
                 vocabId = entity.vocabId,
                 parentCommentId = entity.parentCommentId,
-                user = CommentUserDto(
-                    userId = entity.userId,
-                    fullName = entity.userFullName,
-                    initials = entity.userFullName.computeInitials(),
-                ),
+                user =
+                    CommentUserDto(
+                        userId = entity.userId,
+                        fullName = entity.userFullName,
+                        initials = entity.userFullName.computeInitials(),
+                    ),
                 content = if (deleted) DELETED_PLACEHOLDER else entity.content,
                 likeCount = entity.likeCount,
                 replyCount = entity.replyCount,

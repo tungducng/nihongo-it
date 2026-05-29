@@ -23,6 +23,11 @@ server:
   port: 8088
 
 app:
+  # Cross-service notification dispatch (S5 reply notification). Both keys
+  # default to the dev-friendly fallback — production reads from env.
+  internal-api-key: ${INTERNAL_API_KEY:}
+  notification:
+    base-url: ${NOTIFICATION_BASE_URL:http://localhost:8089}
   fsrs:
     request-retention: 0.9
     maximum-interval: 36500.0

@@ -10,9 +10,15 @@ import java.util.UUID
 
 @Repository
 interface VocabCommentLikeRepository : JpaRepository<VocabCommentLikeEntity, VocabCommentLikeId> {
-    fun existsByCommentIdAndUserId(commentId: UUID, userId: UUID): Boolean
+    fun existsByCommentIdAndUserId(
+        commentId: UUID,
+        userId: UUID,
+    ): Boolean
 
-    fun deleteByCommentIdAndUserId(commentId: UUID, userId: UUID): Long
+    fun deleteByCommentIdAndUserId(
+        commentId: UUID,
+        userId: UUID,
+    ): Long
 
     /**
      * Batched "has the current user liked any of these comments" lookup — used

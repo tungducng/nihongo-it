@@ -97,6 +97,11 @@ $env:SPRING_DEVTOOLS_LIVERELOAD_ENABLED = 'false'
 # the response was logically complete. Production keeps virtual threads on.
 $env:SPRING_THREADS_VIRTUAL_ENABLED = 'false'
 
+# Cross-service notification dispatch (S5 — comment reply notification). Both
+# learning-service and notification-service must agree on the shared secret.
+# In CI this comes from the workflow env; locally we hard-code a dev fallback.
+if (-not $env:INTERNAL_API_KEY) { $env:INTERNAL_API_KEY = 'dev-internal-key-not-for-prod' }
+
 New-Item -ItemType Directory -Force -Path $logsDir | Out-Null
 
 function Wait-ForUrl {

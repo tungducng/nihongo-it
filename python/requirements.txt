@@ -2,7 +2,7 @@ fastapi==0.110.0
 uvicorn==0.28.0
 openai==1.75.0
 librosa==0.10.1
-praat-parselmouth==0.4.3
+praat-parselmouth==0.4.7
 numpy==1.26.4
 soundfile==0.12.1
 fastdtw==0.3.4
